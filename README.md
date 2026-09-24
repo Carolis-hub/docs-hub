@@ -10,8 +10,10 @@ projeto está em [PLAN.md](./PLAN.md).
 - Tailwind CSS, com tema claro/escuro
 - Firebase Auth (e-mail/senha) + Firestore, sem backend próprio — acesso
   direto do navegador, plano Spark
-- Cloudinary para mídia (PNG, GIF, MP4), a partir da Fase 1
-- TipTap para o editor de artigos, a partir da Fase 1
+- Cloudinary para mídia (PNG, GIF, MP4), com compressão de PNG no navegador
+- TipTap para o editor de artigos (estilos semânticos: H1–H3, parágrafo,
+  listas, links, código, imagem com alt obrigatório)
+- `@dnd-kit` para a ordenação por arrastar dos blocos
 - MiniSearch para a busca, a partir da Fase 3
 - ESLint + Prettier
 - Vitest + Testing Library
@@ -77,6 +79,22 @@ próximas fases), alguém com acesso precisa configurar manualmente:
       de tema
 - [x] `ci.yml` com lint, typecheck, testes e build
 
+**Fase 1 — Estrutura e conteúdo**, concluída:
+
+- [x] CRUD de blocos (produtos → subprodutos) com ordenação por arrastar
+- [x] CRUD de artigos: rascunho, publicação, público (usuário/técnico) e
+      versão do produto opcional
+- [x] Editor TipTap com estilos semânticos e imagem/GIF com alt obrigatório
+- [x] Upload para o Cloudinary com validação e compressão de PNG
+- [x] Geração automática de `textoPlano` e `resumo`
+- [x] Histórico de versões a cada publicação, com opção de restaurar
+- [x] Leitura por produto → subproduto → artigo, com breadcrumb
+
+O fluxo completo (criar produto, subproduto e artigo, publicar e visualizar)
+foi validado manualmente contra o Firebase Emulator. As rotas de admin ainda
+não têm proteção por papel — isso é da Fase 2, junto com o `firestore.rules`
+definitivo.
+
 Pendente (fora do Claude Code, ver seção "Configuração necessária" acima e a
 seção 8 do `PLAN.md`):
 
@@ -85,4 +103,4 @@ seção 8 do `PLAN.md`):
 - [ ] Levantamento da ferramenta de documentação atual (formato de
       exportação e volume, necessário para a Fase 5)
 
-Próxima fase: **Fase 1 — Estrutura e conteúdo** (ver `PLAN.md`).
+Próxima fase: **Fase 2 — Usuários e permissões** (ver `PLAN.md`).
