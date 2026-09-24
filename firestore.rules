@@ -1,0 +1,12 @@
+rules_version = '2';
+
+// Regras iniciais da Fase 0: negam todo o acesso.
+// O modelo completo (leitor/admin, produtosPermitidos, verTecnico) é
+// implementado na Fase 2, com testes em tests/rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
