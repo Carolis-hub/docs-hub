@@ -1,13 +1,18 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 export function Login() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
-  const [erro, setErro] = useState<string | null>(null)
+  const [erro, setErro] = useState<string | null>(
+    searchParams.get('motivo') === 'sem-acesso'
+      ? 'Sua conta não tem acesso ao docs-hub. Fale com um administrador.'
+      : null,
+  )
   const [enviando, setEnviando] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

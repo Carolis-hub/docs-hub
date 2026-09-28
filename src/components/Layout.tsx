@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useUserProfile } from '../hooks/useUserProfile'
 import { ThemeToggle } from './ThemeToggle'
 
 const linkClasses = ({ isActive }: { isActive: boolean }) =>
@@ -12,6 +13,8 @@ const linkClasses = ({ isActive }: { isActive: boolean }) =>
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user, signOut } = useAuth()
+  const { profile } = useUserProfile()
+  const ehAdmin = profile?.role === 'admin'
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -24,12 +27,19 @@ export function Layout({ children }: { children: ReactNode }) {
             <NavLink to="/" end className={linkClasses}>
               Início
             </NavLink>
-            <NavLink to="/admin/blocos" className={linkClasses}>
-              Blocos
-            </NavLink>
-            <NavLink to="/admin/artigos" className={linkClasses}>
-              Artigos
-            </NavLink>
+            {ehAdmin && (
+              <>
+                <NavLink to="/admin/blocos" className={linkClasses}>
+                  Blocos
+                </NavLink>
+                <NavLink to="/admin/artigos" className={linkClasses}>
+                  Artigos
+                </NavLink>
+                <NavLink to="/admin/usuarios" className={linkClasses}>
+                  Usuários
+                </NavLink>
+              </>
+            )}
           </nav>
         </div>
         <div className="flex items-center gap-3">
