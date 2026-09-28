@@ -49,6 +49,13 @@ próximas fases), alguém com acesso precisa configurar manualmente:
 3. **Secrets do GitHub** (para as Actions das Fases 6 e 7): credenciais de
    service account do Firebase, chave da API de IA e credenciais da API do
    Cloudinary.
+4. **Primeiro usuário admin**: como a tela "Usuários" (Fase 2) só existe
+   dentro do app e só admins podem criar usuários, o primeiro admin precisa
+   ser criado manualmente uma única vez: crie a conta em Authentication no
+   Console do Firebase (ou no emulador) e, em Firestore, crie o documento
+   `users/{uid}` correspondente com `role: "admin"`, `ativo: true`,
+   `produtosPermitidos: []` e `verTecnico: true`. A partir daí, esse admin
+   cria os demais usuários pela própria interface.
 
 ## Scripts
 
@@ -91,16 +98,33 @@ próximas fases), alguém com acesso precisa configurar manualmente:
 - [x] Leitura por produto → subproduto → artigo, com breadcrumb
 
 O fluxo completo (criar produto, subproduto e artigo, publicar e visualizar)
-foi validado manualmente contra o Firebase Emulator. As rotas de admin ainda
-não têm proteção por papel — isso é da Fase 2, junto com o `firestore.rules`
-definitivo.
+foi validado manualmente contra o Firebase Emulator.
+
+**Fase 2 — Usuários e permissões**, concluída:
+
+- [x] `firestore.rules` completo: sem perfil ou com `ativo: false`, nega
+      tudo; leitor só lê o que está em `produtosPermitidos` e, para
+      conteúdo técnico, só com `verTecnico`; leitor só altera `views`; admin
+      lê e escreve tudo, exceto excluir `auditLog`
+- [x] 19 testes em `tests/rules`, rodando no CI com o Firestore Emulator
+- [x] Tela admin "Usuários": cria (via instância secundária do Firebase, sem
+      derrubar a sessão do admin), edita papel/produtos/`verTecnico` e
+      desativa/reativa
+- [x] Rotas `/admin/*` protegidas por papel no front (`RequireAdmin`), com a
+      navegação também escondida para quem não é admin
+- [x] `auditLog` registrado ao criar, editar, publicar, despublicar e
+      excluir blocos, artigos e usuários
+
+Validado manualmente: um leitor restrito a um produto não vê os demais na
+home, nem por URL direta de bloco ou artigo, nem acessa `/admin/*`.
 
 Pendente (fora do Claude Code, ver seção "Configuração necessária" acima e a
 seção 8 do `PLAN.md`):
 
 - [ ] Criação dos projetos Firebase `dev`/`prod`
 - [ ] Conta e preset do Cloudinary
+- [ ] Criação manual do primeiro usuário admin (ver "Configuração necessária")
 - [ ] Levantamento da ferramenta de documentação atual (formato de
       exportação e volume, necessário para a Fase 5)
 
-Próxima fase: **Fase 2 — Usuários e permissões** (ver `PLAN.md`).
+Próxima fase: **Fase 3 — Busca** (ver `PLAN.md`).

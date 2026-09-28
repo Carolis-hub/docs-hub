@@ -174,13 +174,13 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 2 — Usuários e permissões (≈1 semana)
 
-- [ ] `firestore.rules` completo, conforme a seção 5.
-- [ ] Testes das regras no Emulator (`@firebase/rules-unit-testing`), rodando no CI.
-- [ ] Tela admin "Usuários": criar (via segunda instância do Firebase), editar papel, produtos permitidos e `verTecnico`, e desativar.
-- [ ] Rotas protegidas por papel no front.
-- [ ] Gravação de `auditLog` nas ações de criar, editar, publicar e excluir.
+- [x] `firestore.rules` completo, conforme a seção 5.
+- [x] Testes das regras no Emulator (`@firebase/rules-unit-testing`), rodando no CI.
+- [x] Tela admin "Usuários": criar (via segunda instância do Firebase), editar papel, produtos permitidos e `verTecnico`, e desativar.
+- [x] Rotas protegidas por papel no front.
+- [x] Gravação de `auditLog` nas ações de criar, editar, publicar e excluir.
 
-**Pronto quando:** um leitor com acesso só ao ECM não vê BPM nem na navegação, nem na busca, nem por URL direta, e os testes provam isso.
+**Pronto quando:** um leitor com acesso só ao ECM não vê BPM nem na navegação, nem na busca, nem por URL direta, e os testes provam isso. ✅ 19 testes em `tests/rules` provam o isolamento por produto, papel, status e público técnico (a parte de busca é da Fase 3). Verificado também manualmente via Emulator: um admin criou os produtos Smartshare e ECM e um leitor restrito à ECM; a navegação, a home e a URL direta do Smartshare ficaram bloqueadas para esse leitor, e `/admin/*` retornou "Acesso restrito a administradores".
 
 ### Fase 3 — Busca (≈1–2 semanas)
 
