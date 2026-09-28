@@ -16,6 +16,11 @@ jobs:
           node-version: 20
           cache: npm
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
       - name: Instalar dependências
         run: npm ci
 
@@ -30,6 +35,9 @@ jobs:
 
       - name: Testes
         run: npm run test
+
+      - name: Testes das regras do Firestore
+        run: npm run test:rules
 
       - name: Build
         run: npm run build

@@ -1,10 +1,101 @@
 rules_version = '2';
 
-// Regras iniciais da Fase 0: negam todo o acesso.
-// O modelo completo (leitor/admin, produtosPermitidos, verTecnico) é
-// implementado na Fase 2, com testes em tests/rules.
+// Modelo completo de permissões (Fase 2, seção 5 do PLAN.md).
+// Testado em tests/rules com @firebase/rules-unit-testing.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function perfil() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function temPerfilAtivo() {
+      return autenticado()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && perfil().ativo == true;
+    }
+
+    function ehAdmin() {
+      return temPerfilAtivo() && perfil().role == 'admin';
+    }
+
+    function produtosPermitidos() {
+      return perfil().produtosPermitidos;
+    }
+
+    function podeVerTecnico() {
+      return perfil().verTecnico == true;
+    }
+
+    // Um leitor só pode ler um produto (ou algo desnormalizado com esse
+    // productId) se ele estiver na lista de produtos permitidos do perfil.
+    function podeLerProduto(productId) {
+      return ehAdmin()
+        || (temPerfilAtivo() && productId in produtosPermitidos());
+    }
+
+    function podeLerArtigo(dadosArtigo) {
+      return ehAdmin() || (
+        dadosArtigo.status == 'published' &&
+        podeLerProduto(dadosArtigo.productId) &&
+        (dadosArtigo.publico == 'usuario' || podeVerTecnico())
+      );
+    }
+
+    // Sem documento users/{uid} → nenhum acesso a nada além do próprio
+    // perfil (e nem isso, se o uid não bater).
+    match /users/{uid} {
+      allow get: if ehAdmin() || (autenticado() && request.auth.uid == uid);
+      allow list: if ehAdmin();
+      allow write: if ehAdmin();
+    }
+
+    match /blocks/{blockId} {
+      allow read: if podeLerProduto(resource.data.productId);
+      allow write: if ehAdmin();
+    }
+
+    match /articles/{articleId} {
+      allow read: if podeLerArtigo(resource.data);
+      allow create, delete: if ehAdmin();
+      // Leitor só pode incrementar o contador de views de um artigo que
+      // já pode ler, e só o campo "views" (métricas da Fase 4).
+      allow update: if ehAdmin() || (
+        podeLerArtigo(resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
+      );
+
+      match /versions/{versionId} {
+        allow read, write: if ehAdmin();
+      }
+
+      match /suggestions/{suggestionId} {
+        allow read, write: if ehAdmin();
+      }
+
+      match /viewsDaily/{dia} {
+        allow read: if ehAdmin();
+        allow write: if ehAdmin() || (
+          podeLerArtigo(get(/databases/$(database)/documents/articles/$(articleId)).data) &&
+          request.resource.data.keys().hasOnly(['count'])
+        );
+      }
+    }
+
+    match /searchIndex/{productId} {
+      allow read: if podeLerProduto(productId);
+      allow write: if ehAdmin();
+    }
+
+    match /auditLog/{id} {
+      allow read, create, update: if ehAdmin();
+      allow delete: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
