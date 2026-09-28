@@ -7,4 +7,12 @@ export interface AppUser {
   role: UserRole
   produtosPermitidos: string[]
   verTecnico: boolean
+  ativo: boolean
+}
+
+export interface UserInput {
+  nome: string
+  role: UserRole
+  produtosPermitidos: string[]
+  verTecnico: boolean
 }

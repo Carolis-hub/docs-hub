@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
 import { AuthProvider } from './hooks/useAuth.tsx'
 import { ThemeProvider } from './hooks/useTheme.tsx'
+import { UserProfileProvider } from './hooks/useUserProfile.tsx'
 import './index.css'
 
 const rootElement = document.getElementById('root')
@@ -15,9 +16,11 @@ createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <UserProfileProvider>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </UserProfileProvider>
       </AuthProvider>
     </ThemeProvider>
   </StrictMode>,
