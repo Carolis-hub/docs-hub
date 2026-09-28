@@ -11,6 +11,7 @@ import { AdminBlocos } from './pages/Admin/Blocos'
 import { AdminArtigos } from './pages/Admin/Artigos'
 import { AdminArtigoForm } from './pages/Admin/ArtigoForm'
 import { AdminUsuarios } from './pages/Admin/Usuarios'
+import { AdminMetricas } from './pages/Admin/Metricas'
 
 function App() {
   return (
@@ -63,6 +64,14 @@ function App() {
                   element={
                     <RequireAdmin>
                       <AdminUsuarios />
+                    </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="/admin/metricas"
+                  element={
+                    <RequireAdmin>
+                      <AdminMetricas />
                     </RequireAdmin>
                   }
                 />

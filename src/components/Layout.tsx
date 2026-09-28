@@ -39,6 +39,9 @@ export function Layout({ children }: { children: ReactNode }) {
                 <NavLink to="/admin/usuarios" className={linkClasses}>
                   Usuários
                 </NavLink>
+                <NavLink to="/admin/metricas" className={linkClasses}>
+                  Métricas
+                </NavLink>
               </>
             )}
           </nav>

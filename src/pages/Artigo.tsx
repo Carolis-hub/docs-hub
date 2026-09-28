@@ -2,13 +2,18 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { getArticle } from '../services/articles'
 import { getBreadcrumb } from '../services/blocks'
+import { registrarVisualizacao } from '../services/metrics'
 import { Breadcrumb } from '../components/Breadcrumb'
 import { ArticleViewer } from '../components/editor/ArticleEditor'
+import { useAuth } from '../hooks/useAuth'
+import { useUserProfile } from '../hooks/useUserProfile'
 import type { Article } from '../types/article'
 import type { Block } from '../types/block'
 
 export function Artigo() {
   const { articleId } = useParams<{ articleId: string }>()
+  const { user } = useAuth()
+  const { profile } = useUserProfile()
   const [artigo, setArtigo] = useState<Article | null>(null)
   const [trilha, setTrilha] = useState<Block[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -32,6 +37,11 @@ export function Artigo() {
       .catch(() => setErro('Não foi possível carregar o artigo.'))
       .finally(() => setCarregando(false))
   }, [articleId])
+
+  useEffect(() => {
+    if (!articleId || !user || !profile) return
+    void registrarVisualizacao(articleId, user.uid, profile.role)
+  }, [articleId, user, profile])
 
   if (carregando) {
     return <p className="text-slate-500 dark:text-slate-400">Carregando…</p>
