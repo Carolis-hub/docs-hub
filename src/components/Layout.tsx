@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useUserProfile } from '../hooks/useUserProfile'
+import { SearchBar } from './SearchBar'
 import { ThemeToggle } from './ThemeToggle'
 
 const linkClasses = ({ isActive }: { isActive: boolean }) =>
@@ -43,6 +44,7 @@ export function Layout({ children }: { children: ReactNode }) {
           </nav>
         </div>
         <div className="flex items-center gap-3">
+          <SearchBar />
           <ThemeToggle />
           {user && (
             <button

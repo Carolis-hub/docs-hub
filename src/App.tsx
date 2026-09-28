@@ -6,6 +6,7 @@ import { Login } from './pages/Login'
 import { Home } from './pages/Home'
 import { Bloco } from './pages/Bloco'
 import { Artigo } from './pages/Artigo'
+import { Busca } from './pages/Busca'
 import { AdminBlocos } from './pages/Admin/Blocos'
 import { AdminArtigos } from './pages/Admin/Artigos'
 import { AdminArtigoForm } from './pages/Admin/ArtigoForm'
@@ -24,6 +25,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/blocos/:blockId" element={<Bloco />} />
                 <Route path="/artigos/:articleId" element={<Artigo />} />
+                <Route path="/busca" element={<Busca />} />
                 <Route
                   path="/admin/blocos"
                   element={

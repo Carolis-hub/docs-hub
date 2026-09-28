@@ -5,6 +5,7 @@ import App from './App.tsx'
 import { AuthProvider } from './hooks/useAuth.tsx'
 import { ThemeProvider } from './hooks/useTheme.tsx'
 import { UserProfileProvider } from './hooks/useUserProfile.tsx'
+import { SearchIndexProvider } from './hooks/useSearchIndex.tsx'
 import './index.css'
 
 const rootElement = document.getElementById('root')
@@ -17,9 +18,11 @@ createRoot(rootElement).render(
     <ThemeProvider>
       <AuthProvider>
         <UserProfileProvider>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <SearchIndexProvider>
+            <BrowserRouter>
+              <App />
+            </BrowserRouter>
+          </SearchIndexProvider>
         </UserProfileProvider>
       </AuthProvider>
     </ThemeProvider>
