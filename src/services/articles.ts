@@ -17,6 +17,12 @@ import { db } from './firebase'
 import { slugify } from '../utils/slug'
 import { extrairTextoPlano, gerarResumo } from '../utils/conteudo'
 import { registrarAuditLog } from './auditLog'
+import {
+  atualizarNaTransacao,
+  avisarSeIndiceGrande,
+  itemDoArtigo,
+  removerNoBatch,
+} from './searchIndex'
 import type { Article, ArticleInput, ArticleVersion } from '../types/article'
 
 const articlesCollection = collection(db, 'articles')
@@ -188,7 +194,11 @@ export async function publishArticle(
       atualizadoEm: serverTimestamp(),
       revisadoEm: serverTimestamp(),
     })
-  })
+
+    atualizarNaTransacao(transaction, atual.productId, itemDoArtigo(atual))
+
+    return atual.productId
+  }).then((productId) => avisarSeIndiceGrande(productId))
 
   await registrarAuditLog(autorId, 'publicar_artigo', id)
 }
@@ -197,11 +207,21 @@ export async function unpublishArticle(
   id: string,
   autorId: string,
 ): Promise<void> {
-  await updateDoc(doc(articlesCollection, id), {
+  const articleRef = doc(articlesCollection, id)
+  const snapshot = await getDoc(articleRef)
+  if (!snapshot.exists()) {
+    throw new Error('Artigo não encontrado')
+  }
+
+  const batch = writeBatch(db)
+  batch.update(articleRef, {
     status: 'draft',
     atualizadoPor: autorId,
     atualizadoEm: serverTimestamp(),
   })
+  removerNoBatch(batch, snapshot.data().productId as string, id)
+  await batch.commit()
+
   await registrarAuditLog(autorId, 'despublicar_artigo', id)
 }
 
@@ -260,11 +280,17 @@ export async function deleteArticle(
   autorId: string,
 ): Promise<void> {
   const articleRef = doc(articlesCollection, id)
-  const versionsSnapshot = await getDocs(collection(articleRef, 'versions'))
+  const [articleSnapshot, versionsSnapshot] = await Promise.all([
+    getDoc(articleRef),
+    getDocs(collection(articleRef, 'versions')),
+  ])
 
   const batch = writeBatch(db)
   versionsSnapshot.docs.forEach((versionDoc) => batch.delete(versionDoc.ref))
   batch.delete(articleRef)
+  if (articleSnapshot.exists()) {
+    removerNoBatch(batch, articleSnapshot.data().productId as string, id)
+  }
   await batch.commit()
   await registrarAuditLog(autorId, 'excluir_artigo', id)
 }

@@ -124,6 +124,20 @@ beforeAll(async () => {
       publico: 'usuario',
       views: 0,
     })
+
+    await setDoc(doc(db, 'searchIndex/bpm'), {
+      itens: {
+        'artigo-bpm-publicado': {
+          id: 'artigo-bpm-publicado',
+          titulo: 'Artigo BPM publicado',
+          resumo: '',
+          textoPlano: '',
+          blockId: 'bpm',
+          publico: 'usuario',
+        },
+      },
+    })
+    await setDoc(doc(db, 'searchIndex/ecm'), { itens: {} })
   })
 })
 
@@ -287,6 +301,75 @@ describe('auditLog', () => {
         usuarioId: 'leitor-bpm',
         acao: 'criar_bloco',
         alvo: 'x',
+      }),
+    )
+  })
+})
+
+describe('searchIndex — mesmo isolamento por produto dos blocks/articles', () => {
+  it('leitor da BPM lê o índice da BPM, mas não o da ECM', async () => {
+    const db = testEnv.authenticatedContext('leitor-bpm').firestore()
+    await assertSucceeds(getDoc(doc(db, 'searchIndex/bpm')))
+    await assertFails(getDoc(doc(db, 'searchIndex/ecm')))
+  })
+
+  it('leitor não escreve no índice', async () => {
+    const db = testEnv.authenticatedContext('leitor-bpm').firestore()
+    await assertFails(
+      updateDoc(doc(db, 'searchIndex/bpm'), { 'itens.novo': {} }),
+    )
+  })
+
+  it('admin lê e escreve qualquer índice', async () => {
+    const db = testEnv.authenticatedContext('admin-1').firestore()
+    await assertSucceeds(getDoc(doc(db, 'searchIndex/ecm')))
+    await assertSucceeds(
+      updateDoc(doc(db, 'searchIndex/ecm'), { 'itens.novo': { id: 'novo' } }),
+    )
+  })
+})
+
+describe('buscasSemResultado', () => {
+  it('qualquer usuário ativo registra uma busca sem resultado', async () => {
+    const db = testEnv.authenticatedContext('leitor-bpm').firestore()
+    await assertSucceeds(
+      setDoc(doc(db, 'buscasSemResultado/configuracao-x'), {
+        termo: 'configuracao x',
+        contagem: 1,
+        ultimaBusca: new Date().toISOString(),
+      }),
+    )
+  })
+
+  it('rejeita campos fora do formato esperado', async () => {
+    const db = testEnv.authenticatedContext('leitor-bpm').firestore()
+    await assertFails(
+      setDoc(doc(db, 'buscasSemResultado/outra-busca'), {
+        termo: 'outra busca',
+        contagem: 1,
+        ultimaBusca: new Date().toISOString(),
+        usuarioId: 'leitor-bpm',
+      }),
+    )
+  })
+
+  it('leitor não lê o registro agregado', async () => {
+    const db = testEnv.authenticatedContext('leitor-bpm').firestore()
+    await assertFails(getDoc(doc(db, 'buscasSemResultado/configuracao-x')))
+  })
+
+  it('admin lê o registro agregado', async () => {
+    const db = testEnv.authenticatedContext('admin-1').firestore()
+    await assertSucceeds(getDoc(doc(db, 'buscasSemResultado/configuracao-x')))
+  })
+
+  it('usuário sem perfil não registra nada', async () => {
+    const db = testEnv.authenticatedContext('sem-perfil').firestore()
+    await assertFails(
+      setDoc(doc(db, 'buscasSemResultado/anonimo'), {
+        termo: 'anonimo',
+        contagem: 1,
+        ultimaBusca: new Date().toISOString(),
       }),
     )
   })

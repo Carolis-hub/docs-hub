@@ -91,6 +91,14 @@ service cloud.firestore {
       allow write: if ehAdmin();
     }
 
+    // Registro agregado de buscas sem resultado (sem identificar quem
+    // buscou, só o termo e uma contagem — ver seção 6, Fase 3).
+    match /buscasSemResultado/{termoId} {
+      allow read: if ehAdmin();
+      allow write: if temPerfilAtivo()
+        && request.resource.data.keys().hasOnly(['termo', 'contagem', 'ultimaBusca']);
+    }
+
     match /auditLog/{id} {
       allow read, create, update: if ehAdmin();
       allow delete: if false;
