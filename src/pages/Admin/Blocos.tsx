@@ -27,9 +27,11 @@ import {
   type BlockFormValues,
 } from '../../components/admin/BlockForm'
 import { SortableBlockItem } from '../../components/admin/SortableBlockItem'
+import { useAuth } from '../../hooks/useAuth'
 import type { Block } from '../../types/block'
 
 export function AdminBlocos() {
+  const { user } = useAuth()
   const [parentId, setParentId] = useState<string | null>(null)
   const [trilha, setTrilha] = useState<Block[]>([])
   const [itens, setItens] = useState<Block[]>([])
@@ -78,18 +80,21 @@ export function AdminBlocos() {
   }
 
   async function handleCriar(valores: BlockFormValues) {
-    await createBlock({ ...valores, parentId })
+    if (!user) return
+    await createBlock({ ...valores, parentId }, user.uid)
     setFormulario(null)
     carregar()
   }
 
   async function handleEditar(bloco: Block, valores: BlockFormValues) {
-    await updateBlock(bloco.id, valores)
+    if (!user) return
+    await updateBlock(bloco.id, valores, user.uid)
     setFormulario(null)
     carregar()
   }
 
   async function handleExcluir(bloco: Block) {
+    if (!user) return
     if (
       !window.confirm(
         `Excluir "${bloco.nome}"? Essa ação não pode ser desfeita.`,
@@ -98,7 +103,7 @@ export function AdminBlocos() {
       return
     }
     try {
-      await deleteBlock(bloco.id)
+      await deleteBlock(bloco.id, user.uid)
       carregar()
     } catch (error) {
       setErro(

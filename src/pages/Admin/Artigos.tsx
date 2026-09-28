@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { listAllBlocks } from '../../services/blocks'
 import { deleteArticle, listArticlesByBlock } from '../../services/articles'
 import { montarOpcoesDeBloco } from '../../utils/blockTree'
+import { useAuth } from '../../hooks/useAuth'
 import type { Block } from '../../types/block'
 import type { Article } from '../../types/article'
 
@@ -12,6 +13,7 @@ const rotuloStatus: Record<Article['status'], string> = {
 }
 
 export function AdminArtigos() {
+  const { user } = useAuth()
   const [blocos, setBlocos] = useState<Block[]>([])
   const [blocoSelecionado, setBlocoSelecionado] = useState('')
   const [artigos, setArtigos] = useState<Article[]>([])
@@ -39,8 +41,9 @@ export function AdminArtigos() {
   }, [blocoSelecionado])
 
   async function handleExcluir(artigo: Article) {
+    if (!user) return
     if (!window.confirm(`Excluir o artigo "${artigo.titulo}"?`)) return
-    await deleteArticle(artigo.id)
+    await deleteArticle(artigo.id, user.uid)
     setArtigos((atual) => atual.filter((item) => item.id !== artigo.id))
   }
 
