@@ -16,6 +16,7 @@ import type { JSONContent } from '@tiptap/core'
 import { db } from './firebase'
 import { slugify } from '../utils/slug'
 import { extrairTextoPlano, gerarResumo } from '../utils/conteudo'
+import { registrarAuditLog } from './auditLog'
 import type { Article, ArticleInput, ArticleVersion } from '../types/article'
 
 const articlesCollection = collection(db, 'articles')
@@ -54,13 +55,35 @@ export async function getArticle(id: string): Promise<Article | null> {
   return toArticle(snapshot.id, snapshot.data())
 }
 
+interface ListArticlesOptions {
+  apenasPublicados?: boolean
+  /**
+   * Necessário quando quem consulta é um leitor: o firestore.rules exige
+   * que a consulta filtre por `productId` para provar que só retorna
+   * artigos de um produto permitido. Admins chamam sem esse argumento.
+   */
+  productId?: string
+  /** Necessário quando o leitor não tem `verTecnico`. */
+  apenasUsuario?: boolean
+}
+
 export async function listArticlesByBlock(
   blockId: string,
-  { apenasPublicados = false }: { apenasPublicados?: boolean } = {},
+  {
+    apenasPublicados = false,
+    productId,
+    apenasUsuario = false,
+  }: ListArticlesOptions = {},
 ): Promise<Article[]> {
   const condicoes = [where('blockId', '==', blockId)]
   if (apenasPublicados) {
     condicoes.push(where('status', '==', 'published'))
+  }
+  if (productId) {
+    condicoes.push(where('productId', '==', productId))
+  }
+  if (apenasUsuario) {
+    condicoes.push(where('publico', '==', 'usuario'))
   }
   const q = query(articlesCollection, ...condicoes)
   const snapshot = await getDocs(q)
@@ -99,6 +122,7 @@ export async function createArticleDraft(
     })
   })
 
+  await registrarAuditLog(autorId, 'criar_artigo', novoDocRef.id)
   return novoDocRef.id
 }
 
@@ -124,6 +148,7 @@ export async function updateArticleDraft(
   }
 
   await updateDoc(doc(articlesCollection, id), patch)
+  await registrarAuditLog(autorId, 'editar_artigo', id)
 }
 
 export async function publishArticle(
@@ -164,6 +189,8 @@ export async function publishArticle(
       revisadoEm: serverTimestamp(),
     })
   })
+
+  await registrarAuditLog(autorId, 'publicar_artigo', id)
 }
 
 export async function unpublishArticle(
@@ -175,6 +202,7 @@ export async function unpublishArticle(
     atualizadoPor: autorId,
     atualizadoEm: serverTimestamp(),
   })
+  await registrarAuditLog(autorId, 'despublicar_artigo', id)
 }
 
 export async function listVersions(
@@ -227,7 +255,10 @@ export async function restoreVersion(
   })
 }
 
-export async function deleteArticle(id: string): Promise<void> {
+export async function deleteArticle(
+  id: string,
+  autorId: string,
+): Promise<void> {
   const articleRef = doc(articlesCollection, id)
   const versionsSnapshot = await getDocs(collection(articleRef, 'versions'))
 
@@ -235,4 +266,5 @@ export async function deleteArticle(id: string): Promise<void> {
   versionsSnapshot.docs.forEach((versionDoc) => batch.delete(versionDoc.ref))
   batch.delete(articleRef)
   await batch.commit()
+  await registrarAuditLog(autorId, 'excluir_artigo', id)
 }

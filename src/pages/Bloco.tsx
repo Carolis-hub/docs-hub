@@ -3,11 +3,13 @@ import { Link, useParams } from 'react-router-dom'
 import { getBreadcrumb, listChildren } from '../services/blocks'
 import { listArticlesByBlock } from '../services/articles'
 import { Breadcrumb } from '../components/Breadcrumb'
+import { useUserProfile } from '../hooks/useUserProfile'
 import type { Block } from '../types/block'
 import type { Article } from '../types/article'
 
 export function Bloco() {
   const { blockId } = useParams<{ blockId: string }>()
+  const { profile, loading: carregandoPerfil } = useUserProfile()
   const [trilha, setTrilha] = useState<Block[]>([])
   const [subblocos, setSubblocos] = useState<Block[]>([])
   const [artigos, setArtigos] = useState<Article[]>([])
@@ -15,24 +17,36 @@ export function Bloco() {
   const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!blockId) return
+    if (!blockId || carregandoPerfil || !profile) return
 
     setCarregando(true)
     setErro(null)
 
-    Promise.all([
-      getBreadcrumb(blockId),
-      listChildren(blockId),
-      listArticlesByBlock(blockId, { apenasPublicados: true }),
-    ])
-      .then(([breadcrumb, filhos, artigosPublicados]) => {
+    getBreadcrumb(blockId)
+      .then(async (breadcrumb) => {
+        const blocoAtual = breadcrumb.at(-1)
+        if (!blocoAtual) {
+          setErro('Bloco não encontrado ou sem permissão de acesso.')
+          return
+        }
+
+        const ehAdmin = profile.role === 'admin'
+        const [filhos, artigosPublicados] = await Promise.all([
+          listChildren(blockId, ehAdmin ? undefined : blocoAtual.productId),
+          listArticlesByBlock(blockId, {
+            apenasPublicados: true,
+            productId: ehAdmin ? undefined : blocoAtual.productId,
+            apenasUsuario: !ehAdmin && !profile.verTecnico,
+          }),
+        ])
+
         setTrilha(breadcrumb)
         setSubblocos(filhos)
         setArtigos(artigosPublicados)
       })
-      .catch(() => setErro('Não foi possível carregar este bloco.'))
+      .catch(() => setErro('Bloco não encontrado ou sem permissão de acesso.'))
       .finally(() => setCarregando(false))
-  }, [blockId])
+  }, [blockId, profile, carregandoPerfil])
 
   const blocoAtual = trilha.at(-1)
 

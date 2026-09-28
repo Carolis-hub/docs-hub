@@ -1,17 +1,28 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listProducts } from '../services/blocks'
+import { useUserProfile } from '../hooks/useUserProfile'
 import type { Block } from '../types/block'
 
 export function Home() {
+  const { profile, loading: carregandoPerfil } = useUserProfile()
   const [produtos, setProdutos] = useState<Block[] | null>(null)
   const [erro, setErro] = useState<string | null>(null)
 
   useEffect(() => {
-    listProducts()
+    if (carregandoPerfil || !profile) return
+
+    if (profile.role !== 'admin' && profile.produtosPermitidos.length === 0) {
+      setProdutos([])
+      return
+    }
+
+    const filtro =
+      profile.role === 'admin' ? undefined : profile.produtosPermitidos
+    listProducts(filtro)
       .then(setProdutos)
       .catch(() => setErro('Não foi possível carregar os produtos.'))
-  }, [])
+  }, [profile, carregandoPerfil])
 
   return (
     <div>

@@ -14,9 +14,13 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import { slugify } from '../utils/slug'
+import { registrarAuditLog } from './auditLog'
 import type { Block, BlockInput } from '../types/block'
 
 const blocksCollection = collection(db, 'blocks')
+
+// Limite do operador "in" do Firestore.
+const LIMITE_IN = 10
 
 function toBlock(id: string, data: Record<string, unknown>): Block {
   return {
@@ -31,26 +35,46 @@ function toBlock(id: string, data: Record<string, unknown>): Block {
   }
 }
 
-export async function listProducts(): Promise<Block[]> {
-  const q = query(
-    blocksCollection,
-    where('parentId', '==', null),
-    orderBy('ordem'),
-  )
+/**
+ * Lista os produtos (blocos raiz). Para leitores, `produtosPermitidos` é
+ * obrigatório: sem ele, a consulta é rejeitada pelo firestore.rules porque
+ * a regra depende do campo `productId`, que a consulta precisa filtrar
+ * explicitamente para provar que só retorna documentos permitidos.
+ * Admins chamam sem esse argumento.
+ */
+export async function listProducts(
+  produtosPermitidos?: string[],
+): Promise<Block[]> {
+  const condicoes = [where('parentId', '==', null)]
+  if (produtosPermitidos) {
+    condicoes.push(
+      where('productId', 'in', produtosPermitidos.slice(0, LIMITE_IN)),
+    )
+  }
+  const q = query(blocksCollection, ...condicoes, orderBy('ordem'))
   const snapshot = await getDocs(q)
   return snapshot.docs.map((docSnap) => toBlock(docSnap.id, docSnap.data()))
 }
 
-export async function listChildren(parentId: string): Promise<Block[]> {
-  const q = query(
-    blocksCollection,
-    where('parentId', '==', parentId),
-    orderBy('ordem'),
-  )
+/**
+ * Lista os filhos de um bloco. Para leitores, `productId` (o do próprio
+ * bloco pai, já verificado como permitido) precisa ser informado pelo
+ * mesmo motivo de `listProducts`. Admins chamam sem esse argumento.
+ */
+export async function listChildren(
+  parentId: string,
+  productId?: string,
+): Promise<Block[]> {
+  const condicoes = [where('parentId', '==', parentId)]
+  if (productId) {
+    condicoes.push(where('productId', '==', productId))
+  }
+  const q = query(blocksCollection, ...condicoes, orderBy('ordem'))
   const snapshot = await getDocs(q)
   return snapshot.docs.map((docSnap) => toBlock(docSnap.id, docSnap.data()))
 }
 
+/** Uso restrito a admins: lista todos os blocos, sem filtro de permissão. */
 export async function listAllBlocks(): Promise<Block[]> {
   const snapshot = await getDocs(blocksCollection)
   return snapshot.docs.map((docSnap) => toBlock(docSnap.id, docSnap.data()))
@@ -77,13 +101,16 @@ export async function getBreadcrumb(blockId: string): Promise<Block[]> {
   return trilha
 }
 
-export async function createBlock(input: BlockInput): Promise<string> {
+export async function createBlock(
+  input: BlockInput,
+  autorId: string,
+): Promise<string> {
   const siblings = input.parentId
     ? await listChildren(input.parentId)
     : await listProducts()
   const ordem = siblings.length
 
-  return runTransaction(db, async (transaction) => {
+  const novoId = await runTransaction(db, async (transaction) => {
     const novoDocRef = doc(blocksCollection)
     let productId = novoDocRef.id
 
@@ -111,11 +138,15 @@ export async function createBlock(input: BlockInput): Promise<string> {
 
     return novoDocRef.id
   })
+
+  await registrarAuditLog(autorId, 'criar_bloco', novoId)
+  return novoId
 }
 
 export async function updateBlock(
   id: string,
   input: Partial<BlockInput>,
+  autorId: string,
 ): Promise<void> {
   const patch: Record<string, unknown> = {
     ...input,
@@ -125,6 +156,7 @@ export async function updateBlock(
     patch.slug = slugify(input.nome)
   }
   await updateDoc(doc(blocksCollection, id), patch)
+  await registrarAuditLog(autorId, 'editar_bloco', id)
 }
 
 export async function reorderBlocks(
@@ -137,7 +169,7 @@ export async function reorderBlocks(
   await batch.commit()
 }
 
-export async function deleteBlock(id: string): Promise<void> {
+export async function deleteBlock(id: string, autorId: string): Promise<void> {
   const [filhos, snapshotArtigos] = await Promise.all([
     listChildren(id),
     getDocs(query(collection(db, 'articles'), where('blockId', '==', id))),
@@ -150,4 +182,5 @@ export async function deleteBlock(id: string): Promise<void> {
   }
 
   await deleteDoc(doc(blocksCollection, id))
+  await registrarAuditLog(autorId, 'excluir_bloco', id)
 }
