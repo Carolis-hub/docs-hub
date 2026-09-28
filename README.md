@@ -14,7 +14,9 @@ projeto está em [PLAN.md](./PLAN.md).
 - TipTap para o editor de artigos (estilos semânticos: H1–H3, parágrafo,
   listas, links, código, imagem com alt obrigatório)
 - `@dnd-kit` para a ordenação por arrastar dos blocos
-- MiniSearch para a busca, a partir da Fase 3
+- MiniSearch para a busca (título com peso maior, normalização de acentos,
+  prefixo e fuzzy), sobre `searchIndex/{productId}` com cache persistente
+  do Firestore
 - ESLint + Prettier
 - Vitest + Testing Library
 - `@firebase/rules-unit-testing` para testar `firestore.rules` no Emulator
@@ -118,6 +120,25 @@ foi validado manualmente contra o Firebase Emulator.
 Validado manualmente: um leitor restrito a um produto não vê os demais na
 home, nem por URL direta de bloco ou artigo, nem acessa `/admin/*`.
 
+**Fase 3 — Busca**, concluída:
+
+- [x] `searchIndex/{productId}` atualizado dentro da mesma
+      transação/batch de publicar, despublicar ou excluir um artigo
+- [x] Índices carregados uma vez por sessão (`SearchIndexProvider`), com
+      cache persistente do Firestore (`persistentLocalCache`)
+- [x] MiniSearch com título pesando mais que o corpo, normalização de
+      acentos e busca por prefixo/fuzzy
+- [x] Página `/busca` com trecho destacado e filtros por produto e público
+- [x] Busca rápida no cabeçalho com atalho `Ctrl+K`
+- [x] Registro agregado de buscas sem resultado em `buscasSemResultado`
+- [~] Aviso (não divisão automática) quando um índice se aproxima de 1 MB —
+  ver seção 6 do `PLAN.md`
+
+Validado manualmente: buscar "configuracao" (sem acento) encontrou um
+artigo pelo título e outro só pelo corpo, incluindo pelo `Ctrl+K`; um
+leitor restrito a um produto só viu, na mesma busca, os artigos desse
+produto.
+
 Pendente (fora do Claude Code, ver seção "Configuração necessária" acima e a
 seção 8 do `PLAN.md`):
 
@@ -127,4 +148,4 @@ seção 8 do `PLAN.md`):
 - [ ] Levantamento da ferramenta de documentação atual (formato de
       exportação e volume, necessário para a Fase 5)
 
-Próxima fase: **Fase 3 — Busca** (ver `PLAN.md`).
+Próxima fase: **Fase 4 — Métricas** (ver `PLAN.md`).

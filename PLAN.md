@@ -184,18 +184,18 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 3 — Busca (≈1–2 semanas)
 
-- [ ] Atualizar `searchIndex/{productId}` ao publicar ou despublicar, dentro de um batch.
-- [ ] Carregar os índices permitidos uma vez por sessão, com cache persistente do Firestore.
-- [ ] MiniSearch configurado:
-  - [ ] Título com peso maior que o conteúdo.
-  - [ ] Normalização de acentos.
-  - [ ] Busca por prefixo e fuzzy.
-- [ ] Página de resultados com trecho destacado e filtros por produto e por público.
-- [ ] Busca rápida no cabeçalho com atalho `Ctrl+K`.
-- [ ] Registro agregado de buscas sem resultado.
-- [ ] Se um índice se aproximar de 1 MB, dividir por subproduto.
+- [x] Atualizar `searchIndex/{productId}` ao publicar ou despublicar, dentro de um batch.
+- [x] Carregar os índices permitidos uma vez por sessão, com cache persistente do Firestore.
+- [x] MiniSearch configurado:
+  - [x] Título com peso maior que o conteúdo.
+  - [x] Normalização de acentos.
+  - [x] Busca por prefixo e fuzzy.
+- [x] Página de resultados com trecho destacado e filtros por produto e por público.
+- [x] Busca rápida no cabeçalho com atalho `Ctrl+K`.
+- [x] Registro agregado de buscas sem resultado.
+- [~] Se um índice se aproximar de 1 MB, dividir por subproduto. _Implementado como aviso_: `avisarSeIndiceGrande` registra um `console.warn` quando um índice passa de ~900 KB, mas a divisão em si (por subproduto) ainda é manual — não há volume real de conteúdo hoje que justifique automatizar isso.
 
-**Pronto quando:** buscar "configuracao" encontra "Configuração" no título e no corpo, respeitando as permissões.
+**Pronto quando:** buscar "configuracao" encontra "Configuração" no título e no corpo, respeitando as permissões. ✅ Verificado manualmente via Emulator: um admin publicou artigos no Smartshare/BPM e na ECM, e a busca por "configuracao" (sem acento) encontrou tanto o artigo com o termo no título quanto o que só tinha "configuração" no corpo, incluindo via `Ctrl+K`. Um leitor restrito à ECM viu apenas o artigo da ECM na mesma busca — os artigos do Smartshare não apareceram nem por título nem por corpo.
 
 ### Fase 4 — Métricas (≈1 semana)
 
