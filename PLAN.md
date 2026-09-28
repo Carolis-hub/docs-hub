@@ -199,14 +199,25 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 4 — Métricas (≈1 semana)
 
-- [ ] Incremento de `views` e `viewsDaily` com `increment()`, deduplicado por leitor, artigo e dia no navegador, sem contar admins.
-- [ ] Painel admin:
-  - [ ] Artigos mais acessados.
-  - [ ] Evolução por período.
-  - [ ] Artigos sem acesso.
-  - [ ] Buscas sem resultado.
-  - [ ] Artigos sem revisão há mais de X meses.
-- [ ] Estimativa de consumo das cotas do Spark: 50 mil leituras e 20 mil gravações por dia.
+- [x] Incremento de `views` e `viewsDaily` com `increment()`, deduplicado por leitor, artigo e dia no navegador, sem contar admins.
+- [x] Painel admin:
+  - [x] Artigos mais acessados.
+  - [x] Evolução por período.
+  - [x] Artigos sem acesso.
+  - [x] Buscas sem resultado.
+  - [x] Artigos sem revisão há mais de X meses (6 meses, configurável em código).
+- [x] Estimativa de consumo das cotas do Spark: 50 mil leituras e 20 mil gravações por dia.
+
+**Validado manualmente** via Firebase Emulator: um leitor visualizou o mesmo artigo duas vezes no mesmo dia e o contador só subiu 1; a visualização do admin no mesmo artigo não contou; o painel `/admin/métricas` mostrou corretamente o artigo com acesso, o artigo sem acesso e o gráfico de acessos por dia. Nesse processo, encontrei e corrigi um bug real de `firestore.rules`: uma regra aninhada em `articles/{articleId}/viewsDaily` não vale para uma consulta `collectionGroup` entre artigos (usada para somar os acessos de todos os artigos) — o Firestore exige uma regra à parte no padrão `match /{path=**}/viewsDaily/{dia}` para isso. Também corrigi um bug de CSS no gráfico de barras (a altura em porcentagem não funcionava porque o elemento pai não tinha uma altura definida).
+
+**Estimativa de consumo do Spark** (limites: 50 mil leituras e 20 mil gravações por dia):
+
+Por sessão de um leitor, o padrão de uso hoje é aproximadamente:
+
+- **Leituras**: 1 (perfil) + N (produtos/blocos navegados) + 1 por artigo aberto + 1 por produto permitido a cada busca (índice de busca, carregado uma vez por sessão e reaproveitado depois). Uma sessão típica de 5–10 artigos lidos fica em torno de 20–40 leituras.
+- **Gravações**: 2 por artigo visualizado (`views` + `viewsDaily`, deduplicado por dia), e ocasionalmente uma gravação de busca sem resultado. Uma sessão de 5–10 artigos fica em torno de 10–20 gravações.
+
+Com isso, a cota diária do Spark comporta uma faixa de **~1.500 a ~2.000 sessões de leitor por dia** antes de esbarrar no limite mais apertado (gravações), bem acima do uso esperado de uma ferramenta interna. As ações de admin (CRUD de blocos/artigos, publicar) e o painel de métricas somam pouco a isso, pois são usadas por poucas pessoas. Se o uso real se aproximar desses números, as mitigações já em vigor (cache persistente do Firestore, índice de busca carregado uma vez por sessão, deduplicação de views) reduzem a maior parte do custo por sessão; o próximo passo, se necessário, seria acompanhar o consumo real pelo Console do Firebase.
 
 ### Fase 5 — Migração (≈1–2 semanas)
 

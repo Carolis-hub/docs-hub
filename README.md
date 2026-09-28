@@ -139,6 +139,23 @@ artigo pelo título e outro só pelo corpo, incluindo pelo `Ctrl+K`; um
 leitor restrito a um produto só viu, na mesma busca, os artigos desse
 produto.
 
+**Fase 4 — Métricas**, concluída:
+
+- [x] `views` e `viewsDaily` incrementados com `increment()`, deduplicado por
+      leitor/artigo/dia no navegador (localStorage), sem contar admins
+- [x] Painel `/admin/metricas`: artigos mais acessados, evolução por
+      período (gráfico de barras dos últimos 14 dias), artigos sem acesso,
+      buscas sem resultado e artigos sem revisão há mais de 6 meses
+- [x] Estimativa de consumo das cotas do Spark — ver seção 6 do `PLAN.md`
+
+Validado manualmente: duas visualizações do mesmo leitor no mesmo artigo no
+mesmo dia contaram como 1 acesso; a visualização de um admin não contou; o
+painel mostrou corretamente os artigos com e sem acesso. Nesse processo,
+corrigi dois bugs reais: uma regra do `firestore.rules` que não cobria a
+consulta `collectionGroup` usada para somar acessos entre artigos, e um
+bug de CSS no gráfico de barras (altura em porcentagem sem um elemento pai
+com altura definida).
+
 Pendente (fora do Claude Code, ver seção "Configuração necessária" acima e a
 seção 8 do `PLAN.md`):
 
@@ -148,4 +165,4 @@ seção 8 do `PLAN.md`):
 - [ ] Levantamento da ferramenta de documentação atual (formato de
       exportação e volume, necessário para a Fase 5)
 
-Próxima fase: **Fase 4 — Métricas** (ver `PLAN.md`).
+Próxima fase: **Fase 5 — Migração** (ver `PLAN.md`).
