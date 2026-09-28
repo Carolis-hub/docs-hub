@@ -7,6 +7,7 @@ import {
 } from '@firebase/rules-unit-testing'
 import {
   collection,
+  collectionGroup,
   deleteDoc,
   doc,
   getDoc,
@@ -266,6 +267,62 @@ describe('articles — status, produto e público técnico', () => {
       }),
     )
     await assertFails(deleteDoc(doc(db, 'articles/artigo-bpm-publicado')))
+  })
+
+  it('leitor grava viewsDaily de um artigo que pode ler, só com o campo count', async () => {
+    const db = testEnv.authenticatedContext('leitor-bpm').firestore()
+    await assertSucceeds(
+      setDoc(
+        doc(db, 'articles/artigo-bpm-publicado/viewsDaily/2026-01-01'),
+        { count: increment(1) },
+        { merge: true },
+      ),
+    )
+    await assertFails(
+      setDoc(
+        doc(db, 'articles/artigo-bpm-publicado/viewsDaily/2026-01-01'),
+        { count: increment(1), usuarioId: 'leitor-bpm' },
+        { merge: true },
+      ),
+    )
+  })
+
+  it('leitor não grava viewsDaily de um artigo que não pode ler', async () => {
+    const db = testEnv.authenticatedContext('leitor-ecm').firestore()
+    await assertFails(
+      setDoc(
+        doc(db, 'articles/artigo-bpm-publicado/viewsDaily/2026-01-01'),
+        { count: increment(1) },
+        { merge: true },
+      ),
+    )
+  })
+
+  it('leitor não lê o viewsDaily, só admin', async () => {
+    const leitorDb = testEnv.authenticatedContext('leitor-bpm').firestore()
+    await assertFails(
+      getDoc(
+        doc(leitorDb, 'articles/artigo-bpm-publicado/viewsDaily/2026-01-01'),
+      ),
+    )
+
+    const adminDb = testEnv.authenticatedContext('admin-1').firestore()
+    await assertSucceeds(
+      getDoc(
+        doc(adminDb, 'articles/artigo-bpm-publicado/viewsDaily/2026-01-01'),
+      ),
+    )
+  })
+
+  it('admin consegue somar viewsDaily de todos os artigos via collectionGroup', async () => {
+    const leitorDb = testEnv.authenticatedContext('leitor-bpm').firestore()
+    await assertFails(getDocs(collectionGroup(leitorDb, 'viewsDaily')))
+
+    const adminDb = testEnv.authenticatedContext('admin-1').firestore()
+    const resultado = await assertSucceeds(
+      getDocs(collectionGroup(adminDb, 'viewsDaily')),
+    )
+    expect(resultado.size).toBeGreaterThan(0)
   })
 
   it('admin lê, cria, atualiza e exclui artigos livremente', async () => {

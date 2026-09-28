@@ -104,6 +104,14 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Consulta em coleção (collectionGroup) usada pelo painel de métricas
+    // para somar os acessos diários de todos os artigos. Uma regra aninhada
+    // em articles/{articleId}/viewsDaily não vale para collectionGroup — o
+    // Firestore exige esse padrão {path=**} à parte para isso.
+    match /{path=**}/viewsDaily/{dia} {
+      allow read: if ehAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
