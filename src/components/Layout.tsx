@@ -20,6 +20,12 @@ export function Layout({ children }: { children: ReactNode }) {
           {isAdmin && (
             <nav aria-label="Administração" className="flex gap-4 text-sm">
               <Link
+                to="/admin/sugestoes"
+                className="text-slate-600 hover:underline dark:text-slate-300"
+              >
+                Sugestões
+              </Link>
+              <Link
                 to="/admin/metricas"
                 className="text-slate-600 hover:underline dark:text-slate-300"
               >

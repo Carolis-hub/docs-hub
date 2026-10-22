@@ -1,4 +1,5 @@
 import {
+  arrayRemove,
   collection,
   doc,
   getDoc,
@@ -134,6 +135,8 @@ export async function publishArticle(
   article: Article,
   draft: ArticleDraft,
   uid: string,
+  /** Quando a publicação aplica uma sugestão da IA, marca-a como aprovada. */
+  sugestaoId?: string,
 ): Promise<number> {
   validar(draft)
   const versao = article.versao + 1
@@ -159,12 +162,25 @@ export async function publishArticle(
       versao,
       titulo: draft.titulo.trim(),
       conteudo: draft.conteudo,
-      origem: 'manual',
+      origem: sugestaoId ? 'ia' : 'manual',
       autorId: uid,
       criadoEm: agora,
     }
     tx.set(doc(articles, article.id, 'versions', String(versao)), snapshot)
     registrarAuditoria(tx, uid, 'artigo.publicar', `articles/${article.id}`)
+    if (sugestaoId) {
+      tx.update(doc(articles, article.id, 'suggestions', sugestaoId), {
+        status: 'approved',
+        decididoPor: uid,
+        decididoEm: agora,
+      })
+      registrarAuditoria(
+        tx,
+        uid,
+        'sugestao.aprovar',
+        `articles/${article.id}/suggestions/${sugestaoId}`,
+      )
+    }
   })
   invalidarCacheBusca()
   return versao
@@ -205,4 +221,16 @@ export async function listVersions(id: string): Promise<ArticleVersion[]> {
     query(collection(articles, id, 'versions'), orderBy('versao', 'desc')),
   )
   return snap.docs.map((d) => d.data() as ArticleVersion)
+}
+
+/** Remove um alerta do artigo (ex.: `prints_desatualizados`, depois de refazer os prints). */
+export async function clearFlag(
+  id: string,
+  flag: string,
+  uid: string,
+): Promise<void> {
+  const batch = writeBatch(db)
+  batch.update(doc(articles, id), { flags: arrayRemove(flag) })
+  registrarAuditoria(batch, uid, 'artigo.prints', `articles/${id}`)
+  await batch.commit()
 }

@@ -98,7 +98,15 @@ async function transformar(
   const filhos: JSONContent[] = []
   for (const filho of no.content ?? []) {
     const novo = await transformar(filho, deps, contador)
-    if (novo) filhos.push(novo)
+    // O Markdown/HTML gera um parágrafo vazio ao lado de cada imagem (o nó
+    // de imagem do editor é um bloco). Parágrafos vazios só servem em itens de lista.
+    const vazio = novo?.type === 'paragraph' && !novo.content?.length
+    if (novo && !(vazio && no.type !== 'listItem')) filhos.push(novo)
+  }
+  // `marked` termina cada bloco de código com uma quebra de linha extra.
+  const ultimo = filhos[filhos.length - 1]
+  if (no.type === 'codeBlock' && ultimo?.text?.endsWith('\n')) {
+    ultimo.text = ultimo.text.slice(0, -1)
   }
   const resultado: JSONContent = { ...no }
   if (no.content) resultado.content = filhos

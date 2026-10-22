@@ -7,6 +7,8 @@ import { ArticlePage } from './pages/ArticlePage'
 import { BlockPage } from './pages/BlockPage'
 import { Home } from './pages/Home'
 import { SearchPage } from './pages/SearchPage'
+import { SuggestionReview } from './pages/admin/SuggestionReview'
+import { SuggestionsPage } from './pages/admin/SuggestionsPage'
 import { MetricsPage } from './pages/admin/MetricsPage'
 import { UsersPage } from './pages/admin/UsersPage'
 import { ArticleEditor } from './pages/admin/ArticleEditor'
@@ -25,6 +27,22 @@ function App() {
                 <Route path="/busca" element={<SearchPage />} />
                 <Route path="/b/:blockId" element={<BlockPage />} />
                 <Route path="/a/:articleId" element={<ArticlePage />} />
+                <Route
+                  path="/admin/sugestoes"
+                  element={
+                    <RequireAdmin>
+                      <SuggestionsPage />
+                    </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="/admin/sugestoes/:articleId/:suggestionId"
+                  element={
+                    <RequireAdmin>
+                      <SuggestionReview />
+                    </RequireAdmin>
+                  }
+                />
                 <Route
                   path="/admin/metricas"
                   element={

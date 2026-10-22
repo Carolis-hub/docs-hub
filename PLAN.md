@@ -15,7 +15,7 @@ Plataforma interna da Selbetti para hospedar a documentação técnica e de usu�
 3. Artigos com títulos, parágrafos, imagens PNG e GIFs.
 4. Usuários com papéis **leitor** e **admin**, criados manualmente por um admin.
 5. Contagem de acessos por artigo.
-6. Integração com os repositórios dos produtos, para que uma alteração no código gere uma **sugestão** de atualização da documentação feita por IA.
+6. Sugestões de atualização da documentação feitas por IA a partir de arquivos `.md` com as regras do produto ou da funcionalidade, sempre revisadas por um admin.
 
 ## 2. Decisões de arquitetura
 
@@ -31,7 +31,7 @@ Plataforma interna da Selbetti para hospedar a documentação técnica e de usu�
 | Editor                | TipTap, somente com estilos semânticos (Título 1, 2, 3 e parágrafo), sem tamanho livre de fonte                       |
 | Busca                 | MiniSearch no navegador, sobre índices agregados por produto (`searchIndex/{productId}`)                              |
 | IA no editor          | Camada multi-provedor reaproveitada do QA-Hub, restrita a admins                                                      |
-| IA automática         | GitHub Action nos repositórios de produto. Grava **sugestões**, nunca publica                                         |
+| IA automática         | GitHub Action sobre arquivos `.md` de regras. Grava **sugestões**, nunca publica                                      |
 | Métricas              | Contadores agregados (total e por dia), leitor único por dia, sem contar admins, sem log individual (LGPD)            |
 | Backup                | GitHub Action noturna que exporta o Firestore em JSON como artifact                                                   |
 | Hierarquia            | Ilimitada no banco via `parentId`. A interface é otimizada para 3 níveis. Artigos podem ficar em qualquer bloco       |
@@ -59,10 +59,10 @@ Plataforma interna da Selbetti para hospedar a documentação técnica e de usu�
 docs-hub/
 ├── .github/workflows/
 │   ├── ci.yml              # lint, typecheck, testes, build
-│   ├── doc-sync.yml        # workflow reutilizável pelos repos de produto
+│   ├── doc-sync.yml        # workflow reutilizável: regras .md → sugestões
 │   └── backup.yml          # export noturno do Firestore
 ├── scripts/
-│   ├── doc-sync/           # Node + Admin SDK + IA: gera sugestões
+│   ├── doc-sync/           # Node + Admin SDK + IA: regras .md → sugestões
 │   ├── backup/             # export do Firestore em JSON
 │   └── migrate/            # importação da ferramenta atual
 ├── src/
@@ -113,7 +113,7 @@ articles/{articleId}
   versao, autorId, atualizadoPor, criadoEm, atualizadoEm, revisadoEm
 
 articles/{id}/versions/{versao}      snapshot do conteúdo + origem ("manual" | "ia")
-articles/{id}/suggestions/{sid}      sugestão da IA: conteudo, diffResumo, repo, commit, status
+articles/{id}/suggestions/{sid}      sugestão da IA: conteudo, diffResumo, motivo, avisos, origem (arquivo de regras), status
 articles/{id}/viewsDaily/{AAAA-MM-DD} { count, dia }   (`dia` repete o id, para a consulta agregada do painel)
 
 users/{uid}
@@ -220,19 +220,22 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 - [x] Relatório de validação: imagens com falha, links quebrados e artigos sem bloco.
 - [ ] Período de convivência com a ferramenta antiga em modo só leitura, depois desligamento.
 
-### Fase 6 — Integração com os repositórios de produto (≈2 semanas)
+### Fase 6 — Sugestões de atualização por IA (≈2 semanas)
 
-- [ ] `doc-sync.yml` como workflow reutilizável (`workflow_call`).
-- [ ] `docs-map.yml` no repositório do produto, mapeando caminhos para artigos (`src/login/** → articleId`).
-- [ ] `scripts/doc-sync`:
-  - [ ] Lê o diff do merge.
-  - [ ] Chama a IA com o diff e o artigo atual.
-  - [ ] Grava em `articles/{id}/suggestions`.
-  - [ ] Marca `prints_desatualizados` quando o diff toca arquivos de interface.
-- [ ] Tela de revisão: comparação lado a lado entre a versão atual e a sugestão, com as opções aprovar, editar ou descartar.
-- [ ] Credenciais (service account e chave de IA) em GitHub Secrets.
+A entrada é um arquivo `.md` com as regras do produto ou da funcionalidade, não o código do produto. A IA compara as regras com o artigo e **propõe** a atualização; um admin decide.
 
-**Pronto quando:** um merge no repositório do produto gera uma sugestão visível para o admin, e nada é publicado sem aprovação.
+- [x] `doc-sync.yml` como workflow reutilizável (`workflow_call`), que roda nos arquivos de regras alterados.
+- [x] Arquivo de regras com front matter opcional (`artigos`, `produto`), no lugar do `docs-map.yml`. Sem `artigos`, uma busca escolhe os artigos candidatos.
+- [x] `scripts/doc-sync`:
+  - [x] Lê as regras e o artigo atual.
+  - [x] Chama a IA com as duas coisas.
+  - [x] Grava em `articles/{id}/suggestions`.
+  - [x] Marca `prints_desatualizados` quando as regras mudam telas ou campos.
+- [x] Tela de revisão: comparação lado a lado entre a versão atual e a sugestão, com as opções aprovar, editar ou descartar.
+- [ ] Credenciais (service account e chave de IA) em GitHub Secrets. _(manual: configurar no repositório que guarda as regras)_
+- [ ] Definir onde ficam os arquivos de regras (repositório e pasta) e quem os mantém. _(pendência, ver seção 8)_
+
+**Pronto quando:** a alteração de um arquivo de regras gera uma sugestão visível para o admin, e nada é publicado sem aprovação.
 
 ### Fase 7 — Operação e backlog
 
@@ -257,3 +260,4 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 - [x] Qual é a ferramenta atual e seu formato de exportação (Fase 5). É o site WordPress `docs.selbetti.com.br` (tipo `knowledgebase`, taxonomia `knowledgebase_cat`), já extraído em Markdown pelo `smartshare-kb`. O adaptador `scripts/migrate/adaptadores/smartshare-kb.ts` converte essa extração.
 - [ ] Volume real a migrar: o README do `smartshare-kb` fala em cerca de 400 artigos nos blocos SmartShare e SmartShare 4. Confirmar rodando a extração.
 - [ ] Se a base de conhecimento do QA-Hub migra para o docs-hub como produto "QA".
+- [ ] Onde ficam os arquivos `.md` de regras (repositório, pasta) e quem os mantém (Fase 6).

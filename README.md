@@ -157,5 +157,17 @@ junto com as regras.
 `npm run test:rules` agora também testa o importador contra o Emulator, e o
 `ci.yml` ganhou um job `emulator` que o executa.
 
-Próxima fase: **Fase 6 — Integração com os repositórios de produto** (ver
-`PLAN.md`).
+**Fase 6 — Sugestões de atualização por IA**, implementada em código. A
+entrada é um arquivo `.md` com as regras do produto ou da funcionalidade:
+
+- [x] `scripts/doc-sync`: compara as regras com o artigo, pede à IA a
+      atualização e grava a sugestão em `articles/{id}/suggestions` (nunca
+      publica); marca `prints_desatualizados` quando as telas mudam
+- [x] `doc-sync.yml`, workflow reutilizável que roda nos arquivos de regras
+      alterados
+- [x] Telas **Sugestões** e de revisão (versão atual × sugestão), com aprovar,
+      editar antes de aprovar e descartar
+- [ ] Segredos no GitHub e definição de onde ficam os arquivos de regras
+
+Veja `scripts/doc-sync/README.md`. Próxima fase: **Fase 7 — Operação e
+backlog** (ver `PLAN.md`).

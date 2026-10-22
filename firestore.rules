@@ -55,6 +55,12 @@ service cloud.firestore {
         allow read, write: if isAdmin();
       }
 
+      // Sugestões da IA (doc-sync): só admins leem e decidem; a versão
+      // publicada não muda até um admin aprovar.
+      match /suggestions/{suggestionId} {
+        allow read, write: if isAdmin();
+      }
+
       // Contador diário: o leitor cria com 1 ou soma 1, sem poder ler.
       // `dia` repete o id do documento (AAAA-MM-DD) para a consulta agregada.
       match /viewsDaily/{day} {
@@ -108,6 +114,11 @@ service cloud.firestore {
 
     // Painel de métricas: o admin consulta viewsDaily de todos os artigos.
     match /{path=**}/viewsDaily/{day} {
+      allow read: if isAdmin();
+    }
+
+    // Fila de sugestões pendentes: o admin consulta todos os artigos de uma vez.
+    match /{path=**}/suggestions/{suggestionId} {
       allow read: if isAdmin();
     }
 

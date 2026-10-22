@@ -5,6 +5,7 @@ import { RichEditor } from '../../components/editor/RichEditor'
 import { useAsync } from '../../hooks/useAsync'
 import { useAuth } from '../../hooks/useAuth'
 import {
+  clearFlag,
   createArticle,
   deleteArticle,
   getArticle,
@@ -14,11 +15,13 @@ import {
   unpublishArticle,
 } from '../../services/articles'
 import { getBlock } from '../../services/blocks'
+import { getSuggestion } from '../../services/suggestions'
 import type {
   Article,
   ArticleDraft,
   ArticlePublico,
   ArticleVersion,
+  Suggestion,
 } from '../../types/content'
 import { EMPTY_DOC } from '../../utils/content'
 
@@ -38,10 +41,17 @@ export function ArticleEditor() {
     if (articleId) {
       const artigo = await getArticle(articleId)
       const versoes = artigo ? await listVersions(artigo.id) : []
-      return { artigo, versoes }
+      const sugestaoId = params.get('sugestao')
+      const sugestao =
+        artigo && sugestaoId ? await getSuggestion(artigo.id, sugestaoId) : null
+      return { artigo, versoes, sugestao }
     }
-    return { artigo: null as Article | null, versoes: [] as ArticleVersion[] }
-  }, [articleId])
+    return {
+      artigo: null as Article | null,
+      versoes: [] as ArticleVersion[],
+      sugestao: null as Suggestion | null,
+    }
+  }, [articleId, params])
 
   const [titulo, setTitulo] = useState('')
   const [publico, setPublico] = useState<ArticlePublico>('usuario')
@@ -53,6 +63,7 @@ export function ArticleEditor() {
   const [ocupado, setOcupado] = useState(false)
 
   const artigo = dados?.artigo ?? null
+  const sugestao = dados?.sugestao ?? null
 
   useEffect(() => {
     if (!artigo) return
@@ -60,8 +71,13 @@ export function ArticleEditor() {
     setPublico(artigo.publico)
     setVersaoProduto(artigo.versaoProduto ?? '')
     setConteudo(artigo.conteudo)
+    // Vindo da revisão de uma sugestão, o editor abre com o texto da IA.
+    if (sugestao && sugestao.status === 'pending') {
+      setTitulo(sugestao.titulo)
+      setConteudo(sugestao.conteudo)
+    }
     setEditorKey((k) => k + 1)
-  }, [artigo])
+  }, [artigo, sugestao])
 
   if (carregando && !dados) return <p className="text-slate-500">Carregando…</p>
   if (erro)
@@ -107,10 +123,23 @@ export function ArticleEditor() {
       navigate(`/admin/artigos/${id}/editar`, { replace: true })
     })
 
+  const limparPrints = () =>
+    executar(async () => {
+      if (!artigo) return
+      await clearFlag(artigo.id, 'prints_desatualizados', uid)
+      recarregar()
+      return 'Alerta de prints removido.'
+    })
+
   const publicar = () =>
     executar(async () => {
       if (!artigo) throw new Error('Salve o rascunho antes de publicar.')
-      const versao = await publishArticle(artigo, draft(), uid)
+      const versao = await publishArticle(
+        artigo,
+        draft(),
+        uid,
+        sugestao?.status === 'pending' ? sugestao.id : undefined,
+      )
       recarregar()
       return `Publicado (versão ${versao}).`
     })
@@ -153,6 +182,32 @@ export function ArticleEditor() {
           </span>
         )}
       </h1>
+
+      {sugestao?.status === 'pending' && (
+        <p
+          role="status"
+          className="mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
+        >
+          Editando a partir da sugestão da IA ({sugestao.origem.arquivo}).
+          Publicar aqui aprova a sugestão; nada muda até você publicar.
+        </p>
+      )}
+      {artigo?.flags.includes('prints_desatualizados') && (
+        <div
+          role="alert"
+          className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md bg-amber-100 p-3 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
+        >
+          <span>Os prints deste artigo podem estar desatualizados.</span>
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => void limparPrints()}
+            className="rounded-md border border-amber-400 px-2 py-1"
+          >
+            Prints atualizados
+          </button>
+        </div>
+      )}
 
       <div className="space-y-4">
         <label className="block text-sm">

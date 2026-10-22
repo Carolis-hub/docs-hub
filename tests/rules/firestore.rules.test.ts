@@ -326,3 +326,39 @@ describe('firestore.rules — busca (Fase 3)', () => {
     await assertSucceeds(getDoc(doc(db, 'searchMisses/termo-x')))
   })
 })
+
+describe('firestore.rules — sugestões da IA (Fase 6)', () => {
+  it('só admin lê a fila de sugestões pendentes (consulta de grupo)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'articles/pub/suggestions/s1'), {
+        status: 'pending',
+      })
+    })
+    const consulta = (
+      db: ReturnType<
+        ReturnType<typeof testEnv.authenticatedContext>['firestore']
+      >,
+    ) =>
+      getDocs(
+        query(
+          collectionGroup(db, 'suggestions'),
+          where('status', '==', 'pending'),
+        ),
+      )
+    await assertSucceeds(
+      consulta(testEnv.authenticatedContext('admin').firestore()),
+    )
+    await assertFails(
+      consulta(testEnv.authenticatedContext('leitor').firestore()),
+    )
+  })
+
+  it('admin decide a sugestão; leitor não lê nem escreve', async () => {
+    const admin = testEnv.authenticatedContext('admin').firestore()
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    const ref = 'articles/pub/suggestions/s1'
+    await assertSucceeds(updateDoc(doc(admin, ref), { status: 'discarded' }))
+    await assertFails(getDoc(doc(leitor, ref)))
+    await assertFails(updateDoc(doc(leitor, ref), { status: 'approved' }))
+  })
+})

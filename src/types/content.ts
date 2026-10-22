@@ -55,3 +55,33 @@ export interface ArticleVersion {
   autorId: string
   criadoEm: number
 }
+
+export type SuggestionStatus = 'pending' | 'approved' | 'discarded'
+
+/** Sugestão de atualização gerada pela IA (`articles/{id}/suggestions/{sid}`). */
+export interface Suggestion {
+  id: string
+  articleId: string
+  titulo: string
+  conteudo: JSONContent
+  textoPlano: string
+  resumo: string
+  diffResumo: string[]
+  motivo: string
+  avisos: string[]
+  pratsDesatualizados: boolean
+  automatico: boolean
+  status: SuggestionStatus
+  origem: {
+    tipo: 'regras-md'
+    arquivo: string
+    hash: string
+    repo?: string
+    commit?: string
+  }
+  /** `versao` e `atualizadoEm` do artigo quando a IA o leu. */
+  baseVersao: number
+  baseAtualizadoEm: number
+  modelo: string
+  criadoEm: number
+}
