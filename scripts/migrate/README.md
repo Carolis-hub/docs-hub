@@ -4,10 +4,11 @@ Importa blocos, artigos e imagens de uma exportação da ferramenta de
 documentação atual para o Cloudinary e o Firestore (Fase 5 do
 [PLAN.md](../../PLAN.md)).
 
-O importador lê um **formato neutro** (abaixo). O formato de exportação real da
-ferramenta atual ainda não foi levantado (seção 8 do `PLAN.md`): quando for,
-basta escrever um conversor que gere este formato. Nada no importador depende
-da ferramenta de origem.
+O importador lê um **formato neutro** (abaixo), independente da ferramenta de
+origem. A ferramenta atual é o site WordPress `docs.selbetti.com.br`; o
+adaptador [`adaptadores/smartshare-kb.ts`](./adaptadores/smartshare-kb.ts)
+converte a base extraída por `smartshare-kb/scripts/extrair_kb.py` para esse
+formato (ver "Migrar a base do SmartShare").
 
 Requer **Node 22.18 ou mais novo** (executa TypeScript direto, sem build).
 
@@ -54,7 +55,41 @@ exemplo completo em [`exemplo/`](./exemplo).
 - **Links entre artigos**: caminho relativo para o arquivo de outro artigo, ou
   `artigo:<id>`. Viram `/a/<id novo>`.
 
-## Uso
+## Migrar a base do SmartShare
+
+```bash
+# 1. Extrair a base (precisa de acesso a docs.selbetti.com.br; Python 3.9+)
+cd smartshare-kb && python scripts/extrair_kb.py && cd ..
+
+# 2. Converter a pasta kb/ para o formato neutro
+node scripts/migrate/adaptadores/smartshare-kb.ts smartshare-kb export-neutro \
+  --tecnico "Desenvolvedor|API"          # opcional, ver abaixo
+
+# 3. Simular, revisar o relatório e só então gravar (seção "Uso")
+npm run migrate -- export-neutro
+```
+
+Regras do adaptador:
+
+- Cada pasta de `kb/` vira um bloco (nome em `categoria` do `_index.md`); as
+  pastas de primeiro nível (`smartshare`, `smartshare-4`) são os produtos. A
+  hierarquia do site é mantida em qualquer profundidade.
+- O id do artigo é o id do WordPress, estável entre extrações.
+- `atualizado_em` do site vira a data de revisão, então o painel "sem revisão"
+  já nasce correto.
+- Artigos `status: descontinuado` entram como **rascunho**; use
+  `--publicar-descontinuados` para publicá-los.
+- `--tecnico <regex>` marca como "técnico" os artigos cuja `categoria_caminho`
+  casar com a expressão. Sem ela, tudo entra como "usuário": a base não diz
+  qual público é qual, então vale definir essa regra com o time.
+- O H1 repetido do título é removido, títulos H4 a H6 viram H3 (o editor só
+  tem H1 a H3) e o prefixo `IMG:` do texto alternativo é tirado.
+- Links para outros artigos do site (pela URL) viram links internos do
+  docs-hub. Links para categorias ou páginas fora da base seguem como externos.
+- As imagens são baixadas da URL original no momento do `--gravar`/da
+  simulação, então essa etapa também precisa de acesso ao site. Imagens
+  embutidas no HTML do site (`imagem-embutida-no-site`) não são recuperáveis e
+  aparecem no relatório como falha.
 
 ```bash
 # 1. Simulação (padrão): valida tudo e gera o relatório, sem gravar nem enviar

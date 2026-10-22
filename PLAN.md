@@ -216,7 +216,7 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 5 — Migração (≈1–2 semanas)
 
-- [x] `scripts/migrate`: importar blocos, artigos e imagens da ferramenta atual para o Cloudinary e o Firestore. Rodar primeiro no `dev`. _(importador pronto, lê um formato neutro; falta o conversor da ferramenta atual e a execução no `dev`)_
+- [x] `scripts/migrate`: importar blocos, artigos e imagens da ferramenta atual para o Cloudinary e o Firestore. Rodar primeiro no `dev`. _(importador e adaptador do SmartShare prontos; falta rodar a extração real e a execução no `dev`)_
 - [x] Relatório de validação: imagens com falha, links quebrados e artigos sem bloco.
 - [ ] Período de convivência com a ferramenta antiga em modo só leitura, depois desligamento.
 
@@ -254,5 +254,6 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ## 8. Pendências
 
-- [ ] Qual é a ferramenta atual e seu formato de exportação (Fase 5). O importador já existe; falta o conversor dessa exportação para o formato neutro (`scripts/migrate/README.md`).
+- [x] Qual é a ferramenta atual e seu formato de exportação (Fase 5). É o site WordPress `docs.selbetti.com.br` (tipo `knowledgebase`, taxonomia `knowledgebase_cat`), já extraído em Markdown pelo `smartshare-kb`. O adaptador `scripts/migrate/adaptadores/smartshare-kb.ts` converte essa extração.
+- [ ] Volume real a migrar: o README do `smartshare-kb` fala em cerca de 400 artigos nos blocos SmartShare e SmartShare 4. Confirmar rodando a extração.
 - [ ] Se a base de conhecimento do QA-Hub migra para o docs-hub como produto "QA".

@@ -148,8 +148,9 @@ junto com as regras.
       Admin SDK), idempotente, com simulação por padrão (`npm run migrate`)
 - [x] Relatório de validação: imagens com falha, links quebrados, artigos sem
       bloco, erros e textos alternativos gerados
-- [ ] Conversor da exportação da ferramenta atual (formato ainda desconhecido)
-      e execução no `dev` e no `prod`
+- [x] Adaptador da base atual (`docs.selbetti.com.br`, extraída pelo
+      `smartshare-kb`) para o formato do importador
+- [ ] Extração real, execução no `dev` e depois no `prod`
 - [ ] Período de convivência e desligamento da ferramenta antiga (roteiro em
       `scripts/migrate/README.md`)
 
