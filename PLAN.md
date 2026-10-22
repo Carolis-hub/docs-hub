@@ -239,9 +239,10 @@ A entrada é um arquivo `.md` com as regras do produto ou da funcionalidade, nã
 
 ### Fase 7 — Operação e backlog
 
-- [ ] `backup.yml`: export noturno do Firestore em JSON como artifact do workflow.
-- [ ] Limpeza periódica de imagens órfãs no Cloudinary, via Action com a API secret.
-- [ ] Verificador de links quebrados.
+- [x] `backup.yml`: export noturno do Firestore em JSON como artifact do workflow. O arquivo é comprimido e **cifrado** (repositório público), e há script de restauração.
+- [x] Limpeza periódica de imagens órfãs no Cloudinary, via Action com a API secret. Começa só em modo relatório.
+- [x] Verificador de links quebrados (internos, externos e imagens), semanal.
+- [ ] Configurar os segredos e variáveis dos três workflows no GitHub. _(manual)_
 - Backlog:
   - Interface de versões por versão do produto.
   - Botão "Este artigo foi útil?".
@@ -252,6 +253,7 @@ A entrada é um arquivo `.md` com as regras do produto ou da funcionalidade, nã
 
 - **Cotas do Spark:** ao estourar a cota diária, o app para até o dia seguinte. As mitigações são cache persistente, índice carregado uma vez por sessão e deduplicação de acessos.
 - **Preset do Cloudinary exposto no front:** mitigado pelas restrições do preset. Excluir imagens exige a API secret, por isso a limpeza roda em uma Action.
+- **Backup em repositório público:** os artifacts de um repositório público podem ser baixados por qualquer pessoa logada no GitHub. Por isso o backup é cifrado, e a senha precisa ser guardada fora do GitHub.
 - **Cadastro por e-mail e senha habilitado no Auth:** alguém poderia criar uma conta vazia, mas sem `users/{uid}` as regras negam todo acesso.
 - **IA:** nunca publica diretamente. Prints de tela não são atualizados pela IA, apenas sinalizados.
 

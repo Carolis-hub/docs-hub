@@ -171,3 +171,16 @@ entrada é um arquivo `.md` com as regras do produto ou da funcionalidade:
 
 Veja `scripts/doc-sync/README.md`. Próxima fase: **Fase 7 — Operação e
 backlog** (ver `PLAN.md`).
+
+**Fase 7 — Operação**, implementada em código (cada pasta de `scripts/` tem um
+README):
+
+- [x] `backup.yml`: export noturno do Firestore, **cifrado**, como artifact
+      (30 dias); `scripts/backup/restaurar.ts` para restaurar
+- [x] `limpeza-cloudinary.yml`: imagens órfãs semanais, só relatório até
+      `CLOUDINARY_LIMPEZA_APAGAR=true`
+- [x] `verificar-links.yml`: links e imagens quebrados, semanal
+- [ ] Segredos e variáveis dos workflows no GitHub
+
+O backlog (versões por versão do produto, "foi útil?", busca semântica e PDF)
+fica para depois.

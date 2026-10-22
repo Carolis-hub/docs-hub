@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { extrairTextoPlano, gerarResumo, imagensSemAlt } from './content'
+import {
+  extrairImagens,
+  extrairLinks,
+  extrairTextoPlano,
+  gerarResumo,
+  imagensSemAlt,
+} from './content'
 import { slugify } from './slug'
 import { validarArquivoMidia } from './media'
 
@@ -77,5 +83,50 @@ describe('validarArquivoMidia', () => {
     expect(
       validarArquivoMidia({ type: 'image/png', size: 6 * 1024 * 1024 }),
     ).toMatch(/5 MB/)
+  })
+})
+
+describe('extrairImagens e extrairLinks', () => {
+  const d = {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: 'a',
+            marks: [{ type: 'link', attrs: { href: 'https://x.com' } }],
+          },
+          { type: 'text', text: 'b', marks: [{ type: 'bold' }] },
+        ],
+      },
+      {
+        type: 'bulletList',
+        content: [
+          {
+            type: 'listItem',
+            content: [
+              {
+                type: 'paragraph',
+                content: [
+                  {
+                    type: 'text',
+                    text: 'c',
+                    marks: [{ type: 'link', attrs: { href: '/a/1' } }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      { type: 'image', attrs: { src: 'https://img/1.png', alt: 'um' } },
+      { type: 'image', attrs: { src: '', alt: 'vazia' } },
+    ],
+  }
+  it('lista os endereços em qualquer profundidade', () => {
+    expect(extrairLinks(d)).toEqual(['https://x.com', '/a/1'])
+    expect(extrairImagens(d)).toEqual(['https://img/1.png'])
   })
 })

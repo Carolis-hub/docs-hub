@@ -11,6 +11,13 @@ describe('CLIs rodam no Node puro', () => {
   it.each([
     ['scripts/migrate/index.ts', /Uso: node scripts\/migrate/],
     ['scripts/doc-sync/index.ts', /Uso: node scripts\/doc-sync/],
+    ['scripts/backup/index.ts', /Uso: node scripts\/backup/],
+    ['scripts/backup/restaurar.ts', /Uso: node scripts\/backup\/restaurar/],
+    [
+      'scripts/cloudinary-limpeza/index.ts',
+      /Uso: node scripts\/cloudinary-limpeza/,
+    ],
+    ['scripts/verificar-links/index.ts', /Uso: node scripts\/verificar-links/],
     [
       'scripts/migrate/adaptadores/smartshare-kb.ts',
       /Uso: node scripts\/migrate\/adaptadores/,

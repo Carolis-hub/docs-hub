@@ -56,3 +56,29 @@ export function imagensSemAlt(doc: JSONContent): number {
   visitar(doc)
   return total
 }
+
+/** Endereços (`src`) de todas as imagens do documento. */
+export function extrairImagens(doc: JSONContent): string[] {
+  const urls: string[] = []
+  const visitar = (node: JSONContent) => {
+    if (node.type === 'image' && node.attrs?.src)
+      urls.push(String(node.attrs.src))
+    node.content?.forEach(visitar)
+  }
+  visitar(doc)
+  return urls
+}
+
+/** Endereços (`href`) de todos os links do documento. */
+export function extrairLinks(doc: JSONContent): string[] {
+  const urls: string[] = []
+  const visitar = (node: JSONContent) => {
+    for (const mark of node.marks ?? []) {
+      if (mark.type === 'link' && mark.attrs?.href)
+        urls.push(String(mark.attrs.href))
+    }
+    node.content?.forEach(visitar)
+  }
+  visitar(doc)
+  return urls
+}

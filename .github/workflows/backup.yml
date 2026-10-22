@@ -1,0 +1,62 @@
+# Backup noturno do Firestore: exporta tudo em JSON, comprime, CIFRA e guarda
+# como artifact. A cifragem é obrigatória: o backup traz e-mails dos usuários e
+# o conteúdo técnico, e os artifacts de um repositório público podem ser
+# baixados por qualquer pessoa logada no GitHub.
+#
+# Configuração do repositório:
+#   Secrets:   FIREBASE_SERVICE_ACCOUNT (JSON), BACKUP_PASSPHRASE
+#   Variables: FIREBASE_PROJECT_ID (ex.: docs-hub-prod)
+#
+# O GitHub desativa workflows agendados após 60 dias sem atividade no
+# repositório: confira a aba Actions de vez em quando.
+name: Backup
+
+on:
+  schedule:
+    - cron: '17 5 * * *' # 02:17 no horário de Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Conferir a configuração
+        run: |
+          [ -n "$FIREBASE_PROJECT_ID" ] || { echo "::error::Defina a variável FIREBASE_PROJECT_ID"; exit 1; }
+          [ -n "$BACKUP_PASSPHRASE" ] || { echo "::error::Defina o segredo BACKUP_PASSPHRASE"; exit 1; }
+
+      - name: Exportar o Firestore
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          trap 'rm -f "$RUNNER_TEMP/sa.json"' EXIT
+          node scripts/backup/index.ts --saida backups
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup
+          path: backups/*.enc
+          retention-days: 30
+          if-no-files-found: error
