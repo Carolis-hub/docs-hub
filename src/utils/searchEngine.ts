@@ -1,7 +1,7 @@
 import MiniSearch from 'minisearch'
 import type { ArticlePublico } from '../types/content'
 import type { IndexedItem } from '../types/search'
-import { normalizar } from './search'
+import { normalizar } from './search.ts'
 
 export interface SearchFilters {
   productId?: string
