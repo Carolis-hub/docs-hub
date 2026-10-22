@@ -56,3 +56,13 @@
     @apply min-h-[20rem] outline-none;
   }
 }
+
+@layer components {
+  /* Cor da série única dos gráficos (azul do slot 1, passo para cada tema). */
+  .viz {
+    --series-1: #2a78d6;
+  }
+  .dark .viz {
+    --series-1: #3987e5;
+  }
+}

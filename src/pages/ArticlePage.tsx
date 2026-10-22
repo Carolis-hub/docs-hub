@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArticleContent } from '../components/ArticleContent'
 import { Breadcrumb } from '../components/Breadcrumb'
@@ -5,10 +6,11 @@ import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
 import { getArticle } from '../services/articles'
 import { getAncestors, getBlock } from '../services/blocks'
+import { registrarVisualizacao } from '../services/metrics'
 
 export function ArticlePage() {
   const { articleId = '' } = useParams()
-  const { isAdmin } = useAuth()
+  const { user, isAdmin } = useAuth()
   const { dados, erro, carregando } = useAsync(async () => {
     const artigo = await getArticle(articleId)
     if (!artigo) return null
@@ -16,6 +18,15 @@ export function ArticlePage() {
     const cadeia = bloco ? await getAncestors(bloco) : []
     return { artigo, cadeia }
   }, [articleId])
+
+  const artigoId = dados?.artigo.id
+  const publicado = dados?.artigo.status === 'published'
+  const uid = user?.uid
+  useEffect(() => {
+    // Admins não entram na contagem; rascunhos nem são visíveis a leitores.
+    if (!artigoId || !uid || isAdmin || !publicado) return
+    void registrarVisualizacao(artigoId, uid)
+  }, [artigoId, uid, isAdmin, publicado])
 
   if (carregando) return <p className="text-slate-500">Carregando…</p>
   if (erro)

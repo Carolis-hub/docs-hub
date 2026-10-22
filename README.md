@@ -129,4 +129,17 @@ Os artigos já publicados antes da Fase 3 não estão no índice: basta
 republicá-los (ou salvá-los) para entrarem. A migração da Fase 5 já gravará o
 índice.
 
-Próxima fase: **Fase 4 — Métricas** (ver `PLAN.md`).
+**Fase 4 — Métricas**, implementada em código:
+
+- [x] `views` e `viewsDaily` com `increment()`, deduplicados por leitor, artigo
+      e dia no navegador, sem contar admins
+- [x] Painel `/admin/metricas`: mais acessados, evolução por período (gráfico e
+      tabela), artigos sem acesso, buscas sem resultado e artigos sem revisão
+      há mais de 3, 6 ou 12 meses
+- [x] Estimativa de consumo das cotas do Spark em `docs/cotas-spark.md`
+
+A consulta agregada de `viewsDaily` usa um índice de grupo de coleções em
+`firestore.indexes.json`: faça `firebase deploy --only firestore:indexes`
+junto com as regras.
+
+Próxima fase: **Fase 5 — Migração** (ver `PLAN.md`).

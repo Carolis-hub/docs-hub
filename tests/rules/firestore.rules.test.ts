@@ -6,12 +6,16 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing'
 import {
+  collectionGroup,
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   increment,
+  query,
   setDoc,
   updateDoc,
+  where,
 } from 'firebase/firestore'
 import { afterAll, beforeAll, describe, it } from 'vitest'
 
@@ -176,13 +180,57 @@ describe('firestore.rules — usuários e permissões (Fase 2)', () => {
 
   it('leitor cria e incrementa viewsDaily em +1, sem ler', async () => {
     const db = testEnv.authenticatedContext('leitor').firestore()
-    const ref = doc(db, 'articles/pub/viewsDaily/2026-01-01')
-    await assertSucceeds(setDoc(ref, { count: 1 }))
-    await assertSucceeds(updateDoc(ref, { count: increment(1) }))
+    const dia = '2026-01-01'
+    const ref = doc(db, `articles/pub/viewsDaily/${dia}`)
+    await assertSucceeds(setDoc(ref, { count: 1, dia }))
+    await assertSucceeds(
+      setDoc(ref, { count: increment(1), dia }, { merge: true }),
+    )
     await assertFails(updateDoc(ref, { count: increment(10) }))
     await assertFails(getDoc(ref))
     await assertFails(
-      setDoc(doc(db, 'articles/pub/viewsDaily/2026-01-02'), { count: 9 }),
+      setDoc(doc(db, 'articles/pub/viewsDaily/2026-01-02'), {
+        count: 9,
+        dia: '2026-01-02',
+      }),
+    )
+  })
+
+  it('viewsDaily: `dia` precisa repetir o id e não aceita campos extras', async () => {
+    const db = testEnv.authenticatedContext('leitor').firestore()
+    await assertFails(
+      setDoc(doc(db, 'articles/pub/viewsDaily/2026-02-01'), {
+        count: 1,
+        dia: '2026-02-02',
+      }),
+    )
+    await assertFails(
+      setDoc(doc(db, 'articles/pub/viewsDaily/2026-02-03'), {
+        count: 1,
+        dia: '2026-02-03',
+        extra: true,
+      }),
+    )
+  })
+
+  it('viewsDaily: só admin consulta o conjunto de todos os artigos', async () => {
+    const admin = testEnv.authenticatedContext('admin').firestore()
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    await assertSucceeds(
+      getDocs(
+        query(
+          collectionGroup(admin, 'viewsDaily'),
+          where('dia', '>=', '2026-01-01'),
+        ),
+      ),
+    )
+    await assertFails(
+      getDocs(
+        query(
+          collectionGroup(leitor, 'viewsDaily'),
+          where('dia', '>=', '2026-01-01'),
+        ),
+      ),
     )
   })
 

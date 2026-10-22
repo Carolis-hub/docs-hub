@@ -56,16 +56,18 @@ service cloud.firestore {
       }
 
       // Contador diário: o leitor cria com 1 ou soma 1, sem poder ler.
+      // `dia` repete o id do documento (AAAA-MM-DD) para a consulta agregada.
       match /viewsDaily/{day} {
-        allow read: if isAdmin();
-        allow write: if isAdmin();
+        allow read, write: if isAdmin();
         allow create: if hasProfile() &&
           canReadArticle(articleOf(articleId)) &&
-          request.resource.data.keys().hasOnly(['count']) &&
+          request.resource.data.keys().hasOnly(['count', 'dia']) &&
+          request.resource.data.dia == day &&
           request.resource.data.count == 1;
         allow update: if hasProfile() &&
           canReadArticle(articleOf(articleId)) &&
-          request.resource.data.keys().hasOnly(['count']) &&
+          request.resource.data.keys().hasOnly(['count', 'dia']) &&
+          request.resource.data.dia == resource.data.dia &&
           request.resource.data.count == resource.data.count + 1;
       }
     }
@@ -102,6 +104,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isAdmin() && request.resource.data.usuarioId == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    // Painel de métricas: o admin consulta viewsDaily de todos os artigos.
+    match /{path=**}/viewsDaily/{day} {
+      allow read: if isAdmin();
     }
 
     match /{document=**} {

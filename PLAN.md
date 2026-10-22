@@ -114,7 +114,7 @@ articles/{articleId}
 
 articles/{id}/versions/{versao}      snapshot do conteúdo + origem ("manual" | "ia")
 articles/{id}/suggestions/{sid}      sugestão da IA: conteudo, diffResumo, repo, commit, status
-articles/{id}/viewsDaily/{AAAA-MM-DD} { count }
+articles/{id}/viewsDaily/{AAAA-MM-DD} { count, dia }   (`dia` repete o id, para a consulta agregada do painel)
 
 users/{uid}
   nome, email, role ("reader" | "admin")
@@ -205,14 +205,14 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 4 — Métricas (≈1 semana)
 
-- [ ] Incremento de `views` e `viewsDaily` com `increment()`, deduplicado por leitor, artigo e dia no navegador, sem contar admins.
-- [ ] Painel admin:
-  - [ ] Artigos mais acessados.
-  - [ ] Evolução por período.
-  - [ ] Artigos sem acesso.
-  - [ ] Buscas sem resultado.
-  - [ ] Artigos sem revisão há mais de X meses.
-- [ ] Estimativa de consumo das cotas do Spark: 50 mil leituras e 20 mil gravações por dia.
+- [x] Incremento de `views` e `viewsDaily` com `increment()`, deduplicado por leitor, artigo e dia no navegador, sem contar admins.
+- [x] Painel admin:
+  - [x] Artigos mais acessados.
+  - [x] Evolução por período.
+  - [x] Artigos sem acesso.
+  - [x] Buscas sem resultado.
+  - [x] Artigos sem revisão há mais de X meses.
+- [x] Estimativa de consumo das cotas do Spark: 50 mil leituras e 20 mil gravações por dia.
 
 ### Fase 5 — Migração (≈1–2 semanas)
 

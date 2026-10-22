@@ -18,7 +18,13 @@ export function Layout({ children }: { children: ReactNode }) {
             docs-hub
           </Link>
           {isAdmin && (
-            <nav aria-label="Administração" className="text-sm">
+            <nav aria-label="Administração" className="flex gap-4 text-sm">
+              <Link
+                to="/admin/metricas"
+                className="text-slate-600 hover:underline dark:text-slate-300"
+              >
+                Métricas
+              </Link>
               <Link
                 to="/admin/usuarios"
                 className="text-slate-600 hover:underline dark:text-slate-300"

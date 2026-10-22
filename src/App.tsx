@@ -7,6 +7,7 @@ import { ArticlePage } from './pages/ArticlePage'
 import { BlockPage } from './pages/BlockPage'
 import { Home } from './pages/Home'
 import { SearchPage } from './pages/SearchPage'
+import { MetricsPage } from './pages/admin/MetricsPage'
 import { UsersPage } from './pages/admin/UsersPage'
 import { ArticleEditor } from './pages/admin/ArticleEditor'
 
@@ -24,6 +25,14 @@ function App() {
                 <Route path="/busca" element={<SearchPage />} />
                 <Route path="/b/:blockId" element={<BlockPage />} />
                 <Route path="/a/:articleId" element={<ArticlePage />} />
+                <Route
+                  path="/admin/metricas"
+                  element={
+                    <RequireAdmin>
+                      <MetricsPage />
+                    </RequireAdmin>
+                  }
+                />
                 <Route
                   path="/admin/usuarios"
                   element={
