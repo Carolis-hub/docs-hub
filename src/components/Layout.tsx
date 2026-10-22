@@ -1,16 +1,32 @@
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { ThemeToggle } from './ThemeToggle'
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { user, signOut } = useAuth()
+  const { user, isAdmin, signOut } = useAuth()
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-4 dark:border-slate-700 dark:bg-slate-900">
-        <span className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-          docs-hub
-        </span>
+        <div className="flex items-center gap-6">
+          <Link
+            to="/"
+            className="text-lg font-semibold text-slate-900 dark:text-slate-100"
+          >
+            docs-hub
+          </Link>
+          {isAdmin && (
+            <nav aria-label="Administração" className="text-sm">
+              <Link
+                to="/admin/usuarios"
+                className="text-slate-600 hover:underline dark:text-slate-300"
+              >
+                Usuários
+              </Link>
+            </nav>
+          )}
+        </div>
         <div className="flex items-center gap-3">
           <ThemeToggle />
           {user && (

@@ -19,7 +19,8 @@ import type { Block } from '../types/content'
 
 export function BlockPage() {
   const { blockId = '' } = useParams()
-  const { isAdmin } = useAuth()
+  const { user, isAdmin } = useAuth()
+  const uid = user?.uid ?? ''
   const { dados, erro, carregando, recarregar } = useAsync(async () => {
     const bloco = await getBlock(blockId)
     if (!bloco) return null
@@ -49,7 +50,7 @@ export function BlockPage() {
   async function excluirFilho(b: Block) {
     if (!window.confirm(`Excluir "${b.nome}"?`)) return
     try {
-      await deleteBlock(b.id)
+      await deleteBlock(b.id, uid)
       setAviso(null)
       recarregar()
     } catch (e) {
@@ -103,7 +104,7 @@ export function BlockPage() {
           titulo="Novo subbloco"
           onCancel={() => setModo(null)}
           onSubmit={async (input) => {
-            await createBlock(input, bloco, filhos.length)
+            await createBlock(input, bloco, filhos.length, uid)
             setModo(null)
             recarregar()
           }}
@@ -115,7 +116,7 @@ export function BlockPage() {
           inicial={bloco}
           onCancel={() => setModo(null)}
           onSubmit={async (input) => {
-            await updateBlock(bloco.id, input)
+            await updateBlock(bloco.id, input, uid)
             setModo(null)
             recarregar()
           }}
@@ -127,7 +128,7 @@ export function BlockPage() {
           inicial={editandoFilho}
           onCancel={() => setEditandoFilho(null)}
           onSubmit={async (input) => {
-            await updateBlock(editandoFilho.id, input)
+            await updateBlock(editandoFilho.id, input, uid)
             setEditandoFilho(null)
             recarregar()
           }}

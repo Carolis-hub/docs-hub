@@ -1,17 +1,17 @@
 rules_version = '2';
 
-// Regras da Fase 1: conteúdo (blocks, articles, versions) para admin e leitor.
-// Os demais itens da seção 5 do PLAN.md (searchIndex, auditLog, viewsDaily,
-// gestão de usuários) são completados na Fase 2.
+// Modelo de acesso do docs-hub (seção 5 do PLAN.md), testado em tests/rules.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function profile() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
-    }
+    // Sem documento users/{uid}, ou com ativo == false, não há nenhum acesso.
     function hasProfile() {
       return request.auth != null &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('ativo', true) == true;
+    }
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     function isAdmin() {
       return hasProfile() && profile().role == 'admin';
@@ -26,7 +26,11 @@ service cloud.firestore {
           a.status == 'published' &&
           (a.publico == 'usuario' || profile().get('verTecnico', false) == true));
     }
+    function articleOf(articleId) {
+      return get(/databases/$(database)/documents/articles/$(articleId)).data;
+    }
 
+    // Um usuário lê só o próprio perfil; só admins leem os demais e escrevem.
     match /users/{uid} {
       allow read: if isAdmin() || (hasProfile() && request.auth.uid == uid);
       allow write: if isAdmin();
@@ -41,9 +45,42 @@ service cloud.firestore {
       allow read: if canReadArticle(resource.data);
       allow write: if isAdmin();
 
+      // O leitor só pode somar 1 ao contador `views` e nada mais.
+      allow update: if hasProfile() &&
+        canReadArticle(resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']) &&
+        request.resource.data.views == resource.data.views + 1;
+
       match /versions/{versionId} {
         allow read, write: if isAdmin();
       }
+
+      // Contador diário: o leitor cria com 1 ou soma 1, sem poder ler.
+      match /viewsDaily/{day} {
+        allow read: if isAdmin();
+        allow write: if isAdmin();
+        allow create: if hasProfile() &&
+          canReadArticle(articleOf(articleId)) &&
+          request.resource.data.keys().hasOnly(['count']) &&
+          request.resource.data.count == 1;
+        allow update: if hasProfile() &&
+          canReadArticle(articleOf(articleId)) &&
+          request.resource.data.keys().hasOnly(['count']) &&
+          request.resource.data.count == resource.data.count + 1;
+      }
+    }
+
+    // Índice de busca agregado por produto: o leitor lê apenas os seus.
+    match /searchIndex/{productId} {
+      allow read: if canSeeProduct(productId);
+      allow write: if isAdmin();
+    }
+
+    // Auditoria: admins leem e criam; ninguém altera ou exclui.
+    match /auditLog/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.usuarioId == request.auth.uid;
+      allow update, delete: if false;
     }
 
     match /{document=**} {

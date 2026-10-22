@@ -99,8 +99,19 @@ seção 8 do `PLAN.md`):
 - [x] `firestore.rules` cobrindo `users`, `blocks` e `articles`, com testes
       (o restante das regras vem na Fase 2)
 
-Para testar de ponta a ponta é preciso criar manualmente o documento
-`users/{uid}` com `role: "admin"` da primeira conta (a tela de usuários só
-chega na Fase 2) e configurar o Cloudinary para enviar imagens.
+**Fase 2 — Usuários e permissões**, implementada em código:
 
-Próxima fase: **Fase 2 — Usuários e permissões** (ver `PLAN.md`).
+- [x] `firestore.rules` completo (`users`, `blocks`, `articles`, `viewsDaily`,
+      `searchIndex`, `auditLog`), com 17 testes no Emulator
+- [x] Tela admin "Usuários": criar (segunda instância do Firebase), editar
+      papel, produtos permitidos e `verTecnico`, desativar e reativar
+- [x] Rotas protegidas por papel; conta sem perfil ou desativada vê "Sem acesso"
+- [x] `auditLog` gravado no mesmo batch das ações de criar, editar, publicar e
+      excluir (blocos, artigos e usuários)
+
+O primeiro admin precisa ser criado à mão: crie a conta no Authentication do
+console e o documento `users/{uid}` com `role: "admin"`, `ativo: true`. Os
+demais usuários são criados pela tela "Usuários". Para enviar imagens, falta
+configurar o Cloudinary.
+
+Próxima fase: **Fase 3 — Busca** (ver `PLAN.md`).

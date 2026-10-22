@@ -8,6 +8,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
+import { registrarAuditoria } from './audit'
 import { db } from './firebase'
 import type {
   Article,
@@ -91,6 +92,7 @@ export async function createArticle(
     atualizadoEm: agora,
     revisadoEm: agora,
   })
+  registrarAuditoria(batch, uid, 'artigo.criar', `articles/${ref.id}`)
   await batch.commit()
   return ref.id
 }
@@ -108,6 +110,7 @@ export async function saveArticle(
     atualizadoPor: uid,
     atualizadoEm: Date.now(),
   })
+  registrarAuditoria(batch, uid, 'artigo.editar', `articles/${id}`)
   await batch.commit()
 }
 
@@ -138,6 +141,7 @@ export async function publishArticle(
     criadoEm: agora,
   }
   batch.set(doc(articles, article.id, 'versions', String(versao)), snapshot)
+  registrarAuditoria(batch, uid, 'artigo.publicar', `articles/${article.id}`)
   await batch.commit()
   return versao
 }
@@ -149,14 +153,16 @@ export async function unpublishArticle(id: string, uid: string): Promise<void> {
     atualizadoPor: uid,
     atualizadoEm: Date.now(),
   })
+  registrarAuditoria(batch, uid, 'artigo.despublicar', `articles/${id}`)
   await batch.commit()
 }
 
-export async function deleteArticle(id: string): Promise<void> {
+export async function deleteArticle(id: string, uid: string): Promise<void> {
   const versoes = await getDocs(collection(articles, id, 'versions'))
   const batch = writeBatch(db)
   versoes.docs.forEach((v) => batch.delete(v.ref))
   batch.delete(doc(articles, id))
+  registrarAuditoria(batch, uid, 'artigo.excluir', `articles/${id}`)
   await batch.commit()
 }
 

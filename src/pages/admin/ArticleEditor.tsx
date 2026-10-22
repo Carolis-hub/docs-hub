@@ -127,7 +127,7 @@ export function ArticleEditor() {
     executar(async () => {
       if (!artigo || !window.confirm('Excluir este artigo e suas versões?'))
         return
-      await deleteArticle(artigo.id)
+      await deleteArticle(artigo.id, uid)
       navigate(`/b/${artigo.blockId}`, { replace: true })
     })
 

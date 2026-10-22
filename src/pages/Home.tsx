@@ -13,7 +13,8 @@ import {
 import type { Block } from '../types/content'
 
 export function Home() {
-  const { profile, isAdmin } = useAuth()
+  const { user, profile, isAdmin } = useAuth()
+  const uid = user?.uid ?? ''
   const { dados, erro, carregando, recarregar } = useAsync(
     () =>
       listProducts(isAdmin ? undefined : (profile?.produtosPermitidos ?? [])),
@@ -33,7 +34,7 @@ export function Home() {
   async function excluir(b: Block) {
     if (!window.confirm(`Excluir o produto "${b.nome}"?`)) return
     try {
-      await deleteBlock(b.id)
+      await deleteBlock(b.id, uid)
       setAviso(null)
       recarregar()
     } catch (e) {
@@ -61,7 +62,7 @@ export function Home() {
           titulo="Novo produto"
           onCancel={() => setCriando(false)}
           onSubmit={async (input) => {
-            await createBlock(input, null, produtos.length)
+            await createBlock(input, null, produtos.length, uid)
             setCriando(false)
             recarregar()
           }}
@@ -73,7 +74,7 @@ export function Home() {
           inicial={editando}
           onCancel={() => setEditando(null)}
           onSubmit={async (input) => {
-            await updateBlock(editando.id, input)
+            await updateBlock(editando.id, input, uid)
             setEditando(null)
             recarregar()
           }}

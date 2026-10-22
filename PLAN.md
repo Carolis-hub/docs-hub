@@ -174,11 +174,11 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 2 — Usuários e permissões (≈1 semana)
 
-- [ ] `firestore.rules` completo, conforme a seção 5.
-- [ ] Testes das regras no Emulator (`@firebase/rules-unit-testing`), rodando no CI.
-- [ ] Tela admin "Usuários": criar (via segunda instância do Firebase), editar papel, produtos permitidos e `verTecnico`, e desativar.
-- [ ] Rotas protegidas por papel no front.
-- [ ] Gravação de `auditLog` nas ações de criar, editar, publicar e excluir.
+- [x] `firestore.rules` completo, conforme a seção 5.
+- [x] Testes das regras no Emulator (`@firebase/rules-unit-testing`), rodando no CI.
+- [x] Tela admin "Usuários": criar (via segunda instância do Firebase), editar papel, produtos permitidos e `verTecnico`, e desativar.
+- [x] Rotas protegidas por papel no front.
+- [x] Gravação de `auditLog` nas ações de criar, editar, publicar e excluir.
 
 **Pronto quando:** um leitor com acesso só ao ECM não vê BPM nem na navegação, nem na busca, nem por URL direta, e os testes provam isso.
 

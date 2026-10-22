@@ -42,13 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return
       }
       getDoc(doc(db, 'users', firebaseUser.uid))
-        .then((snap) =>
-          setProfile(
-            snap.exists()
-              ? ({ uid: snap.id, ...snap.data() } as AppUser)
-              : null,
-          ),
-        )
+        .then((snap) => {
+          const dados = snap.exists()
+            ? ({ uid: snap.id, ...snap.data() } as AppUser)
+            : null
+          // Conta desativada equivale a conta sem perfil.
+          setProfile(dados && dados.ativo !== false ? dados : null)
+        })
         .catch(() => setProfile(null))
         .finally(() => setLoading(false))
     })

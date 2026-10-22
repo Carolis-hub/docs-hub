@@ -8,6 +8,7 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
+import { registrarAuditoria } from './audit'
 import { db } from './firebase'
 import type { Block, BlockInput } from '../types/content'
 import { slugify } from '../utils/slug'
@@ -72,6 +73,7 @@ export async function createBlock(
   input: BlockInput,
   parent: Block | null,
   proximaOrdem: number,
+  uid: string,
 ): Promise<Block> {
   const ref = doc(blocks)
   const block: Omit<Block, 'id'> = {
@@ -85,6 +87,7 @@ export async function createBlock(
   }
   const batch = writeBatch(db)
   batch.set(ref, block)
+  registrarAuditoria(batch, uid, 'bloco.criar', `blocks/${ref.id}`)
   await batch.commit()
   return { id: ref.id, ...block }
 }
@@ -92,6 +95,7 @@ export async function createBlock(
 export async function updateBlock(
   id: string,
   input: BlockInput,
+  uid: string,
 ): Promise<void> {
   const batch = writeBatch(db)
   batch.update(doc(blocks, id), {
@@ -100,6 +104,7 @@ export async function updateBlock(
     descricao: input.descricao.trim(),
     icone: input.icone.trim(),
   })
+  registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`)
   await batch.commit()
 }
 
@@ -111,7 +116,7 @@ export async function reorderBlocks(idsEmOrdem: string[]): Promise<void> {
 }
 
 /** Só exclui blocos vazios, para não deixar artigos ou blocos órfãos. */
-export async function deleteBlock(id: string): Promise<void> {
+export async function deleteBlock(id: string, uid: string): Promise<void> {
   const [filhos, artigos] = await Promise.all([
     getDocs(query(blocks, where('parentId', '==', id), limit(1))),
     getDocs(
@@ -125,5 +130,6 @@ export async function deleteBlock(id: string): Promise<void> {
   }
   const batch = writeBatch(db)
   batch.delete(doc(blocks, id))
+  registrarAuditoria(batch, uid, 'bloco.excluir', `blocks/${id}`)
   await batch.commit()
 }
