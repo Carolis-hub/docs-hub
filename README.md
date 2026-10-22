@@ -85,4 +85,22 @@ seção 8 do `PLAN.md`):
 - [ ] Levantamento da ferramenta de documentação atual (formato de
       exportação e volume, necessário para a Fase 5)
 
-Próxima fase: **Fase 1 — Estrutura e conteúdo** (ver `PLAN.md`).
+**Fase 1 — Estrutura e conteúdo**, implementada em código:
+
+- [x] CRUD de blocos com hierarquia, ordenação por arrastar (dnd-kit) e
+      `productId` desnormalizado
+- [x] CRUD de artigos (rascunho/publicado, `publico`, `versaoProduto`)
+- [x] Editor TipTap (H1–H3, listas, links, código, imagem/GIF com texto
+      alternativo obrigatório)
+- [x] Upload para o Cloudinary com validação (tipo, 5 MB) e compressão de PNG
+- [x] `textoPlano` e `resumo` gerados ao salvar
+- [x] Histórico de versões a cada publicação, com restauração
+- [x] Leitura: produtos → subprodutos → artigos, com breadcrumb
+- [x] `firestore.rules` cobrindo `users`, `blocks` e `articles`, com testes
+      (o restante das regras vem na Fase 2)
+
+Para testar de ponta a ponta é preciso criar manualmente o documento
+`users/{uid}` com `role: "admin"` da primeira conta (a tela de usuários só
+chega na Fase 2) e configurar o Cloudinary para enviar imagens.
+
+Próxima fase: **Fase 2 — Usuários e permissões** (ver `PLAN.md`).

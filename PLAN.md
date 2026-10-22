@@ -160,15 +160,15 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 1 — Estrutura e conteúdo (≈3 semanas)
 
-- [ ] CRUD de blocos com hierarquia, ordenação por arrastar e `productId` desnormalizado.
-- [ ] CRUD de artigos: rascunho e publicado, campo `publico` e `versaoProduto` opcional.
-- [ ] Editor TipTap:
-  - [ ] Títulos H1 a H3, parágrafo, listas, links e código.
-  - [ ] Imagem e GIF com **texto alternativo obrigatório**.
-- [ ] Upload para o Cloudinary com validação de tipo e tamanho, e compressão de PNG no navegador.
-- [ ] Geração de `textoPlano` e `resumo` ao salvar.
-- [ ] Histórico de versões a cada publicação, com opção de restaurar.
-- [ ] Leitura: cards de produto, depois subprodutos, depois artigos, com breadcrumb e renderização do artigo.
+- [x] CRUD de blocos com hierarquia, ordenação por arrastar e `productId` desnormalizado.
+- [x] CRUD de artigos: rascunho e publicado, campo `publico` e `versaoProduto` opcional.
+- [x] Editor TipTap:
+  - [x] Títulos H1 a H3, parágrafo, listas, links e código.
+  - [x] Imagem e GIF com **texto alternativo obrigatório**.
+- [x] Upload para o Cloudinary com validação de tipo e tamanho, e compressão de PNG no navegador.
+- [x] Geração de `textoPlano` e `resumo` ao salvar.
+- [x] Histórico de versões a cada publicação, com opção de restaurar.
+- [x] Leitura: cards de produto, depois subprodutos, depois artigos, com breadcrumb e renderização do artigo.
 
 **Pronto quando:** um admin cria o produto Smartshare, o subproduto BPM e um artigo com texto e GIF, publica, e o artigo aparece corretamente.
 

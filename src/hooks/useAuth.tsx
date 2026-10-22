@@ -12,10 +12,15 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from 'firebase/auth'
-import { auth } from '../services/firebase'
+import { doc, getDoc } from 'firebase/firestore'
+import { auth, db } from '../services/firebase'
+import type { AppUser } from '../types/user'
 
 interface AuthContextValue {
   user: User | null
+  /** Perfil em `users/{uid}`; `null` se a conta não foi criada por um admin. */
+  profile: AppUser | null
+  isAdmin: boolean
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
@@ -25,25 +30,42 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     return onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser)
-      setLoading(false)
+      if (!firebaseUser) {
+        setProfile(null)
+        setLoading(false)
+        return
+      }
+      getDoc(doc(db, 'users', firebaseUser.uid))
+        .then((snap) =>
+          setProfile(
+            snap.exists()
+              ? ({ uid: snap.id, ...snap.data() } as AppUser)
+              : null,
+          ),
+        )
+        .catch(() => setProfile(null))
+        .finally(() => setLoading(false))
     })
   }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      profile,
+      isAdmin: profile?.role === 'admin',
       loading,
       signIn: async (email, password) => {
         await signInWithEmailAndPassword(auth, email, password)
       },
       signOut: () => firebaseSignOut(auth),
     }),
-    [user, loading],
+    [user, profile, loading],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,10 +1,51 @@
 rules_version = '2';
 
-// Regras iniciais da Fase 0: negam todo o acesso.
-// O modelo completo (leitor/admin, produtosPermitidos, verTecnico) é
-// implementado na Fase 2, com testes em tests/rules.
+// Regras da Fase 1: conteúdo (blocks, articles, versions) para admin e leitor.
+// Os demais itens da seção 5 do PLAN.md (searchIndex, auditLog, viewsDaily,
+// gestão de usuários) são completados na Fase 2.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function hasProfile() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    function isAdmin() {
+      return hasProfile() && profile().role == 'admin';
+    }
+    function canSeeProduct(productId) {
+      return isAdmin() ||
+        (hasProfile() && productId in profile().get('produtosPermitidos', []));
+    }
+    function canReadArticle(a) {
+      return isAdmin() ||
+        (canSeeProduct(a.productId) &&
+          a.status == 'published' &&
+          (a.publico == 'usuario' || profile().get('verTecnico', false) == true));
+    }
+
+    match /users/{uid} {
+      allow read: if isAdmin() || (hasProfile() && request.auth.uid == uid);
+      allow write: if isAdmin();
+    }
+
+    match /blocks/{blockId} {
+      allow read: if canSeeProduct(resource.data.productId);
+      allow write: if isAdmin();
+    }
+
+    match /articles/{articleId} {
+      allow read: if canReadArticle(resource.data);
+      allow write: if isAdmin();
+
+      match /versions/{versionId} {
+        allow read, write: if isAdmin();
+      }
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
