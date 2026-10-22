@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 export function RequireAuth({ children }: { children: ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, profile, loading, signOut } = useAuth()
 
   if (loading) {
     return (
@@ -15,6 +15,24 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (!user) {
     return <Navigate to="/login" replace />
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
+        <h1 className="text-xl font-semibold">Sem acesso</h1>
+        <p className="max-w-sm text-slate-600 dark:text-slate-400">
+          Sua conta não está habilitada no docs-hub. Fale com um administrador.
+        </p>
+        <button
+          type="button"
+          onClick={() => void signOut()}
+          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600"
+        >
+          Sair
+        </button>
+      </div>
+    )
   }
 
   return <>{children}</>

@@ -85,4 +85,102 @@ seção 8 do `PLAN.md`):
 - [ ] Levantamento da ferramenta de documentação atual (formato de
       exportação e volume, necessário para a Fase 5)
 
-Próxima fase: **Fase 1 — Estrutura e conteúdo** (ver `PLAN.md`).
+**Fase 1 — Estrutura e conteúdo**, implementada em código:
+
+- [x] CRUD de blocos com hierarquia, ordenação por arrastar (dnd-kit) e
+      `productId` desnormalizado
+- [x] CRUD de artigos (rascunho/publicado, `publico`, `versaoProduto`)
+- [x] Editor TipTap (H1–H3, listas, links, código, imagem/GIF com texto
+      alternativo obrigatório)
+- [x] Upload para o Cloudinary com validação (tipo, 5 MB) e compressão de PNG
+- [x] `textoPlano` e `resumo` gerados ao salvar
+- [x] Histórico de versões a cada publicação, com restauração
+- [x] Leitura: produtos → subprodutos → artigos, com breadcrumb
+- [x] `firestore.rules` cobrindo `users`, `blocks` e `articles`, com testes
+      (o restante das regras vem na Fase 2)
+
+**Fase 2 — Usuários e permissões**, implementada em código:
+
+- [x] `firestore.rules` completo (`users`, `blocks`, `articles`, `viewsDaily`,
+      `searchIndex`, `auditLog`), com 17 testes no Emulator
+- [x] Tela admin "Usuários": criar (segunda instância do Firebase), editar
+      papel, produtos permitidos e `verTecnico`, desativar e reativar
+- [x] Rotas protegidas por papel; conta sem perfil ou desativada vê "Sem acesso"
+- [x] `auditLog` gravado no mesmo batch das ações de criar, editar, publicar e
+      excluir (blocos, artigos e usuários)
+
+O primeiro admin precisa ser criado à mão: crie a conta no Authentication do
+console e o documento `users/{uid}` com `role: "admin"`, `ativo: true`. Os
+demais usuários são criados pela tela "Usuários". Para enviar imagens, falta
+configurar o Cloudinary.
+
+**Fase 3 — Busca**, implementada em código:
+
+- [x] `searchIndex/{productId}` atualizado em transação ao publicar, editar
+      artigo publicado, despublicar e excluir
+- [x] Índices carregados uma vez por sessão, com cache persistente do Firestore
+- [x] MiniSearch com título de maior peso, sem acentos, prefixo e fuzzy
+- [x] Página `/busca` com trecho destacado e filtros por produto e público
+- [x] Busca rápida no cabeçalho com `Ctrl+K` (ou `⌘K`)
+- [x] Buscas sem resultado agregadas em `searchMisses`
+- [x] Índice dividido por subproduto (`partes/`) perto de 800 KB
+
+Os artigos já publicados antes da Fase 3 não estão no índice: basta
+republicá-los (ou salvá-los) para entrarem. A migração da Fase 5 já gravará o
+índice.
+
+**Fase 4 — Métricas**, implementada em código:
+
+- [x] `views` e `viewsDaily` com `increment()`, deduplicados por leitor, artigo
+      e dia no navegador, sem contar admins
+- [x] Painel `/admin/metricas`: mais acessados, evolução por período (gráfico e
+      tabela), artigos sem acesso, buscas sem resultado e artigos sem revisão
+      há mais de 3, 6 ou 12 meses
+- [x] Estimativa de consumo das cotas do Spark em `docs/cotas-spark.md`
+
+A consulta agregada de `viewsDaily` usa um índice de grupo de coleções em
+`firestore.indexes.json`: faça `firebase deploy --only firestore:indexes`
+junto com as regras.
+
+**Fase 5 — Migração**, implementada em código (`scripts/migrate`):
+
+- [x] Importador de blocos, artigos e imagens (Cloudinary + Firestore, via
+      Admin SDK), idempotente, com simulação por padrão (`npm run migrate`)
+- [x] Relatório de validação: imagens com falha, links quebrados, artigos sem
+      bloco, erros e textos alternativos gerados
+- [x] Adaptador da base atual (`docs.selbetti.com.br`, extraída pelo
+      `smartshare-kb`) para o formato do importador
+- [ ] Extração real, execução no `dev` e depois no `prod`
+- [ ] Período de convivência e desligamento da ferramenta antiga (roteiro em
+      `scripts/migrate/README.md`)
+
+`npm run test:rules` agora também testa o importador contra o Emulator, e o
+`ci.yml` ganhou um job `emulator` que o executa.
+
+**Fase 6 — Sugestões de atualização por IA**, implementada em código. A
+entrada é um arquivo `.md` com as regras do produto ou da funcionalidade:
+
+- [x] `scripts/doc-sync`: compara as regras com o artigo, pede à IA a
+      atualização e grava a sugestão em `articles/{id}/suggestions` (nunca
+      publica); marca `prints_desatualizados` quando as telas mudam
+- [x] `doc-sync.yml`, workflow reutilizável que roda nos arquivos de regras
+      alterados
+- [x] Telas **Sugestões** e de revisão (versão atual × sugestão), com aprovar,
+      editar antes de aprovar e descartar
+- [ ] Segredos no GitHub e definição de onde ficam os arquivos de regras
+
+Veja `scripts/doc-sync/README.md`. Próxima fase: **Fase 7 — Operação e
+backlog** (ver `PLAN.md`).
+
+**Fase 7 — Operação**, implementada em código (cada pasta de `scripts/` tem um
+README):
+
+- [x] `backup.yml`: export noturno do Firestore, **cifrado**, como artifact
+      (30 dias); `scripts/backup/restaurar.ts` para restaurar
+- [x] `limpeza-cloudinary.yml`: imagens órfãs semanais, só relatório até
+      `CLOUDINARY_LIMPEZA_APAGAR=true`
+- [x] `verificar-links.yml`: links e imagens quebrados, semanal
+- [ ] Segredos e variáveis dos workflows no GitHub
+
+O backlog (versões por versão do produto, "foi útil?", busca semântica e PDF)
+fica para depois.

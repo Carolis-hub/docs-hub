@@ -1,10 +1,127 @@
 rules_version = '2';
 
-// Regras iniciais da Fase 0: negam todo o acesso.
-// O modelo completo (leitor/admin, produtosPermitidos, verTecnico) é
-// implementado na Fase 2, com testes em tests/rules.
+// Modelo de acesso do docs-hub (seção 5 do PLAN.md), testado em tests/rules.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Sem documento users/{uid}, ou com ativo == false, não há nenhum acesso.
+    function hasProfile() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('ativo', true) == true;
+    }
+    function profile() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return hasProfile() && profile().role == 'admin';
+    }
+    function canSeeProduct(productId) {
+      return isAdmin() ||
+        (hasProfile() && productId in profile().get('produtosPermitidos', []));
+    }
+    function canReadArticle(a) {
+      return isAdmin() ||
+        (canSeeProduct(a.productId) &&
+          a.status == 'published' &&
+          (a.publico == 'usuario' || profile().get('verTecnico', false) == true));
+    }
+    function articleOf(articleId) {
+      return get(/databases/$(database)/documents/articles/$(articleId)).data;
+    }
+
+    // Um usuário lê só o próprio perfil; só admins leem os demais e escrevem.
+    match /users/{uid} {
+      allow read: if isAdmin() || (hasProfile() && request.auth.uid == uid);
+      allow write: if isAdmin();
+    }
+
+    match /blocks/{blockId} {
+      allow read: if canSeeProduct(resource.data.productId);
+      allow write: if isAdmin();
+    }
+
+    match /articles/{articleId} {
+      allow read: if canReadArticle(resource.data);
+      allow write: if isAdmin();
+
+      // O leitor só pode somar 1 ao contador `views` e nada mais.
+      allow update: if hasProfile() &&
+        canReadArticle(resource.data) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']) &&
+        request.resource.data.views == resource.data.views + 1;
+
+      match /versions/{versionId} {
+        allow read, write: if isAdmin();
+      }
+
+      // Sugestões da IA (doc-sync): só admins leem e decidem; a versão
+      // publicada não muda até um admin aprovar.
+      match /suggestions/{suggestionId} {
+        allow read, write: if isAdmin();
+      }
+
+      // Contador diário: o leitor cria com 1 ou soma 1, sem poder ler.
+      // `dia` repete o id do documento (AAAA-MM-DD) para a consulta agregada.
+      match /viewsDaily/{day} {
+        allow read, write: if isAdmin();
+        allow create: if hasProfile() &&
+          canReadArticle(articleOf(articleId)) &&
+          request.resource.data.keys().hasOnly(['count', 'dia']) &&
+          request.resource.data.dia == day &&
+          request.resource.data.count == 1;
+        allow update: if hasProfile() &&
+          canReadArticle(articleOf(articleId)) &&
+          request.resource.data.keys().hasOnly(['count', 'dia']) &&
+          request.resource.data.dia == resource.data.dia &&
+          request.resource.data.count == resource.data.count + 1;
+      }
+    }
+
+    // Índice de busca agregado por produto: o leitor lê apenas os seus.
+    match /searchIndex/{productId} {
+      allow read: if canSeeProduct(productId);
+      allow write: if isAdmin();
+
+      // Quando o índice passa de ~800 KB, é dividido por subproduto.
+      match /partes/{parteId} {
+        allow read: if canSeeProduct(productId);
+        allow write: if isAdmin();
+      }
+    }
+
+    // Buscas sem resultado: contador agregado por termo. O leitor só cria
+    // com 1 ou soma 1; apenas admins leem (painel da Fase 4).
+    match /searchMisses/{termoId} {
+      allow read, write: if isAdmin();
+      allow create: if hasProfile() &&
+        request.resource.data.keys().hasOnly(['termo', 'count', 'ultimaVez']) &&
+        request.resource.data.termo is string &&
+        request.resource.data.termo.size() <= 100 &&
+        request.resource.data.count == 1;
+      allow update: if hasProfile() &&
+        request.resource.data.keys().hasOnly(['termo', 'count', 'ultimaVez']) &&
+        request.resource.data.termo == resource.data.termo &&
+        request.resource.data.count == resource.data.count + 1;
+    }
+
+    // Auditoria: admins leem e criam; ninguém altera ou exclui.
+    match /auditLog/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.usuarioId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Painel de métricas: o admin consulta viewsDaily de todos os artigos.
+    match /{path=**}/viewsDaily/{day} {
+      allow read: if isAdmin();
+    }
+
+    // Fila de sugestões pendentes: o admin consulta todos os artigos de uma vez.
+    match /{path=**}/suggestions/{suggestionId} {
+      allow read: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

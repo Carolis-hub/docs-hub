@@ -1,0 +1,104 @@
+# Workflow reutilizável: gera sugestões de atualização da documentação a partir
+# de arquivos .md com as regras de um produto ou funcionalidade.
+#
+# Uso, no repositório que guarda os arquivos de regras:
+#
+#   on:
+#     push:
+#       branches: [main]
+#       paths: ['regras/**.md']
+#   jobs:
+#     doc-sync:
+#       uses: Carolis-hub/docs-hub/.github/workflows/doc-sync.yml@main
+#       with:
+#         regras: 'regras/**/*.md'
+#         projeto: docs-hub-prod
+#       secrets:
+#         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+#         ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+#
+# O workflow nunca publica: só grava sugestões, que um admin revisa no docs-hub.
+name: Doc Sync
+
+on:
+  workflow_call:
+    inputs:
+      regras:
+        description: 'Padrão (glob) dos arquivos .md de regras no repositório que chama'
+        type: string
+        default: 'regras/**/*.md'
+      projeto:
+        description: 'Id do projeto Firebase (docs-hub-dev ou docs-hub-prod)'
+        type: string
+        required: true
+      docs-hub-ref:
+        description: 'Branch ou tag do docs-hub com o script doc-sync'
+        type: string
+        default: main
+    secrets:
+      FIREBASE_SERVICE_ACCOUNT:
+        description: 'JSON da service account do projeto Firebase'
+        required: true
+      ANTHROPIC_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Regras do repositório de origem
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: origem
+
+      - name: Script doc-sync
+        uses: actions/checkout@v4
+        with:
+          repository: Carolis-hub/docs-hub
+          ref: ${{ inputs.docs-hub-ref }}
+          path: docs-hub
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs-hub/package-lock.json
+
+      - name: Instalar dependências
+        working-directory: docs-hub
+        run: npm ci
+
+      - name: Descobrir os arquivos de regras alterados
+        id: arquivos
+        working-directory: origem
+        env:
+          PADRAO: ${{ inputs.regras }}
+          ANTES: ${{ github.event.before }}
+        run: |
+          # Em push, compara com o commit anterior; no resto, olha o último commit.
+          base="${ANTES:-HEAD~1}"
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ]; then base="HEAD~1"; fi
+          git diff --name-only --diff-filter=AM "$base" HEAD -- "$PADRAO" > ../alterados.txt || true
+          echo "Arquivos alterados:"; cat ../alterados.txt
+          echo "total=$(wc -l < ../alterados.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Gerar sugestões
+        if: steps.arquivos.outputs.total != '0'
+        working-directory: origem
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ inputs.projeto }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          trap 'rm -f "$RUNNER_TEMP/sa.json"' EXIT
+          mapfile -t arquivos < ../alterados.txt
+          node ../docs-hub/scripts/doc-sync/index.ts "${arquivos[@]}" \
+            --gravar \
+            --repo "$GITHUB_REPOSITORY" \
+            --commit "$GITHUB_SHA"

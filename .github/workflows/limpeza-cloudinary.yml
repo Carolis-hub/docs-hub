@@ -1,0 +1,62 @@
+# Limpeza semanal de imagens órfãs do Cloudinary: as que nenhum artigo (nem
+# versão do histórico, nem sugestão pendente) usa mais. Excluir exige a API
+# secret, que não existe no navegador; por isso a limpeza roda aqui.
+#
+# Implantação gradual: sem a variável CLOUDINARY_LIMPEZA_APAGAR=true, a
+# execução agendada só gera o relatório (no resumo da execução). Confira o
+# relatório por algumas semanas e só então habilite a variável.
+#
+# Configuração do repositório:
+#   Secrets:   FIREBASE_SERVICE_ACCOUNT, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+#   Variables: FIREBASE_PROJECT_ID, CLOUDINARY_CLOUD_NAME,
+#              CLOUDINARY_FOLDER (opcional), CLOUDINARY_LIMPEZA_APAGAR (opcional)
+name: Limpeza do Cloudinary
+
+on:
+  schedule:
+    - cron: '43 6 * * 0' # domingo, 03:43 no horário de Brasília
+  workflow_dispatch:
+    inputs:
+      apagar:
+        description: 'Apagar de verdade (senão, só relatório)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: limpeza-cloudinary
+  cancel-in-progress: false
+
+jobs:
+  limpeza:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+      CLOUDINARY_CLOUD_NAME: ${{ vars.CLOUDINARY_CLOUD_NAME }}
+      CLOUDINARY_FOLDER: ${{ vars.CLOUDINARY_FOLDER }}
+      CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+      CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+      APAGAR: ${{ github.event_name == 'workflow_dispatch' && inputs.apagar || vars.CLOUDINARY_LIMPEZA_APAGAR == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Limpar
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          trap 'rm -f "$RUNNER_TEMP/sa.json"' EXIT
+          args=()
+          if [ "$APAGAR" = "true" ]; then args+=(--apagar); fi
+          node scripts/cloudinary-limpeza/index.ts "${args[@]}"
