@@ -216,8 +216,8 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 5 — Migração (≈1–2 semanas)
 
-- [ ] `scripts/migrate`: importar blocos, artigos e imagens da ferramenta atual para o Cloudinary e o Firestore. Rodar primeiro no `dev`.
-- [ ] Relatório de validação: imagens com falha, links quebrados e artigos sem bloco.
+- [x] `scripts/migrate`: importar blocos, artigos e imagens da ferramenta atual para o Cloudinary e o Firestore. Rodar primeiro no `dev`. _(importador pronto, lê um formato neutro; falta o conversor da ferramenta atual e a execução no `dev`)_
+- [x] Relatório de validação: imagens com falha, links quebrados e artigos sem bloco.
 - [ ] Período de convivência com a ferramenta antiga em modo só leitura, depois desligamento.
 
 ### Fase 6 — Integração com os repositórios de produto (≈2 semanas)
@@ -254,5 +254,5 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ## 8. Pendências
 
-- [ ] Qual é a ferramenta atual e seu formato de exportação (Fase 5).
+- [ ] Qual é a ferramenta atual e seu formato de exportação (Fase 5). O importador já existe; falta o conversor dessa exportação para o formato neutro (`scripts/migrate/README.md`).
 - [ ] Se a base de conhecimento do QA-Hub migra para o docs-hub como produto "QA".

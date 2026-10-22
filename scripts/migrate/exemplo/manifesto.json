@@ -1,0 +1,52 @@
+{
+  "blocos": [
+    {
+      "id": "smartshare",
+      "nome": "Smartshare",
+      "descricao": "Suíte de gestão de documentos e processos",
+      "icone": "📦"
+    },
+    {
+      "id": "bpm",
+      "nome": "BPM",
+      "pai": "smartshare",
+      "descricao": "Processos e fluxos"
+    },
+    {
+      "id": "ecm",
+      "nome": "ECM",
+      "pai": "smartshare"
+    }
+  ],
+  "artigos": [
+    {
+      "id": "login",
+      "bloco": "bpm",
+      "titulo": "Como acessar o BPM",
+      "arquivo": "artigos/login.html",
+      "atualizadoEm": "2025-03-10"
+    },
+    {
+      "id": "fluxo",
+      "bloco": "bpm",
+      "titulo": "Fluxo de aprovação",
+      "arquivo": "artigos/fluxo-aprovacao.md",
+      "publico": "tecnico",
+      "versaoProduto": "4.2",
+      "atualizadoEm": "2025-06-01"
+    },
+    {
+      "id": "tabela",
+      "bloco": "ecm",
+      "titulo": "Tipos de documento",
+      "arquivo": "artigos/ecm-tabela.html",
+      "publicado": false
+    },
+    {
+      "id": "orfao",
+      "bloco": "nao-existe",
+      "titulo": "Artigo órfão",
+      "conteudo": "<p>Sem bloco.</p>"
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { Block } from '../types/content'
+import type { Article, Block } from '../types/content'
 import type { SearchItem } from '../types/search'
 
 /** Margem de segurança sobre o limite de 1 MiB de um documento do Firestore. */
@@ -50,4 +50,40 @@ export function dividirPorParte(
     ;(partes[chave] ??= []).push(item)
   }
   return partes
+}
+
+export function itemDoArtigo(
+  a: Pick<
+    Article,
+    'titulo' | 'resumo' | 'textoPlano' | 'blockId' | 'publico'
+  > & { id: string },
+): SearchItem {
+  return {
+    id: a.id,
+    titulo: a.titulo,
+    resumo: a.resumo,
+    textoPlano: truncarTexto(a.textoPlano),
+    blockId: a.blockId,
+    publico: a.publico,
+  }
+}
+
+export interface IndiceMontado {
+  principal: { itens: SearchItem[]; dividido?: true }
+  /** Só preenchido quando o índice foi dividido por subproduto. */
+  partes: Record<string, SearchItem[]>
+}
+
+/** Monta o índice completo de um produto, dividindo-o se passar do limite. */
+export function montarIndice(
+  itens: SearchItem[],
+  arvore: Block[],
+): IndiceMontado {
+  if (tamanhoBytes({ itens }) <= INDEX_LIMITE_BYTES) {
+    return { principal: { itens }, partes: {} }
+  }
+  return {
+    principal: { itens: [], dividido: true },
+    partes: dividirPorParte(itens, (b) => parteDoBloco(arvore, b)),
+  }
 }

@@ -5,16 +5,15 @@ import {
   getDocs,
   type Transaction,
 } from 'firebase/firestore'
-import type { Article } from '../types/content'
 import type { IndexedItem, SearchItem } from '../types/search'
 import {
   INDEX_LIMITE_BYTES,
   PARTE_RAIZ,
   aplicarItem,
   dividirPorParte,
+  itemDoArtigo,
   parteDoBloco,
   tamanhoBytes,
-  truncarTexto,
 } from '../utils/searchIndex'
 import { listProductTree } from './blocks'
 import { db } from './firebase'
@@ -23,22 +22,6 @@ interface IndexDoc {
   itens?: SearchItem[]
   /** `true` quando o índice foi dividido em `partes/{subprodutoId}`. */
   dividido?: boolean
-}
-
-export function itemDoArtigo(
-  a: Pick<
-    Article,
-    'titulo' | 'resumo' | 'textoPlano' | 'blockId' | 'publico'
-  > & { id: string },
-): SearchItem {
-  return {
-    id: a.id,
-    titulo: a.titulo,
-    resumo: a.resumo,
-    textoPlano: truncarTexto(a.textoPlano),
-    blockId: a.blockId,
-    publico: a.publico,
-  }
 }
 
 const indexRef = (productId: string) => doc(db, 'searchIndex', productId)
@@ -102,3 +85,5 @@ export async function lerIndiceDoProduto(
   }
   return itens.map((i) => ({ ...i, productId }))
 }
+
+export { itemDoArtigo }

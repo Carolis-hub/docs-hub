@@ -142,4 +142,19 @@ A consulta agregada de `viewsDaily` usa um índice de grupo de coleções em
 `firestore.indexes.json`: faça `firebase deploy --only firestore:indexes`
 junto com as regras.
 
-Próxima fase: **Fase 5 — Migração** (ver `PLAN.md`).
+**Fase 5 — Migração**, implementada em código (`scripts/migrate`):
+
+- [x] Importador de blocos, artigos e imagens (Cloudinary + Firestore, via
+      Admin SDK), idempotente, com simulação por padrão (`npm run migrate`)
+- [x] Relatório de validação: imagens com falha, links quebrados, artigos sem
+      bloco, erros e textos alternativos gerados
+- [ ] Conversor da exportação da ferramenta atual (formato ainda desconhecido)
+      e execução no `dev` e no `prod`
+- [ ] Período de convivência e desligamento da ferramenta antiga (roteiro em
+      `scripts/migrate/README.md`)
+
+`npm run test:rules` agora também testa o importador contra o Emulator, e o
+`ci.yml` ganhou um job `emulator` que o executa.
+
+Próxima fase: **Fase 6 — Integração com os repositórios de produto** (ver
+`PLAN.md`).
