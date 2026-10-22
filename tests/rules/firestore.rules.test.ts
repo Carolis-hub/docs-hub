@@ -51,6 +51,8 @@ beforeAll(async () => {
     })
     await setDoc(doc(db, 'searchIndex/p1'), { itens: [] })
     await setDoc(doc(db, 'searchIndex/p2'), { itens: [] })
+    await setDoc(doc(db, 'searchIndex/p1/partes/bpm'), { itens: [] })
+    await setDoc(doc(db, 'searchIndex/p2/partes/bpm'), { itens: [] })
     await setDoc(doc(db, 'articles/tec'), {
       productId: 'p1',
       status: 'published',
@@ -214,5 +216,65 @@ describe('firestore.rules — usuários e permissões (Fase 2)', () => {
     const db = testEnv.authenticatedContext('leitor').firestore()
     await assertFails(getDoc(doc(db, 'auditLog/a1')))
     await assertFails(setDoc(doc(db, 'auditLog/a3'), { usuarioId: 'leitor' }))
+  })
+})
+
+describe('firestore.rules — busca (Fase 3)', () => {
+  it('searchIndex dividido: leitor lê as partes só dos seus produtos', async () => {
+    const db = testEnv.authenticatedContext('leitor').firestore()
+    await assertSucceeds(getDoc(doc(db, 'searchIndex/p1/partes/bpm')))
+    await assertFails(getDoc(doc(db, 'searchIndex/p2/partes/bpm')))
+    await assertFails(
+      setDoc(doc(db, 'searchIndex/p1/partes/bpm'), { itens: [] }),
+    )
+  })
+
+  it('admin escreve o índice e suas partes', async () => {
+    const db = testEnv.authenticatedContext('admin').firestore()
+    await assertSucceeds(setDoc(doc(db, 'searchIndex/p1'), { itens: [] }))
+    await assertSucceeds(
+      setDoc(doc(db, 'searchIndex/p1/partes/ecm'), { itens: [] }),
+    )
+  })
+
+  it('searchMisses: leitor cria com 1 e soma 1, sem ler', async () => {
+    const db = testEnv.authenticatedContext('leitor').firestore()
+    const ref = doc(db, 'searchMisses/termo-x')
+    const dados = { termo: 'termo x', ultimaVez: 1 }
+    await assertSucceeds(
+      setDoc(ref, { ...dados, count: increment(1) }, { merge: true }),
+    )
+    await assertSucceeds(
+      setDoc(ref, { ...dados, count: increment(1) }, { merge: true }),
+    )
+    await assertFails(
+      setDoc(ref, { ...dados, count: increment(5) }, { merge: true }),
+    )
+    await assertFails(getDoc(ref))
+  })
+
+  it('searchMisses: rejeita campos extras e conta sem perfil', async () => {
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    await assertFails(
+      setDoc(doc(leitor, 'searchMisses/outro'), {
+        termo: 'a',
+        count: 1,
+        ultimaVez: 1,
+        extra: true,
+      }),
+    )
+    const semPerfil = testEnv.authenticatedContext('sem-perfil').firestore()
+    await assertFails(
+      setDoc(doc(semPerfil, 'searchMisses/outro2'), {
+        termo: 'a',
+        count: 1,
+        ultimaVez: 1,
+      }),
+    )
+  })
+
+  it('searchMisses: admin lê', async () => {
+    const db = testEnv.authenticatedContext('admin').firestore()
+    await assertSucceeds(getDoc(doc(db, 'searchMisses/termo-x')))
   })
 })

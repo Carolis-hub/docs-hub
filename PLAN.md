@@ -125,6 +125,12 @@ users/{uid}
 searchIndex/{productId}
   itens[]: { id, titulo, resumo, textoPlano (truncado), blockId, publico }
 
+searchIndex/{productId}/partes/{subprodutoId}
+  itens[]            (só existe quando o índice foi dividido; o principal fica com dividido: true)
+
+searchMisses/{termoSlug}
+  termo, count, ultimaVez   (buscas sem resultado, agregadas)
+
 auditLog/{id}
   usuarioId, acao, alvo, data
 ```
@@ -184,16 +190,16 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 3 — Busca (≈1–2 semanas)
 
-- [ ] Atualizar `searchIndex/{productId}` ao publicar ou despublicar, dentro de um batch.
-- [ ] Carregar os índices permitidos uma vez por sessão, com cache persistente do Firestore.
-- [ ] MiniSearch configurado:
-  - [ ] Título com peso maior que o conteúdo.
-  - [ ] Normalização de acentos.
-  - [ ] Busca por prefixo e fuzzy.
-- [ ] Página de resultados com trecho destacado e filtros por produto e por público.
-- [ ] Busca rápida no cabeçalho com atalho `Ctrl+K`.
-- [ ] Registro agregado de buscas sem resultado.
-- [ ] Se um índice se aproximar de 1 MB, dividir por subproduto.
+- [x] Atualizar `searchIndex/{productId}` ao publicar ou despublicar, dentro de um batch.
+- [x] Carregar os índices permitidos uma vez por sessão, com cache persistente do Firestore.
+- [x] MiniSearch configurado:
+  - [x] Título com peso maior que o conteúdo.
+  - [x] Normalização de acentos.
+  - [x] Busca por prefixo e fuzzy.
+- [x] Página de resultados com trecho destacado e filtros por produto e por público.
+- [x] Busca rápida no cabeçalho com atalho `Ctrl+K`.
+- [x] Registro agregado de buscas sem resultado.
+- [x] Se um índice se aproximar de 1 MB, dividir por subproduto.
 
 **Pronto quando:** buscar "configuracao" encontra "Configuração" no título e no corpo, respeitando as permissões.
 

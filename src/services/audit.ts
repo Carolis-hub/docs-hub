@@ -1,4 +1,9 @@
-import { collection, doc, type WriteBatch } from 'firebase/firestore'
+import {
+  collection,
+  doc,
+  type DocumentData,
+  type DocumentReference,
+} from 'firebase/firestore'
 import { db } from './firebase'
 
 export type AuditAction =
@@ -17,7 +22,7 @@ export type AuditAction =
 
 /** Inclui o registro de auditoria no mesmo batch da ação. */
 export function registrarAuditoria(
-  batch: WriteBatch,
+  batch: { set(ref: DocumentReference, data: DocumentData): unknown },
   usuarioId: string,
   acao: AuditAction,
   alvo: string,

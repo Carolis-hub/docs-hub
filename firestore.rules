@@ -74,6 +74,27 @@ service cloud.firestore {
     match /searchIndex/{productId} {
       allow read: if canSeeProduct(productId);
       allow write: if isAdmin();
+
+      // Quando o índice passa de ~800 KB, é dividido por subproduto.
+      match /partes/{parteId} {
+        allow read: if canSeeProduct(productId);
+        allow write: if isAdmin();
+      }
+    }
+
+    // Buscas sem resultado: contador agregado por termo. O leitor só cria
+    // com 1 ou soma 1; apenas admins leem (painel da Fase 4).
+    match /searchMisses/{termoId} {
+      allow read, write: if isAdmin();
+      allow create: if hasProfile() &&
+        request.resource.data.keys().hasOnly(['termo', 'count', 'ultimaVez']) &&
+        request.resource.data.termo is string &&
+        request.resource.data.termo.size() <= 100 &&
+        request.resource.data.count == 1;
+      allow update: if hasProfile() &&
+        request.resource.data.keys().hasOnly(['termo', 'count', 'ultimaVez']) &&
+        request.resource.data.termo == resource.data.termo &&
+        request.resource.data.count == resource.data.count + 1;
     }
 
     // Auditoria: admins leem e criam; ninguém altera ou exclui.

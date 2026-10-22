@@ -5,11 +5,14 @@ import {
   getDocs,
   orderBy,
   query,
+  runTransaction,
   where,
   writeBatch,
 } from 'firebase/firestore'
 import { registrarAuditoria } from './audit'
 import { db } from './firebase'
+import { atualizarIndiceTx, itemDoArtigo } from './searchIndex'
+import { invalidarCacheBusca } from './search'
 import type {
   Article,
   ArticleDraft,
@@ -97,24 +100,36 @@ export async function createArticle(
   return ref.id
 }
 
-/** Salva as edições. Um artigo publicado continua publicado até nova ação. */
+/**
+ * Salva as edições. Um artigo publicado continua publicado, então o índice de
+ * busca acompanha a edição na mesma transação.
+ */
 export async function saveArticle(
   id: string,
   draft: ArticleDraft,
   uid: string,
 ): Promise<void> {
   validar(draft)
-  const batch = writeBatch(db)
-  batch.update(doc(articles, id), {
-    ...camposDerivados(draft),
-    atualizadoPor: uid,
-    atualizadoEm: Date.now(),
+  const ref = doc(articles, id)
+  await runTransaction(db, async (tx) => {
+    const atual = fromSnap(await tx.get(ref))
+    const campos = camposDerivados(draft)
+    if (atual.status === 'published') {
+      await atualizarIndiceTx(
+        tx,
+        atual.productId,
+        atual.blockId,
+        id,
+        itemDoArtigo({ ...campos, id, blockId: atual.blockId }),
+      )
+    }
+    tx.update(ref, { ...campos, atualizadoPor: uid, atualizadoEm: Date.now() })
+    registrarAuditoria(tx, uid, 'artigo.editar', `articles/${id}`)
   })
-  registrarAuditoria(batch, uid, 'artigo.editar', `articles/${id}`)
-  await batch.commit()
+  invalidarCacheBusca()
 }
 
-/** Publica e grava o snapshot da versão no mesmo batch. */
+/** Publica, grava o snapshot da versão e atualiza o índice de busca. */
 export async function publishArticle(
   article: Article,
   draft: ArticleDraft,
@@ -123,47 +138,66 @@ export async function publishArticle(
   validar(draft)
   const versao = article.versao + 1
   const agora = Date.now()
-  const batch = writeBatch(db)
-  batch.update(doc(articles, article.id), {
-    ...camposDerivados(draft),
-    status: 'published' satisfies ArticleStatus,
-    versao,
-    atualizadoPor: uid,
-    atualizadoEm: agora,
-    revisadoEm: agora,
+  const campos = camposDerivados(draft)
+  await runTransaction(db, async (tx) => {
+    await atualizarIndiceTx(
+      tx,
+      article.productId,
+      article.blockId,
+      article.id,
+      itemDoArtigo({ ...campos, id: article.id, blockId: article.blockId }),
+    )
+    tx.update(doc(articles, article.id), {
+      ...campos,
+      status: 'published' satisfies ArticleStatus,
+      versao,
+      atualizadoPor: uid,
+      atualizadoEm: agora,
+      revisadoEm: agora,
+    })
+    const snapshot: ArticleVersion = {
+      versao,
+      titulo: draft.titulo.trim(),
+      conteudo: draft.conteudo,
+      origem: 'manual',
+      autorId: uid,
+      criadoEm: agora,
+    }
+    tx.set(doc(articles, article.id, 'versions', String(versao)), snapshot)
+    registrarAuditoria(tx, uid, 'artigo.publicar', `articles/${article.id}`)
   })
-  const snapshot: ArticleVersion = {
-    versao,
-    titulo: draft.titulo.trim(),
-    conteudo: draft.conteudo,
-    origem: 'manual',
-    autorId: uid,
-    criadoEm: agora,
-  }
-  batch.set(doc(articles, article.id, 'versions', String(versao)), snapshot)
-  registrarAuditoria(batch, uid, 'artigo.publicar', `articles/${article.id}`)
-  await batch.commit()
+  invalidarCacheBusca()
   return versao
 }
 
 export async function unpublishArticle(id: string, uid: string): Promise<void> {
-  const batch = writeBatch(db)
-  batch.update(doc(articles, id), {
-    status: 'draft' satisfies ArticleStatus,
-    atualizadoPor: uid,
-    atualizadoEm: Date.now(),
+  const ref = doc(articles, id)
+  await runTransaction(db, async (tx) => {
+    const atual = fromSnap(await tx.get(ref))
+    await atualizarIndiceTx(tx, atual.productId, atual.blockId, id, null)
+    tx.update(ref, {
+      status: 'draft' satisfies ArticleStatus,
+      atualizadoPor: uid,
+      atualizadoEm: Date.now(),
+    })
+    registrarAuditoria(tx, uid, 'artigo.despublicar', `articles/${id}`)
   })
-  registrarAuditoria(batch, uid, 'artigo.despublicar', `articles/${id}`)
-  await batch.commit()
+  invalidarCacheBusca()
 }
 
 export async function deleteArticle(id: string, uid: string): Promise<void> {
+  const ref = doc(articles, id)
   const versoes = await getDocs(collection(articles, id, 'versions'))
-  const batch = writeBatch(db)
-  versoes.docs.forEach((v) => batch.delete(v.ref))
-  batch.delete(doc(articles, id))
-  registrarAuditoria(batch, uid, 'artigo.excluir', `articles/${id}`)
-  await batch.commit()
+  await runTransaction(db, async (tx) => {
+    const atual = fromSnap(await tx.get(ref))
+    if (atual.status === 'published') {
+      await atualizarIndiceTx(tx, atual.productId, atual.blockId, id, null)
+    }
+    versoes.docs.forEach((v) => tx.delete(v.ref))
+    tx.delete(ref)
+    registrarAuditoria(tx, uid, 'artigo.excluir', `articles/${id}`)
+  })
+  invalidarCacheBusca()
 }
 
 export async function listVersions(id: string): Promise<ArticleVersion[]> {

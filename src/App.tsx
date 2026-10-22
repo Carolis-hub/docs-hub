@@ -6,6 +6,7 @@ import { RequireAdmin } from './components/RequireAdmin'
 import { ArticlePage } from './pages/ArticlePage'
 import { BlockPage } from './pages/BlockPage'
 import { Home } from './pages/Home'
+import { SearchPage } from './pages/SearchPage'
 import { UsersPage } from './pages/admin/UsersPage'
 import { ArticleEditor } from './pages/admin/ArticleEditor'
 
@@ -20,6 +21,7 @@ function App() {
             <Layout>
               <Routes>
                 <Route path="/" element={<Home />} />
+                <Route path="/busca" element={<SearchPage />} />
                 <Route path="/b/:blockId" element={<BlockPage />} />
                 <Route path="/a/:articleId" element={<ArticlePage />} />
                 <Route

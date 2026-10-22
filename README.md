@@ -114,4 +114,19 @@ console e o documento `users/{uid}` com `role: "admin"`, `ativo: true`. Os
 demais usuários são criados pela tela "Usuários". Para enviar imagens, falta
 configurar o Cloudinary.
 
-Próxima fase: **Fase 3 — Busca** (ver `PLAN.md`).
+**Fase 3 — Busca**, implementada em código:
+
+- [x] `searchIndex/{productId}` atualizado em transação ao publicar, editar
+      artigo publicado, despublicar e excluir
+- [x] Índices carregados uma vez por sessão, com cache persistente do Firestore
+- [x] MiniSearch com título de maior peso, sem acentos, prefixo e fuzzy
+- [x] Página `/busca` com trecho destacado e filtros por produto e público
+- [x] Busca rápida no cabeçalho com `Ctrl+K` (ou `⌘K`)
+- [x] Buscas sem resultado agregadas em `searchMisses`
+- [x] Índice dividido por subproduto (`partes/`) perto de 800 KB
+
+Os artigos já publicados antes da Fase 3 não estão no índice: basta
+republicá-los (ou salvá-los) para entrarem. A migração da Fase 5 já gravará o
+índice.
+
+Próxima fase: **Fase 4 — Métricas** (ver `PLAN.md`).

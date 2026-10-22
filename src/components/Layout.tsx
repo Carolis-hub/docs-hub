@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { QuickSearch } from './QuickSearch'
 import { ThemeToggle } from './ThemeToggle'
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -28,6 +29,7 @@ export function Layout({ children }: { children: ReactNode }) {
           )}
         </div>
         <div className="flex items-center gap-3">
+          <QuickSearch />
           <ThemeToggle />
           {user && (
             <button
