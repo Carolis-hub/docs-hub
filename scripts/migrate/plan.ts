@@ -161,24 +161,34 @@ export async function planejar(
       : '.'
     try {
       const fonte = await deps.lerConteudo(origem)
-      const { doc, naoSuportados } = await converter(fonte, formatoDe(origem), {
-        titulo: origem.titulo,
-        resolverImagem: async (src) => {
-          const r = await deps.resolverImagem(src, dirDoArtigo)
-          if ('erro' in r) relatorio.resumo.imagensComFalha++
-          else relatorio.resumo.imagensOk++
-          return r
+      const { doc, naoSuportados, imagensComLink } = await converter(
+        fonte,
+        formatoDe(origem),
+        {
+          titulo: origem.titulo,
+          resolverImagem: async (src) => {
+            const r = await deps.resolverImagem(src, dirDoArtigo)
+            if ('erro' in r) relatorio.resumo.imagensComFalha++
+            else relatorio.resumo.imagensOk++
+            return r
+          },
+          resolverLink,
+          aoFalharImagem: (src, motivo) =>
+            relatorio.imagensComFalha.push({ artigo: origem.id, src, motivo }),
+          aoGerarAlt: (src, alt) =>
+            relatorio.altsGerados.push({ artigo: origem.id, src, alt }),
+          aoQuebrarLink: (href, motivo) => {
+            relatorio.resumo.linksQuebrados++
+            relatorio.linksQuebrados.push({ artigo: origem.id, href, motivo })
+          },
         },
-        resolverLink,
-        aoFalharImagem: (src, motivo) =>
-          relatorio.imagensComFalha.push({ artigo: origem.id, src, motivo }),
-        aoGerarAlt: (src, alt) =>
-          relatorio.altsGerados.push({ artigo: origem.id, src, alt }),
-        aoQuebrarLink: (href, motivo) => {
-          relatorio.resumo.linksQuebrados++
-          relatorio.linksQuebrados.push({ artigo: origem.id, href, motivo })
-        },
-      })
+      )
+      if (imagensComLink > 0) {
+        relatorio.avisos.push({
+          artigo: origem.id,
+          mensagem: `${imagensComLink} imagem(ns) com link: o link virou um parágrafo de texto abaixo da imagem`,
+        })
+      }
       if (naoSuportados.length) {
         relatorio.avisos.push({
           artigo: origem.id,

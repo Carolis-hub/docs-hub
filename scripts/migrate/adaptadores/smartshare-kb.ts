@@ -15,6 +15,10 @@ export interface OpcoesKb {
   tecnico?: RegExp
   /** Por padrão artigos `descontinuado` entram como rascunho. */
   publicarDescontinuados?: boolean
+  /** Mantém blocos sem artigos (por padrão são descartados, com aviso). */
+  manterVazios?: boolean
+  /** Converte só estes artigos (ids do site) e os blocos que levam até eles. */
+  apenas?: string[]
 }
 
 export interface ResultadoKb {
@@ -64,6 +68,10 @@ export function normalizarUrl(url: string): string {
  * títulos a H3, tira o prefixo "IMG:" do texto alternativo e troca links do
  * site antigo para `artigo:<id>`.
  */
+/** Linha que só tem uma imagem cujo arquivo se chama "branco" (espaçador do site). */
+const ESPACADOR =
+  /^[ \t]*!\[[^\]]*\]\([^)\s]*\/[^/)\s]*branco[^/)\s]*\)[ \t]*$/gim
+
 export function ajustarCorpo(
   corpo: string,
   titulo: string,
@@ -72,6 +80,9 @@ export function ajustarCorpo(
   let texto = corpo.replace(/^\s*#\s+(.+)\r?\n/, (inteiro, h1: string) =>
     h1.trim() === titulo.trim() ? '' : inteiro,
   )
+  // O site usa imagens em branco ("Branco.png", "Espaço-Branco.png"…) como
+  // espaçadores entre parágrafos. No editor viram imagens sem sentido.
+  texto = texto.replace(ESPACADOR, '').replace(/\n{3,}/g, '\n\n')
   texto = texto.replace(/^(#{4,6})\s/gm, '### ')
   texto = texto.replace(
     /!\[IMG:\s*([^\]]*)\]/g,
@@ -174,7 +185,46 @@ export async function converterKb(
       ajustarCorpo(p.corpo, p.titulo, idPorUrl),
     )
   }
-  return { manifesto: { blocos, artigos }, arquivos, avisos }
+  let blocosFinais = blocos
+  let artigosFinais = artigos
+  if (opcoes.apenas) {
+    const quer = new Set(opcoes.apenas)
+    artigosFinais = artigos.filter((a) => quer.has(a.id))
+    for (const id of quer) {
+      if (!artigosFinais.some((a) => a.id === id))
+        avisos.push(`artigo ${id} não encontrado`)
+    }
+    for (const [rel] of arquivos) {
+      if (!artigosFinais.some((a) => rel === `artigos/${a.id}.md`))
+        arquivos.delete(rel)
+    }
+  }
+  // Blocos sem nenhum artigo (nem nos descendentes) são lixo do site, como a
+  // categoria "teste". Com `apenas`, só ficam os blocos que levam aos artigos.
+  if (!opcoes.manterVazios || opcoes.apenas) {
+    const usados = new Set<string>()
+    const paiDe = new Map(blocos.map((b) => [b.id, b.pai ?? null]))
+    for (const a of artigosFinais) {
+      for (
+        let b: string | null = a.bloco;
+        b && !usados.has(b);
+        b = paiDe.get(b) ?? null
+      )
+        usados.add(b)
+    }
+    blocosFinais = blocos.filter((b) => usados.has(b.id))
+    if (!opcoes.apenas) {
+      for (const b of blocos) {
+        if (!usados.has(b.id))
+          avisos.push(`bloco sem artigos descartado: ${b.nome} (${b.id})`)
+      }
+    }
+  }
+  return {
+    manifesto: { blocos: blocosFinais, artigos: artigosFinais },
+    arquivos,
+    avisos,
+  }
 }
 
 async function main(): Promise<number> {
@@ -183,19 +233,27 @@ async function main(): Promise<number> {
     options: {
       tecnico: { type: 'string' },
       'publicar-descontinuados': { type: 'boolean', default: false },
+      'manter-vazios': { type: 'boolean', default: false },
+      apenas: { type: 'string' },
     },
   })
   const [origem, saida] = positionals
   if (!origem || !saida) {
     console.log(
       'Uso: node scripts/migrate/adaptadores/smartshare-kb.ts <pasta-smartshare-kb> <pasta-saida>\n' +
-        '       [--tecnico <regex sobre a categoria>] [--publicar-descontinuados]',
+        '       [--tecnico <regex sobre a categoria>] [--publicar-descontinuados]\n' +
+        '       [--manter-vazios] [--apenas <id,id,…>]',
     )
     return 2
   }
   const r = await converterKb(path.join(origem, 'kb'), {
     tecnico: values.tecnico ? new RegExp(values.tecnico, 'i') : undefined,
     publicarDescontinuados: values['publicar-descontinuados'],
+    manterVazios: values['manter-vazios'],
+    apenas: values.apenas
+      ?.split(',')
+      .map((x) => x.trim())
+      .filter(Boolean),
   })
   await mkdir(path.join(saida, 'artigos'), { recursive: true })
   await writeFile(

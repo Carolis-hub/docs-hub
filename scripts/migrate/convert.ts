@@ -33,6 +33,35 @@ export interface ConversaoDeps {
   aoQuebrarLink(href: string, motivo: string): void
 }
 
+/**
+ * O nó de imagem do editor é um bloco e não aceita link: `<a><img></a>` perdia
+ * o link sem aviso. Aqui a imagem fica e o link vira um parágrafo de texto
+ * logo abaixo (rótulo: o alt da imagem ou o domínio do destino).
+ */
+export function separarImagensComLink(html: string): {
+  html: string
+  total: number
+} {
+  let total = 0
+  const saida = html.replace(
+    /<a\s[^>]*?href=(["'])(.*?)\1[^>]*>\s*(<img\b[^>]*>)\s*<\/a>/gi,
+    (_m, _q: string, href: string, img: string) => {
+      total++
+      const alt = /\balt=(["'])(.*?)\1/i.exec(img)?.[2]?.trim()
+      let rotulo = alt
+      if (!rotulo) {
+        try {
+          rotulo = new URL(href).hostname
+        } catch {
+          rotulo = href
+        }
+      }
+      return `${img}<p><a href="${href}">${rotulo}</a></p>`
+    },
+  )
+  return { html: saida, total }
+}
+
 export function paraHtml(fonte: string, formato: 'html' | 'markdown'): string {
   const html =
     formato === 'markdown'
@@ -122,9 +151,18 @@ export async function converter(
   fonte: string,
   formato: 'html' | 'markdown',
   deps: ConversaoDeps,
-): Promise<{ doc: JSONContent; naoSuportados: string[] }> {
-  const html = paraHtml(fonte, formato)
+): Promise<{
+  doc: JSONContent
+  naoSuportados: string[]
+  imagensComLink: number
+}> {
+  const separado = separarImagensComLink(paraHtml(fonte, formato))
+  const html = separado.html
   const bruto = generateJSON(html, extensions) as JSONContent
   const doc = (await transformar(bruto, deps, { imagens: 0 })) ?? bruto
-  return { doc, naoSuportados: elementosNaoSuportados(html) }
+  return {
+    doc,
+    naoSuportados: elementosNaoSuportados(html),
+    imagensComLink: separado.total,
+  }
 }

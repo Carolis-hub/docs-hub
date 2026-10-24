@@ -86,6 +86,16 @@ Regras do adaptador:
   tem H1 a H3) e o prefixo `IMG:` do texto alternativo é tirado.
 - Links para outros artigos do site (pela URL) viram links internos do
   docs-hub. Links para categorias ou páginas fora da base seguem como externos.
+- Imagens-espaçador do site (arquivos com "branco" no nome, como `Branco.png` e
+  `Espaço-Branco.png`, sozinhas em uma linha) são removidas.
+- Blocos sem nenhum artigo (nem nos descendentes), como a categoria `teste` do
+  site, são descartados com aviso; `--manter-vazios` os mantém.
+- `--apenas <id,id,…>` converte só os artigos pedidos (ids do site) e os blocos
+  que levam até eles: serve para um primeiro lote de teste. Links para artigos
+  fora do lote aparecem no relatório como quebrados.
+- Imagem dentro de link (`[![](img)](url)`): o editor não aceita link em
+  imagem. A imagem fica e o link vira um parágrafo de texto logo abaixo
+  (rótulo: o alt da imagem ou o domínio do destino), com um aviso no relatório.
 - As imagens são baixadas da URL original no momento do `--gravar`/da
   simulação, então essa etapa também precisa de acesso ao site. Imagens
   embutidas no HTML do site (`imagem-embutida-no-site`) não são recuperáveis e
