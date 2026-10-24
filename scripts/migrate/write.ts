@@ -28,6 +28,8 @@ export interface ResultadoGravacao {
   artigosGravados: number
   artigosPulados: number
   indices: number
+  /** Versões do histórico recriadas em artigos que já existiam sem elas. */
+  versoesRecriadas: number
 }
 
 /** Códigos do Firestore que valem uma nova tentativa (rede lenta ou instável). */
@@ -75,6 +77,7 @@ export async function gravar(
     artigosGravados: 0,
     artigosPulados: 0,
     indices: 0,
+    versoesRecriadas: 0,
   }
 
   const refsBlocos = plano.blocos.map((b) => db.collection('blocks').doc(b.id))
@@ -115,12 +118,17 @@ export async function gravar(
     lista.push(item)
     itensPorProduto.set(productId, lista)
   }
+  const puladosPublicados: Array<{
+    ref: DocumentReference
+    anterior: FirebaseFirestore.DocumentData
+  }> = []
   plano.artigos.forEach((a, i) => {
     const ref = refsArtigos[i] as DocumentReference
     const anterior = existentes.get(ref.path)
     if (anterior && !opts.sobrescrever) {
       resultado.artigosPulados++
       if (anterior.status === 'published') {
+        puladosPublicados.push({ ref, anterior })
         guardarItem(
           a.productId,
           itemDoArtigo({ ...(anterior as Article), id: a.id }),
@@ -151,6 +159,29 @@ export async function gravar(
       guardarItem(a.productId, itemDoArtigo(a))
     }
     resultado.artigosGravados++
+  })
+
+  // Uma queda no meio da gravação pode deixar um artigo sem o registro da
+  // sua versão no histórico (são escritas separadas): recria o que faltar.
+  const comVersao = puladosPublicados.filter(
+    (p) => ((p.anterior.versao as number | undefined) ?? 0) >= 1,
+  )
+  const refsVersoes = comVersao.map((p) =>
+    p.ref.collection('versions').doc(String(p.anterior.versao)),
+  )
+  const versoesExistentes = await lerTodos(refsVersoes)
+  comVersao.forEach((p, i) => {
+    const refVersao = refsVersoes[i] as DocumentReference
+    if (versoesExistentes.get(refVersao.path)) return
+    resultado.versoesRecriadas++
+    escrever(refVersao, {
+      versao: p.anterior.versao,
+      titulo: p.anterior.titulo,
+      conteudo: p.anterior.conteudo,
+      origem: 'manual',
+      autorId: opts.autorId,
+      criadoEm: p.anterior.atualizadoEm,
+    })
   })
 
   // Índice de busca: une o que já existe com os artigos recém-publicados.

@@ -153,7 +153,10 @@ async function main() {
     })
     console.log(
       `Gravado em ${projeto}: ${r.blocosGravados} blocos (${r.blocosPulados} já existiam), ` +
-        `${r.artigosGravados} artigos (${r.artigosPulados} já existiam), ${r.indices} índices de busca.`,
+        `${r.artigosGravados} artigos (${r.artigosPulados} já existiam), ${r.indices} índices de busca` +
+        (r.versoesRecriadas
+          ? `, ${r.versoesRecriadas} versões do histórico recriadas.`
+          : '.'),
     )
   }
   console.log(`Relatório: ${path.join(saida, 'relatorio.md')}`)
