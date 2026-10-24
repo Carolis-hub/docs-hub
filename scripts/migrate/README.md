@@ -113,7 +113,14 @@ npm run migrate -- caminho/do/export --gravar --projeto docs-hub-dev
 # 3. Só depois de revisar o relatório, repetir no prod
 ```
 
-Opções: `--sobrescrever` (substitui o que já existe, mantém `views`),
+**Só o texto, sem imagens:** `--sem-imagens` não baixa nem envia nenhuma imagem
+e dispensa o Cloudinary. No lugar de cada imagem o artigo recebe o parágrafo
+`[Imagem não migrada: <endereço original>]`, e o relatório conta quantas foram
+puladas (e não como falhas). Para trazer as imagens depois, rode de novo **sem**
+a opção e **com** `--sobrescrever`: o conteúdo dos artigos é refeito (as
+`views` ficam e a versão sobe), então faça isso antes de editar os artigos à mão.
+
+Opções: `--sem-imagens`, `--sobrescrever` (substitui o que já existe, mantém `views`),
 `--verificar-links` (confere links externos por HTTP), `--autor <uid>`,
 `--saida <pasta>` (padrão `<export>/.migracao`), `--estrito` (código de saída 1
 se houver pendências) e `--ajuda`. Para testar contra o Emulator, defina

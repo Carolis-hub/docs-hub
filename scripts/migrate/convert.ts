@@ -1,6 +1,7 @@
 import { generateJSON } from '@tiptap/html'
 import type { JSONContent } from '@tiptap/react'
 import { marked } from 'marked'
+import type { ResultadoImagem } from './images.ts'
 import { extensions } from '../../src/components/editor/extensions.ts'
 
 /** Elementos que o editor não suporta e que o texto "achata". */
@@ -26,7 +27,7 @@ export type LinkResolvido =
 
 export interface ConversaoDeps {
   titulo: string
-  resolverImagem(src: string): Promise<{ url: string } | { erro: string }>
+  resolverImagem(src: string): Promise<ResultadoImagem>
   resolverLink(href: string): Promise<LinkResolvido>
   aoFalharImagem(src: string, motivo: string): void
   aoGerarAlt(src: string, alt: string): void
@@ -87,8 +88,8 @@ async function transformar(
   if (no.type === 'image') {
     const src = String(no.attrs?.src ?? '')
     const resultado = await deps.resolverImagem(src)
-    if ('erro' in resultado) {
-      deps.aoFalharImagem(src, resultado.erro)
+    if ('pulada' in resultado || 'erro' in resultado) {
+      if ('erro' in resultado) deps.aoFalharImagem(src, resultado.erro)
       return {
         type: 'paragraph',
         content: [{ type: 'text', text: `[Imagem não migrada: ${src}]` }],

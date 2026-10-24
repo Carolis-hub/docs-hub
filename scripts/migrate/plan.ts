@@ -7,6 +7,7 @@ import {
   imagensSemAlt,
 } from '../../src/utils/content.ts'
 import { slugify } from '../../src/utils/slug.ts'
+import type { ResultadoImagem } from './images.ts'
 import { PREFIXO_ARTIGO, converter, type LinkResolvido } from './convert.ts'
 import type { Manifesto, ManifestoArtigo, Plano, Relatorio } from './types.ts'
 
@@ -14,10 +15,7 @@ export interface PlanoDeps {
   /** Devolve o conteúdo bruto (HTML ou Markdown) do artigo. */
   lerConteudo(artigo: ManifestoArtigo): Promise<string>
   /** `dirDoArtigo` é relativo à raiz do export; caminhos locais valem a partir dele. */
-  resolverImagem(
-    src: string,
-    dirDoArtigo: string,
-  ): Promise<{ url: string } | { erro: string }>
+  resolverImagem(src: string, dirDoArtigo: string): Promise<ResultadoImagem>
   /** Opcional: confere links externos. Devolve o motivo da falha, ou `null`. */
   verificarLink?(href: string): Promise<string | null>
   agora: number
@@ -55,6 +53,7 @@ export function relatorioVazio(): Relatorio {
       rascunhos: 0,
       imagensOk: 0,
       imagensComFalha: 0,
+      imagensPuladas: 0,
       linksQuebrados: 0,
       artigosSemBloco: 0,
     },
@@ -168,7 +167,8 @@ export async function planejar(
           titulo: origem.titulo,
           resolverImagem: async (src) => {
             const r = await deps.resolverImagem(src, dirDoArtigo)
-            if ('erro' in r) relatorio.resumo.imagensComFalha++
+            if ('pulada' in r) relatorio.resumo.imagensPuladas++
+            else if ('erro' in r) relatorio.resumo.imagensComFalha++
             else relatorio.resumo.imagensOk++
             return r
           },

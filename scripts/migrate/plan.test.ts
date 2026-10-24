@@ -256,3 +256,66 @@ describe('relatório', () => {
     expect(md).toContain('nao-existe')
   })
 })
+
+describe('--sem-imagens', () => {
+  async function planoSemImagens() {
+    const bruto = JSON.parse(
+      await readFile(path.join(EXEMPLO, 'manifesto.json'), 'utf8'),
+    )
+    const v = validarManifesto(bruto)
+    if (!('manifesto' in v)) throw new Error(v.erros.join('; '))
+    return planejar(v.manifesto, {
+      agora: 1_700_000_000_000,
+      autorId: 'migracao',
+      lerConteudo: (a: ManifestoArtigo) =>
+        a.arquivo
+          ? readFile(path.join(EXEMPLO, a.arquivo), 'utf8')
+          : Promise.resolve(a.conteudo ?? ''),
+      resolverImagem: criarResolvedorImagens({
+        baseDir: EXEMPLO,
+        cloudinary: null,
+        cache: new Map(),
+        pular: true,
+      }),
+    })
+  }
+
+  it('não baixa nem valida imagens: nada vira falha', async () => {
+    const { relatorio } = await planoSemImagens()
+    expect(relatorio.resumo).toMatchObject({
+      imagensOk: 0,
+      imagensComFalha: 0,
+      imagensPuladas: 3,
+    })
+    expect(relatorio.imagensComFalha).toEqual([])
+    expect(relatorio.altsGerados).toEqual([])
+  })
+
+  it('deixa um marcador com o endereço original no lugar de cada imagem', async () => {
+    const { artigos } = await planoSemImagens()
+    const login = JSON.stringify(artigos[0]?.conteudo)
+    expect(login).not.toContain('"type":"image"')
+    expect(login).toContain('[Imagem não migrada: ../imagens/tela-login.png]')
+    expect(artigos[0]?.textoPlano).toContain('[Imagem não migrada')
+  })
+
+  it('o relatório explica como trazer as imagens depois', async () => {
+    const { relatorio } = await planoSemImagens()
+    const md = relatorioEmMarkdown(relatorio, true)
+    expect(md).toContain('Imagens puladas')
+    expect(md).toContain('--sobrescrever')
+  })
+
+  it('não confere se o arquivo existe (nem acessa a rede)', async () => {
+    const resolver = criarResolvedorImagens({
+      baseDir: EXEMPLO,
+      cloudinary: null,
+      cache: new Map(),
+      pular: true,
+    })
+    expect(await resolver('https://exemplo.invalid/x.png')).toEqual({
+      pulada: true,
+    })
+    expect(await resolver('nao-existe.png')).toEqual({ pulada: true })
+  })
+})

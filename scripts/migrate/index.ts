@@ -13,13 +13,15 @@ const AJUDA = `Uso: node scripts/migrate/index.ts <pasta-do-export> [opções]
 
   --gravar              Grava no Firestore e envia as imagens (sem isto é simulação)
   --projeto <id>        Projeto Firebase (ou FIREBASE_PROJECT_ID / VITE_FIREBASE_PROJECT_ID)
+  --sem-imagens         Importa só o texto: não baixa nem envia imagens (não pede o Cloudinary)
   --sobrescrever        Substitui artigos e blocos que já existem (mantém views)
   --verificar-links     Confere links externos (faz requisições HTTP)
   --autor <uid>         Autor gravado nos artigos (padrão: migracao)
   --saida <pasta>       Onde salvar relatório e cache (padrão: <pasta-do-export>/.migracao)
   --estrito             Sai com código 1 se o relatório tiver pendências
 
-Cloudinary (só com --gravar): CLOUDINARY_CLOUD_NAME e CLOUDINARY_UPLOAD_PRESET.
+Cloudinary (só com --gravar, e dispensado com --sem-imagens): CLOUDINARY_CLOUD_NAME
+e CLOUDINARY_UPLOAD_PRESET.
 Firestore: GOOGLE_APPLICATION_CREDENTIALS, ou FIRESTORE_EMULATOR_HOST para testes.
 `
 
@@ -30,6 +32,7 @@ async function main() {
       gravar: { type: 'boolean', default: false },
       projeto: { type: 'string' },
       sobrescrever: { type: 'boolean', default: false },
+      'sem-imagens': { type: 'boolean', default: false },
       'verificar-links': { type: 'boolean', default: false },
       autor: { type: 'string', default: 'migracao' },
       saida: { type: 'string' },
@@ -79,7 +82,7 @@ async function main() {
     console.error('Informe o projeto com --projeto <id> (use o dev primeiro).')
     return 2
   }
-  if (!simulacao && (!cloudName || !preset)) {
+  if (!simulacao && !values['sem-imagens'] && (!cloudName || !preset)) {
     console.error(
       'Defina CLOUDINARY_CLOUD_NAME e CLOUDINARY_UPLOAD_PRESET para enviar as imagens.',
     )
@@ -109,6 +112,7 @@ async function main() {
     resolverImagem: criarResolvedorImagens({
       baseDir,
       cache,
+      pular: values['sem-imagens'],
       cloudinary: simulacao
         ? null
         : { cloudName: cloudName as string, uploadPreset: preset as string },
@@ -132,6 +136,7 @@ async function main() {
   console.log(
     `${simulacao ? 'Simulação' : 'Plano'}: ${resumo.blocos} blocos, ${resumo.artigos} artigos, ` +
       `${resumo.imagensOk} imagens ok, ${resumo.imagensComFalha} com falha, ` +
+      (resumo.imagensPuladas ? `${resumo.imagensPuladas} puladas, ` : '') +
       `${resumo.linksQuebrados} links quebrados, ${resumo.artigosSemBloco} artigos sem bloco, ` +
       `${plano.relatorio.erros.length} com erro.`,
   )
