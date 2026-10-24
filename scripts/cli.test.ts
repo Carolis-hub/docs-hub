@@ -18,6 +18,7 @@ describe('CLIs rodam no Node puro', () => {
       /Uso: node scripts\/cloudinary-limpeza/,
     ],
     ['scripts/verificar-links/index.ts', /Uso: node scripts\/verificar-links/],
+    ['scripts/alt-texto/index.ts', /Uso: node scripts\/alt-texto/],
     [
       'scripts/migrate/adaptadores/smartshare-kb.ts',
       /Uso: node scripts\/migrate\/adaptadores/,

@@ -16,7 +16,8 @@
     "emulators": "firebase emulators:start --only auth,firestore",
     "test:rules": "firebase emulators:exec --only firestore \"vitest run --config vitest.rules.config.ts\"",
     "migrate": "node scripts/migrate/index.ts",
-    "doc-sync": "node scripts/doc-sync/index.ts"
+    "doc-sync": "node scripts/doc-sync/index.ts",
+    "alt-texto": "node scripts/alt-texto/index.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.1.0",

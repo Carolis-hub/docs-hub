@@ -73,7 +73,7 @@ export interface Suggestion {
   automatico: boolean
   status: SuggestionStatus
   origem: {
-    tipo: 'regras-md'
+    tipo: 'regras-md' | 'alt-texto'
     arquivo: string
     hash: string
     repo?: string

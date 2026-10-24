@@ -149,6 +149,24 @@ describe('SuggestionReview', () => {
     expect(screen.getByText(/imagem foi removida/i)).toBeInTheDocument()
   })
 
+  it('explica que a sugestão de textos alternativos não muda o que se vê', async () => {
+    getSuggestion.mockResolvedValue(
+      sugestao({
+        origem: {
+          tipo: 'alt-texto',
+          arquivo: 'Textos alternativos (IA)',
+          hash: 'h',
+        },
+        diffResumo: ['Imagem 1: “Imagem 1 do artigo "X"” → “Tela de login”'],
+      }),
+    )
+    await renderizar()
+    expect(
+      await screen.findByText(/só troca textos alternativos/i),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/Tela de login/)).toBeInTheDocument()
+  })
+
   it('sugestão já decidida não oferece ações', async () => {
     getSuggestion.mockResolvedValue(sugestao({ status: 'discarded' }))
     await renderizar()

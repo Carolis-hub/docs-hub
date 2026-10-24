@@ -115,6 +115,12 @@ export function SuggestionReview() {
           O artigo foi alterado depois que a IA o leu. Compare com cuidado.
         </p>
       )}
+      {sugestao.origem.tipo === 'alt-texto' && (
+        <p className="mt-4 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800">
+          Esta sugestão só troca textos alternativos de imagens. O que você vê
+          nas duas colunas é igual; confira as descrições na lista abaixo.
+        </p>
+      )}
       {sugestao.automatico && (
         <p className="mt-4 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800">
           Este artigo foi escolhido por busca, não indicado nas regras. Descarte
