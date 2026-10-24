@@ -14,6 +14,7 @@ const AJUDA = `Uso: node scripts/migrate/index.ts <pasta-do-export> [opções]
   --gravar              Grava no Firestore e envia as imagens (sem isto é simulação)
   --projeto <id>        Projeto Firebase (ou FIREBASE_PROJECT_ID / VITE_FIREBASE_PROJECT_ID)
   --sem-imagens         Importa só o texto: não baixa nem envia imagens (não pede o Cloudinary)
+  --rest                Grava por REST em vez de gRPC (para redes com proxy/firewall que travam)
   --sobrescrever        Substitui artigos e blocos que já existem (mantém views)
   --verificar-links     Confere links externos (faz requisições HTTP)
   --autor <uid>         Autor gravado nos artigos (padrão: migracao)
@@ -33,6 +34,7 @@ async function main() {
       projeto: { type: 'string' },
       sobrescrever: { type: 'boolean', default: false },
       'sem-imagens': { type: 'boolean', default: false },
+      rest: { type: 'boolean', default: false },
       'verificar-links': { type: 'boolean', default: false },
       autor: { type: 'string', default: 'migracao' },
       saida: { type: 'string' },
@@ -145,6 +147,7 @@ async function main() {
     const r = await gravar(plano, {
       projectId: projeto as string,
       sobrescrever: values.sobrescrever,
+      rest: values.rest,
       autorId: values.autor,
       agora,
     })

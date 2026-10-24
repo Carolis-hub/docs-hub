@@ -120,7 +120,14 @@ puladas (e não como falhas). Para trazer as imagens depois, rode de novo **sem*
 a opção e **com** `--sobrescrever`: o conteúdo dos artigos é refeito (as
 `views` ficam e a versão sobe), então faça isso antes de editar os artigos à mão.
 
-Opções: `--sem-imagens`, `--sobrescrever` (substitui o que já existe, mantém `views`),
+**Se a gravação travar** (erro `DEADLINE_EXCEEDED` ou `UNAVAILABLE`): é quase
+sempre a rede (VPN, proxy ou firewall da empresa). O script já tenta cada
+escrita até 8 vezes. Se ainda assim falhar, ele termina com uma mensagem curta
+(sem perder nada: rode o mesmo comando de novo, que pula o que já foi
+gravado e completa o índice de busca). Tente a opção `--rest`, que grava por
+HTTP comum em vez de gRPC, ou desligue a VPN, ou use outra conexão.
+
+Opções: `--rest`, `--sem-imagens`, `--sobrescrever` (substitui o que já existe, mantém `views`),
 `--verificar-links` (confere links externos por HTTP), `--autor <uid>`,
 `--saida <pasta>` (padrão `<export>/.migracao`), `--estrito` (código de saída 1
 se houver pendências) e `--ajuda`. Para testar contra o Emulator, defina

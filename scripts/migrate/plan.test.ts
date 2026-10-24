@@ -6,6 +6,7 @@ import { criarResolvedorImagens, detectarTipo } from './images.ts'
 import { validarManifesto } from './manifest.ts'
 import { criarGeradorDeIds, planejar } from './plan.ts'
 import { relatorioEmMarkdown, temPendencias } from './report.ts'
+import { MAX_TENTATIVAS, deveTentarDeNovo } from './write.ts'
 import type { ManifestoArtigo } from './types.ts'
 
 const EXEMPLO = path.resolve(import.meta.dirname, 'exemplo')
@@ -318,4 +319,23 @@ describe('--sem-imagens', () => {
     })
     expect(await resolver('nao-existe.png')).toEqual({ pulada: true })
   })
+})
+
+describe('deveTentarDeNovo', () => {
+  it.each([
+    [4, 'DEADLINE_EXCEEDED'],
+    [14, 'UNAVAILABLE'],
+    [10, 'ABORTED'],
+    [8, 'RESOURCE_EXHAUSTED'],
+  ])('tenta de novo o código %i (%s) até o limite', (codigo) => {
+    expect(deveTentarDeNovo(codigo, 1)).toBe(true)
+    expect(deveTentarDeNovo(codigo, MAX_TENTATIVAS)).toBe(false)
+  })
+
+  it.each([[7], [3], [5], [16]])(
+    'não tenta de novo o código %i (permissão, dado inválido…)',
+    (codigo) => {
+      expect(deveTentarDeNovo(codigo, 1)).toBe(false)
+    },
+  )
 })

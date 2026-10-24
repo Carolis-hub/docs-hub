@@ -134,6 +134,29 @@ describe('migração gravada no Firestore (Emulator)', () => {
     })
   })
 
+  it('uma segunda rodada refaz o índice de busca de artigos que já existiam', async () => {
+    const plano = await planoDoExemplo()
+    const db = getFirestore(
+      getApps()[0] ?? initializeApp({ projectId: PROJETO }),
+    )
+    const produto = plano.artigos[0]!.productId
+    // Simula uma queda no meio da primeira gravação: artigos gravados, índice não.
+    await db.collection('searchIndex').doc(produto).delete()
+
+    const r = await gravar(plano, opts)
+    expect(r).toMatchObject({
+      artigosGravados: 0,
+      artigosPulados: 3,
+      indices: 1,
+    })
+    const indice = (
+      await db.collection('searchIndex').doc(produto).get()
+    ).data()
+    expect(indice?.itens.map((i: { id: string }) => i.id).sort()).toEqual(
+      [plano.artigos[0]!.id, plano.artigos[1]!.id].sort(),
+    )
+  })
+
   it('com sobrescrever, mantém as views e sobe a versão', async () => {
     const plano = await planoDoExemplo()
     const db = getFirestore(
