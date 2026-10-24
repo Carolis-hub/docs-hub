@@ -15,7 +15,7 @@ Plataforma interna da Selbetti para hospedar a documentação técnica e de usu�
 3. Artigos com títulos, parágrafos, imagens PNG e GIFs.
 4. Usuários com papéis **leitor** e **admin**, criados manualmente por um admin.
 5. Contagem de acessos por artigo.
-6. Integração com os repositórios dos produtos, para que uma alteração no código gere uma **sugestão** de atualização da documentação feita por IA.
+6. Sugestões de atualização da documentação feitas por IA a partir de arquivos `.md` com as regras do produto ou da funcionalidade, sempre revisadas por um admin.
 
 ## 2. Decisões de arquitetura
 
@@ -31,7 +31,7 @@ Plataforma interna da Selbetti para hospedar a documentação técnica e de usu�
 | Editor                | TipTap, somente com estilos semânticos (Título 1, 2, 3 e parágrafo), sem tamanho livre de fonte                       |
 | Busca                 | MiniSearch no navegador, sobre índices agregados por produto (`searchIndex/{productId}`)                              |
 | IA no editor          | Camada multi-provedor reaproveitada do QA-Hub, restrita a admins                                                      |
-| IA automática         | GitHub Action nos repositórios de produto. Grava **sugestões**, nunca publica                                         |
+| IA automática         | GitHub Action sobre arquivos `.md` de regras. Grava **sugestões**, nunca publica                                      |
 | Métricas              | Contadores agregados (total e por dia), leitor único por dia, sem contar admins, sem log individual (LGPD)            |
 | Backup                | GitHub Action noturna que exporta o Firestore em JSON como artifact                                                   |
 | Hierarquia            | Ilimitada no banco via `parentId`. A interface é otimizada para 3 níveis. Artigos podem ficar em qualquer bloco       |
@@ -59,10 +59,10 @@ Plataforma interna da Selbetti para hospedar a documentação técnica e de usu�
 docs-hub/
 ├── .github/workflows/
 │   ├── ci.yml              # lint, typecheck, testes, build
-│   ├── doc-sync.yml        # workflow reutilizável pelos repos de produto
+│   ├── doc-sync.yml        # workflow reutilizável: regras .md → sugestões
 │   └── backup.yml          # export noturno do Firestore
 ├── scripts/
-│   ├── doc-sync/           # Node + Admin SDK + IA: gera sugestões
+│   ├── doc-sync/           # Node + Admin SDK + IA: regras .md → sugestões
 │   ├── backup/             # export do Firestore em JSON
 │   └── migrate/            # importação da ferramenta atual
 ├── src/
@@ -113,8 +113,8 @@ articles/{articleId}
   versao, autorId, atualizadoPor, criadoEm, atualizadoEm, revisadoEm
 
 articles/{id}/versions/{versao}      snapshot do conteúdo + origem ("manual" | "ia")
-articles/{id}/suggestions/{sid}      sugestão da IA: conteudo, diffResumo, repo, commit, status
-articles/{id}/viewsDaily/{AAAA-MM-DD} { count }
+articles/{id}/suggestions/{sid}      sugestão da IA: conteudo, diffResumo, motivo, avisos, origem (arquivo de regras), status
+articles/{id}/viewsDaily/{AAAA-MM-DD} { count, dia }   (`dia` repete o id, para a consulta agregada do painel)
 
 users/{uid}
   nome, email, role ("reader" | "admin")
@@ -124,6 +124,12 @@ users/{uid}
 
 searchIndex/{productId}
   itens[]: { id, titulo, resumo, textoPlano (truncado), blockId, publico }
+
+searchIndex/{productId}/partes/{subprodutoId}
+  itens[]            (só existe quando o índice foi dividido; o principal fica com dividido: true)
+
+searchMisses/{termoSlug}
+  termo, count, ultimaVez   (buscas sem resultado, agregadas)
 
 auditLog/{id}
   usuarioId, acao, alvo, data
@@ -160,79 +166,83 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 ### Fase 1 — Estrutura e conteúdo (≈3 semanas)
 
-- [ ] CRUD de blocos com hierarquia, ordenação por arrastar e `productId` desnormalizado.
-- [ ] CRUD de artigos: rascunho e publicado, campo `publico` e `versaoProduto` opcional.
-- [ ] Editor TipTap:
-  - [ ] Títulos H1 a H3, parágrafo, listas, links e código.
-  - [ ] Imagem e GIF com **texto alternativo obrigatório**.
-- [ ] Upload para o Cloudinary com validação de tipo e tamanho, e compressão de PNG no navegador.
-- [ ] Geração de `textoPlano` e `resumo` ao salvar.
-- [ ] Histórico de versões a cada publicação, com opção de restaurar.
-- [ ] Leitura: cards de produto, depois subprodutos, depois artigos, com breadcrumb e renderização do artigo.
+- [x] CRUD de blocos com hierarquia, ordenação por arrastar e `productId` desnormalizado.
+- [x] CRUD de artigos: rascunho e publicado, campo `publico` e `versaoProduto` opcional.
+- [x] Editor TipTap:
+  - [x] Títulos H1 a H3, parágrafo, listas, links e código.
+  - [x] Imagem e GIF com **texto alternativo obrigatório**.
+- [x] Upload para o Cloudinary com validação de tipo e tamanho, e compressão de PNG no navegador.
+- [x] Geração de `textoPlano` e `resumo` ao salvar.
+- [x] Histórico de versões a cada publicação, com opção de restaurar.
+- [x] Leitura: cards de produto, depois subprodutos, depois artigos, com breadcrumb e renderização do artigo.
 
 **Pronto quando:** um admin cria o produto Smartshare, o subproduto BPM e um artigo com texto e GIF, publica, e o artigo aparece corretamente.
 
 ### Fase 2 — Usuários e permissões (≈1 semana)
 
-- [ ] `firestore.rules` completo, conforme a seção 5.
-- [ ] Testes das regras no Emulator (`@firebase/rules-unit-testing`), rodando no CI.
-- [ ] Tela admin "Usuários": criar (via segunda instância do Firebase), editar papel, produtos permitidos e `verTecnico`, e desativar.
-- [ ] Rotas protegidas por papel no front.
-- [ ] Gravação de `auditLog` nas ações de criar, editar, publicar e excluir.
+- [x] `firestore.rules` completo, conforme a seção 5.
+- [x] Testes das regras no Emulator (`@firebase/rules-unit-testing`), rodando no CI.
+- [x] Tela admin "Usuários": criar (via segunda instância do Firebase), editar papel, produtos permitidos e `verTecnico`, e desativar.
+- [x] Rotas protegidas por papel no front.
+- [x] Gravação de `auditLog` nas ações de criar, editar, publicar e excluir.
 
 **Pronto quando:** um leitor com acesso só ao ECM não vê BPM nem na navegação, nem na busca, nem por URL direta, e os testes provam isso.
 
 ### Fase 3 — Busca (≈1–2 semanas)
 
-- [ ] Atualizar `searchIndex/{productId}` ao publicar ou despublicar, dentro de um batch.
-- [ ] Carregar os índices permitidos uma vez por sessão, com cache persistente do Firestore.
-- [ ] MiniSearch configurado:
-  - [ ] Título com peso maior que o conteúdo.
-  - [ ] Normalização de acentos.
-  - [ ] Busca por prefixo e fuzzy.
-- [ ] Página de resultados com trecho destacado e filtros por produto e por público.
-- [ ] Busca rápida no cabeçalho com atalho `Ctrl+K`.
-- [ ] Registro agregado de buscas sem resultado.
-- [ ] Se um índice se aproximar de 1 MB, dividir por subproduto.
+- [x] Atualizar `searchIndex/{productId}` ao publicar ou despublicar, dentro de um batch.
+- [x] Carregar os índices permitidos uma vez por sessão, com cache persistente do Firestore.
+- [x] MiniSearch configurado:
+  - [x] Título com peso maior que o conteúdo.
+  - [x] Normalização de acentos.
+  - [x] Busca por prefixo e fuzzy.
+- [x] Página de resultados com trecho destacado e filtros por produto e por público.
+- [x] Busca rápida no cabeçalho com atalho `Ctrl+K`.
+- [x] Registro agregado de buscas sem resultado.
+- [x] Se um índice se aproximar de 1 MB, dividir por subproduto.
 
 **Pronto quando:** buscar "configuracao" encontra "Configuração" no título e no corpo, respeitando as permissões.
 
 ### Fase 4 — Métricas (≈1 semana)
 
-- [ ] Incremento de `views` e `viewsDaily` com `increment()`, deduplicado por leitor, artigo e dia no navegador, sem contar admins.
-- [ ] Painel admin:
-  - [ ] Artigos mais acessados.
-  - [ ] Evolução por período.
-  - [ ] Artigos sem acesso.
-  - [ ] Buscas sem resultado.
-  - [ ] Artigos sem revisão há mais de X meses.
-- [ ] Estimativa de consumo das cotas do Spark: 50 mil leituras e 20 mil gravações por dia.
+- [x] Incremento de `views` e `viewsDaily` com `increment()`, deduplicado por leitor, artigo e dia no navegador, sem contar admins.
+- [x] Painel admin:
+  - [x] Artigos mais acessados.
+  - [x] Evolução por período.
+  - [x] Artigos sem acesso.
+  - [x] Buscas sem resultado.
+  - [x] Artigos sem revisão há mais de X meses.
+- [x] Estimativa de consumo das cotas do Spark: 50 mil leituras e 20 mil gravações por dia.
 
 ### Fase 5 — Migração (≈1–2 semanas)
 
-- [ ] `scripts/migrate`: importar blocos, artigos e imagens da ferramenta atual para o Cloudinary e o Firestore. Rodar primeiro no `dev`.
-- [ ] Relatório de validação: imagens com falha, links quebrados e artigos sem bloco.
+- [x] `scripts/migrate`: importar blocos, artigos e imagens da ferramenta atual para o Cloudinary e o Firestore. Rodar primeiro no `dev`. _(importador e adaptador do SmartShare prontos; falta rodar a extração real e a execução no `dev`)_
+- [x] Relatório de validação: imagens com falha, links quebrados e artigos sem bloco.
 - [ ] Período de convivência com a ferramenta antiga em modo só leitura, depois desligamento.
 
-### Fase 6 — Integração com os repositórios de produto (≈2 semanas)
+### Fase 6 — Sugestões de atualização por IA (≈2 semanas)
 
-- [ ] `doc-sync.yml` como workflow reutilizável (`workflow_call`).
-- [ ] `docs-map.yml` no repositório do produto, mapeando caminhos para artigos (`src/login/** → articleId`).
-- [ ] `scripts/doc-sync`:
-  - [ ] Lê o diff do merge.
-  - [ ] Chama a IA com o diff e o artigo atual.
-  - [ ] Grava em `articles/{id}/suggestions`.
-  - [ ] Marca `prints_desatualizados` quando o diff toca arquivos de interface.
-- [ ] Tela de revisão: comparação lado a lado entre a versão atual e a sugestão, com as opções aprovar, editar ou descartar.
-- [ ] Credenciais (service account e chave de IA) em GitHub Secrets.
+A entrada é um arquivo `.md` com as regras do produto ou da funcionalidade, não o código do produto. A IA compara as regras com o artigo e **propõe** a atualização; um admin decide.
 
-**Pronto quando:** um merge no repositório do produto gera uma sugestão visível para o admin, e nada é publicado sem aprovação.
+- [x] `doc-sync.yml` como workflow reutilizável (`workflow_call`), que roda nos arquivos de regras alterados.
+- [x] Arquivo de regras com front matter opcional (`artigos`, `produto`), no lugar do `docs-map.yml`. Sem `artigos`, uma busca escolhe os artigos candidatos.
+- [x] `scripts/doc-sync`:
+  - [x] Lê as regras e o artigo atual.
+  - [x] Chama a IA com as duas coisas.
+  - [x] Grava em `articles/{id}/suggestions`.
+  - [x] Marca `prints_desatualizados` quando as regras mudam telas ou campos.
+- [x] Tela de revisão: comparação lado a lado entre a versão atual e a sugestão, com as opções aprovar, editar ou descartar.
+- [ ] Credenciais (service account e chave de IA) em GitHub Secrets. _(manual: configurar no repositório que guarda as regras)_
+- [ ] Definir onde ficam os arquivos de regras (repositório e pasta) e quem os mantém. _(pendência, ver seção 8)_
+
+**Pronto quando:** a alteração de um arquivo de regras gera uma sugestão visível para o admin, e nada é publicado sem aprovação.
 
 ### Fase 7 — Operação e backlog
 
-- [ ] `backup.yml`: export noturno do Firestore em JSON como artifact do workflow.
-- [ ] Limpeza periódica de imagens órfãs no Cloudinary, via Action com a API secret.
-- [ ] Verificador de links quebrados.
+- [x] `backup.yml`: export noturno do Firestore em JSON como artifact do workflow. O arquivo é comprimido e **cifrado** (repositório público), e há script de restauração.
+- [x] Limpeza periódica de imagens órfãs no Cloudinary, via Action com a API secret. Começa só em modo relatório.
+- [x] Verificador de links quebrados (internos, externos e imagens), semanal.
+- [ ] Configurar os segredos e variáveis dos três workflows no GitHub. _(manual)_
 - Backlog:
   - Interface de versões por versão do produto.
   - Botão "Este artigo foi útil?".
@@ -243,10 +253,13 @@ Estimativa total: **11 a 14 semanas** para uma pessoa.
 
 - **Cotas do Spark:** ao estourar a cota diária, o app para até o dia seguinte. As mitigações são cache persistente, índice carregado uma vez por sessão e deduplicação de acessos.
 - **Preset do Cloudinary exposto no front:** mitigado pelas restrições do preset. Excluir imagens exige a API secret, por isso a limpeza roda em uma Action.
+- **Backup em repositório público:** os artifacts de um repositório público podem ser baixados por qualquer pessoa logada no GitHub. Por isso o backup é cifrado, e a senha precisa ser guardada fora do GitHub.
 - **Cadastro por e-mail e senha habilitado no Auth:** alguém poderia criar uma conta vazia, mas sem `users/{uid}` as regras negam todo acesso.
 - **IA:** nunca publica diretamente. Prints de tela não são atualizados pela IA, apenas sinalizados.
 
 ## 8. Pendências
 
-- [ ] Qual é a ferramenta atual e seu formato de exportação (Fase 5).
+- [x] Qual é a ferramenta atual e seu formato de exportação (Fase 5). É o site WordPress `docs.selbetti.com.br` (tipo `knowledgebase`, taxonomia `knowledgebase_cat`), já extraído em Markdown pelo `smartshare-kb`. O adaptador `scripts/migrate/adaptadores/smartshare-kb.ts` converte essa extração.
+- [ ] Volume real a migrar: o README do `smartshare-kb` fala em cerca de 400 artigos nos blocos SmartShare e SmartShare 4. Confirmar rodando a extração.
 - [ ] Se a base de conhecimento do QA-Hub migra para o docs-hub como produto "QA".
+- [ ] Onde ficam os arquivos `.md` de regras (repositório, pasta) e quem os mantém (Fase 6).

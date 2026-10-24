@@ -1,0 +1,48 @@
+# Verificação semanal de links e imagens dos artigos publicados. O relatório
+# aparece no resumo da execução e fica como artifact; a execução fica vermelha
+# quando há links quebrados, para chegar a notificação do GitHub.
+#
+# Configuração do repositório:
+#   Secrets:   FIREBASE_SERVICE_ACCOUNT
+#   Variables: FIREBASE_PROJECT_ID
+name: Verificar links
+
+on:
+  schedule:
+    - cron: '23 7 * * 1' # segunda, 04:23 no horário de Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    env:
+      FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Verificar
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          trap 'rm -f "$RUNNER_TEMP/sa.json"' EXIT
+          node scripts/verificar-links/index.ts --estrito
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: relatorio-links
+          path: relatorio-links/
+          if-no-files-found: ignore

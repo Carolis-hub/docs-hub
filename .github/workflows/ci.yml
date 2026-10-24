@@ -11,9 +11,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Node 22: o firebase-admin e o @google-cloud/firestore exigem >=22. Com
+      # Node 20 o npm pula o pacote opcional e os tipos dos scripts não resolvem.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Instalar dependências
@@ -33,3 +35,25 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # Regras do Firestore e importador, contra o Firebase Emulator.
+  emulator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Testes das regras e da migração (Emulator)
+        run: npm run test:rules
