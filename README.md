@@ -46,7 +46,95 @@ próximas fases), alguém com acesso precisa configurar manualmente:
    limite de 5 MB.
 3. **Secrets do GitHub** (para as Actions das Fases 6 e 7): credenciais de
    service account do Firebase, chave da API de IA e credenciais da API do
-   Cloudinary.
+   Cloudinary. O passo a passo está na seção seguinte.
+
+## Configuração dos workflows do GitHub
+
+Checklist para ligar as Actions, na ordem do menos arriscado para o mais. Os
+segredos e variáveis ficam em **GitHub → Settings → Secrets and variables →
+Actions** (segredos na aba _Secrets_, variáveis na aba _Variables_). Os
+workflows agendados só passam a rodar depois que este código estiver na branch
+padrão; antes disso dá para criar os segredos, mas o "Run workflow" manual só
+aparece depois da mesclagem.
+
+### 0. Pré-requisitos
+
+- [ ] Projetos Firebase `docs-hub-dev` e `docs-hub-prod` criados, com Firestore
+      e Authentication (e-mail e senha).
+- [ ] Regras e índices publicados em cada projeto:
+      `firebase deploy --only firestore:rules,firestore:indexes --project <id>`.
+- [ ] Conta do Cloudinary e o preset sem assinatura (pasta fixa, formatos
+      `png/jpg/gif/mp4/webm`, até 5 MB), como descrito acima.
+- [ ] Primeiro admin criado à mão: a conta em Authentication e o documento
+      `users/{uid}` com `role: "admin"` e `ativo: true`.
+
+**Comece pelo `dev`.** Aponte `FIREBASE_PROJECT_ID` para o `dev`, rode cada
+workflow à mão, confira, e só então troque para o `prod`.
+
+### 1. Service accounts (duas, com permissões mínimas)
+
+Crie no **Google Cloud Console** do projeto (_IAM e administrador → Contas de
+serviço → Criar conta de serviço_), não pelo botão "Gerar nova chave privada" do
+console do Firebase, que usa uma conta com permissões bem maiores:
+
+| Conta              | Papel (IAM)              | Usada por                                         |
+| ------------------ | ------------------------ | ------------------------------------------------- |
+| `docs-hub-leitura` | `Cloud Datastore Viewer` | `verificar-links`, `backup`, `limpeza-cloudinary` |
+| `docs-hub-escrita` | `Cloud Datastore User`   | `doc-sync` (grava sugestões)                      |
+
+Para cada uma: abra a conta → aba _Chaves_ → _Adicionar chave_ → _Criar nova
+chave_ → **JSON**. O conteúdo inteiro do arquivo vira o valor do segredo
+`FIREBASE_SERVICE_ACCOUNT`. Depois apague o arquivo baixado do seu computador.
+Crie contas separadas para `dev` e `prod`.
+
+### 2. Verificar links (só leitura)
+
+- [ ] Variável `FIREBASE_PROJECT_ID` (ex.: `docs-hub-dev`)
+- [ ] Segredo `FIREBASE_SERVICE_ACCOUNT` (chave da conta `docs-hub-leitura`)
+- [ ] Actions → _Verificar links_ → _Run workflow_; abra o resumo da execução e
+      o artifact `relatorio-links`
+
+### 3. Backup noturno
+
+- [ ] Segredo `BACKUP_PASSPHRASE`: uma senha longa e aleatória (por exemplo,
+      `openssl rand -base64 32`)
+- [ ] **Guarde a mesma senha fora do GitHub** (gerenciador de senhas). Sem ela o
+      backup cifrado não abre, e o repositório é público
+- [ ] Actions → _Backup_ → _Run workflow_; baixe o artifact `firestore-backup`
+- [ ] Teste a restauração no `dev`, em simulação:
+      `BACKUP_PASSPHRASE=… node scripts/backup/restaurar.ts <arquivo>.enc --projeto docs-hub-dev`
+
+### 4. Limpeza de imagens do Cloudinary (só relatório)
+
+- [ ] Variável `CLOUDINARY_CLOUD_NAME` (aparece no Dashboard do Cloudinary)
+- [ ] Segredos `CLOUDINARY_API_KEY` e `CLOUDINARY_API_SECRET` (Dashboard →
+      _Settings_ → _API Keys_; crie uma chave só para este uso)
+- [ ] Opcional: variável `CLOUDINARY_FOLDER`, se as imagens ficam em uma pasta
+- [ ] Actions → _Limpeza do Cloudinary_ → _Run workflow_ com `apagar` desmarcado
+- [ ] Deixe `CLOUDINARY_LIMPEZA_APAGAR` **sem definir** por algumas semanas.
+      Quando os relatórios estiverem confiáveis, crie a variável com o valor `true`
+
+### 5. Sugestões por IA (por último)
+
+Estes segredos ficam no **repositório que guarda os arquivos `.md` de regras**,
+que ainda precisa ser definido (veja a seção 8 do `PLAN.md`), e não
+necessariamente neste.
+
+- [ ] Segredo `FIREBASE_SERVICE_ACCOUNT` (chave da conta `docs-hub-escrita`)
+- [ ] Segredo `ANTHROPIC_API_KEY` (console da Anthropic → _API keys_)
+- [ ] Nesse repositório, um workflow que chame o `doc-sync.yml` (exemplo no
+      comentário do topo de `.github/workflows/doc-sync.yml`) com `projeto:`
+      apontando para o `dev` no começo
+
+### Resumo: quem usa o quê
+
+| Workflow                 | Segredos                                                                  | Variáveis                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`                 | nenhum                                                                    | nenhuma                                                                                                       |
+| `verificar-links.yml`    | `FIREBASE_SERVICE_ACCOUNT`                                                | `FIREBASE_PROJECT_ID`                                                                                         |
+| `backup.yml`             | `FIREBASE_SERVICE_ACCOUNT`, `BACKUP_PASSPHRASE`                           | `FIREBASE_PROJECT_ID`                                                                                         |
+| `limpeza-cloudinary.yml` | `FIREBASE_SERVICE_ACCOUNT`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | `FIREBASE_PROJECT_ID`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_FOLDER` e `CLOUDINARY_LIMPEZA_APAGAR` (opcionais) |
+| `doc-sync.yml`           | `FIREBASE_SERVICE_ACCOUNT`, `ANTHROPIC_API_KEY`                           | nenhuma (o projeto vai como `projeto:` na chamada)                                                            |
 
 ## Scripts
 
