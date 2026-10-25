@@ -40,6 +40,8 @@ export interface Relatorio {
     rascunhos: number
     imagensOk: number
     imagensComFalha: number
+    /** Imagens deixadas de lado de propósito (`--sem-imagens`). */
+    imagensPuladas: number
     linksQuebrados: number
     artigosSemBloco: number
   }

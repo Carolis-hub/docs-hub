@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { BookOpen } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
@@ -26,20 +27,22 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 dark:bg-slate-900">
-      <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-8 shadow-sm dark:border-slate-700 dark:bg-slate-800">
-        <h1 className="mb-6 text-center text-xl font-semibold text-slate-900 dark:text-slate-100">
-          Entrar no docs-hub
-        </h1>
+    <div className="flex min-h-screen items-center justify-center bg-fundo px-4">
+      <div className="cartao w-full max-w-sm p-8 shadow-sm">
+        <div className="mb-6 flex flex-col items-center gap-3">
+          <span className="inline-flex size-12 items-center justify-center rounded-lg bg-destaque text-white">
+            <BookOpen className="size-6" aria-hidden />
+          </span>
+          <h1 className="text-center text-xl font-semibold">
+            Entrar no docs-hub
+          </h1>
+        </div>
         <form
           onSubmit={(event) => void handleSubmit(event)}
           className="space-y-4"
         >
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
-            >
+            <label htmlFor="email" className="mb-1 block text-sm font-medium">
               E-mail
             </label>
             <input
@@ -49,14 +52,11 @@ export function Login() {
               autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              className="campo"
             />
           </div>
           <div>
-            <label
-              htmlFor="senha"
-              className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-200"
-            >
+            <label htmlFor="senha" className="mb-1 block text-sm font-medium">
               Senha
             </label>
             <input
@@ -66,18 +66,18 @@ export function Login() {
               autoComplete="current-password"
               value={senha}
               onChange={(event) => setSenha(event.target.value)}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-slate-500 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100"
+              className="campo"
             />
           </div>
           {erro && (
-            <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+            <p role="alert" className="text-sm text-perigo">
               {erro}
             </p>
           )}
           <button
             type="submit"
             disabled={enviando}
-            className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+            className="botao botao-primario w-full py-2"
           >
             {enviando ? 'Entrando…' : 'Entrar'}
           </button>

@@ -272,3 +272,13 @@ README):
 
 O backlog (versões por versão do produto, "foi útil?", busca semântica e PDF)
 fica para depois.
+
+**Textos alternativos** (`scripts/alt-texto`): sugere, com a IA vendo a imagem e
+o texto ao redor, alts melhores para imagens sem descrição (a base do SmartShare
+não tem nenhum). O resultado é uma sugestão revisada em "Sugestões", como no
+`doc-sync`. Veja `scripts/alt-texto/README.md`.
+
+**Visual:** as telas seguem o protótipo (tema escuro e claro, cartões, ícones
+da biblioteca `lucide-react`). As cores ficam como variáveis em `src/index.css`
+(`fundo`, `cartao`, `borda`, `texto`, `suave`, `destaque`…) e são usadas pelo
+Tailwind por nome (`bg-cartao`, `text-suave`); para mudar a paleta, mexa só ali.

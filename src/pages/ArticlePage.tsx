@@ -1,12 +1,15 @@
 import { useEffect } from 'react'
+import { Pencil } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ArticleContent } from '../components/ArticleContent'
 import { Breadcrumb } from '../components/Breadcrumb'
+import { PageHeader } from '../components/PageHeader'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
 import { getArticle } from '../services/articles'
 import { getAncestors, getBlock } from '../services/blocks'
 import { registrarVisualizacao } from '../services/metrics'
+import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 
 export function ArticlePage() {
   const { articleId = '' } = useParams()
@@ -28,41 +31,42 @@ export function ArticlePage() {
     void registrarVisualizacao(artigoId, uid)
   }, [artigoId, uid, isAdmin, publicado])
 
-  if (carregando) return <p className="text-slate-500">Carregando…</p>
+  if (carregando) return <p className="text-suave">Carregando…</p>
   if (erro)
     return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
+      <p role="alert" className="text-perigo ">
         {erro}
       </p>
     )
   if (!dados) return <p>Artigo não encontrado.</p>
 
   const { artigo, cadeia } = dados
+  const meta = [
+    `Atualizado em ${new Date(artigo.atualizadoEm).toLocaleDateString('pt-BR')}`,
+    artigo.versaoProduto && `Versão do produto ${artigo.versaoProduto}`,
+    artigo.publico === 'tecnico' && 'Técnico',
+    isAdmin && artigo.status === 'draft' && 'Rascunho',
+  ].filter(Boolean)
+
   return (
-    <article className="mx-auto max-w-3xl">
+    <article className="mx-auto max-w-4xl">
       <Breadcrumb cadeia={cadeia} artigo={artigo} />
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">{artigo.titulo}</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Atualizado em{' '}
-            {new Date(artigo.atualizadoEm).toLocaleDateString('pt-BR')}
-            {artigo.versaoProduto &&
-              ` · Versão do produto ${artigo.versaoProduto}`}
-            {artigo.publico === 'tecnico' && ' · Técnico'}
-            {isAdmin && artigo.status === 'draft' && ' · Rascunho'}
-          </p>
-        </div>
-        {isAdmin && (
-          <Link
-            to={`/admin/artigos/${artigo.id}/editar`}
-            className="shrink-0 rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600"
-          >
-            Editar
-          </Link>
-        )}
+      <PageHeader
+        icone={iconeDoArtigo(artigo.titulo)}
+        titulo={artigo.titulo}
+        subtitulo={meta.join(' · ')}
+        acoes={
+          isAdmin && (
+            <Link to={`/admin/artigos/${artigo.id}/editar`} className="botao">
+              <Pencil className="size-4" aria-hidden />
+              Editar
+            </Link>
+          )
+        }
+      />
+      <div className="cartao p-6 sm:p-8">
+        <ArticleContent conteudo={artigo.conteudo} />
       </div>
-      <ArticleContent conteudo={artigo.conteudo} />
     </article>
   )
 }

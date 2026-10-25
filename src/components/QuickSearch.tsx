@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useSearchEngine } from '../hooks/useSearchEngine'
 
@@ -36,11 +37,15 @@ export function QuickSearch() {
 
   return (
     <form role="search" onSubmit={irParaBusca} className="relative">
+      <Search
+        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-suave"
+        aria-hidden
+      />
       <input
         ref={inputRef}
         type="search"
         aria-label="Busca rápida"
-        placeholder="Buscar… (Ctrl+K)"
+        placeholder="Buscar na documentação…"
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value)
@@ -54,12 +59,18 @@ export function QuickSearch() {
             inputRef.current?.blur()
           }
         }}
-        className="w-48 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm sm:w-64 dark:border-slate-600 dark:bg-slate-900"
+        className="h-9 w-44 rounded-lg border border-borda bg-cartao pl-9 pr-14 text-sm text-texto placeholder:text-suave sm:w-72 [&::-webkit-search-cancel-button]:appearance-none"
       />
+      <kbd
+        aria-hidden
+        className="pointer-events-none absolute right-2 top-1/2 hidden -translate-y-1/2 rounded border border-borda bg-bloco px-1.5 py-0.5 font-sans text-[10px] font-medium text-suave sm:block"
+      >
+        Ctrl K
+      </kbd>
       {aberto && sugestoes.length > 0 && (
         <ul
           role="listbox"
-          className="absolute left-0 top-full z-10 mt-1 w-80 max-w-[90vw] overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800"
+          className="absolute right-0 top-full z-20 mt-1 w-80 max-w-[90vw] overflow-hidden rounded-lg border border-borda bg-cartao shadow-xl"
         >
           {sugestoes.map(({ item }) => (
             <li key={item.id} role="option" aria-selected={false}>
@@ -70,7 +81,7 @@ export function QuickSearch() {
                   setAberto(false)
                   navigate(`/a/${item.id}`)
                 }}
-                className="block w-full px-3 py-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="block w-full px-3 py-2 text-left text-sm text-texto hover:bg-bloco"
               >
                 {item.titulo}
               </button>
@@ -79,7 +90,7 @@ export function QuickSearch() {
           <li>
             <button
               type="submit"
-              className="block w-full border-t border-slate-200 px-3 py-2 text-left text-xs text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-700"
+              className="block w-full border-t border-borda px-3 py-2 text-left text-xs text-suave hover:bg-bloco"
             >
               Ver todos os resultados
             </button>

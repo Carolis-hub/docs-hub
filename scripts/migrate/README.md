@@ -86,6 +86,16 @@ Regras do adaptador:
   tem H1 a H3) e o prefixo `IMG:` do texto alternativo é tirado.
 - Links para outros artigos do site (pela URL) viram links internos do
   docs-hub. Links para categorias ou páginas fora da base seguem como externos.
+- Imagens-espaçador do site (arquivos com "branco" no nome, como `Branco.png` e
+  `Espaço-Branco.png`, sozinhas em uma linha) são removidas.
+- Blocos sem nenhum artigo (nem nos descendentes), como a categoria `teste` do
+  site, são descartados com aviso; `--manter-vazios` os mantém.
+- `--apenas <id,id,…>` converte só os artigos pedidos (ids do site) e os blocos
+  que levam até eles: serve para um primeiro lote de teste. Links para artigos
+  fora do lote aparecem no relatório como quebrados.
+- Imagem dentro de link (`[![](img)](url)`): o editor não aceita link em
+  imagem. A imagem fica e o link vira um parágrafo de texto logo abaixo
+  (rótulo: o alt da imagem ou o domínio do destino), com um aviso no relatório.
 - As imagens são baixadas da URL original no momento do `--gravar`/da
   simulação, então essa etapa também precisa de acesso ao site. Imagens
   embutidas no HTML do site (`imagem-embutida-no-site`) não são recuperáveis e
@@ -103,7 +113,21 @@ npm run migrate -- caminho/do/export --gravar --projeto docs-hub-dev
 # 3. Só depois de revisar o relatório, repetir no prod
 ```
 
-Opções: `--sobrescrever` (substitui o que já existe, mantém `views`),
+**Só o texto, sem imagens:** `--sem-imagens` não baixa nem envia nenhuma imagem
+e dispensa o Cloudinary. No lugar de cada imagem o artigo recebe o parágrafo
+`[Imagem não migrada: <endereço original>]`, e o relatório conta quantas foram
+puladas (e não como falhas). Para trazer as imagens depois, rode de novo **sem**
+a opção e **com** `--sobrescrever`: o conteúdo dos artigos é refeito (as
+`views` ficam e a versão sobe), então faça isso antes de editar os artigos à mão.
+
+**Se a gravação travar** (erro `DEADLINE_EXCEEDED` ou `UNAVAILABLE`): é quase
+sempre a rede (VPN, proxy ou firewall da empresa). O script já tenta cada
+escrita até 8 vezes. Se ainda assim falhar, ele termina com uma mensagem curta
+(sem perder nada: rode o mesmo comando de novo, que pula o que já foi
+gravado e completa o índice de busca). Tente a opção `--rest`, que grava por
+HTTP comum em vez de gRPC, ou desligue a VPN, ou use outra conexão.
+
+Opções: `--rest`, `--sem-imagens`, `--sobrescrever` (substitui o que já existe, mantém `views`),
 `--verificar-links` (confere links externos por HTTP), `--autor <uid>`,
 `--saida <pasta>` (padrão `<export>/.migracao`), `--estrito` (código de saída 1
 se houver pendências) e `--ajuda`. Para testar contra o Emulator, defina

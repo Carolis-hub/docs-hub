@@ -39,3 +39,7 @@ coverage
 
 # Relatórios e cache da migração
 .migracao
+
+# Chaves de service account (nunca versionar)
+service-account*.json
+*-firebase-adminsdk-*.json

@@ -63,6 +63,22 @@ describe('ajustarCorpo', () => {
   })
 })
 
+describe('espaçadores em branco', () => {
+  const sem = new Map<string, string>()
+  it('remove linhas que só têm uma imagem "branco" e mantém as outras', () => {
+    const r = ajustarCorpo(
+      'Texto\n\n![IMG: ](http://x/2021/02/Branco.png)\n\n![IMG: ](http://x/Espaço-Branco.png)\n\n![IMG: Tela](http://x/tela.gif)\n\n![IMG: ](http://x/Branco-150x11.png)\nFim',
+      'T',
+      sem,
+    )
+    expect(r).toBe('Texto\n\n![Tela](http://x/tela.gif)\n\nFim\n')
+  })
+  it('não mexe em imagem cujo texto alternativo fala de branco', () => {
+    const r = ajustarCorpo('![IMG: Fundo branco](http://x/fundo.png)', 'T', sem)
+    expect(r).toContain('![Fundo branco](http://x/fundo.png)')
+  })
+})
+
 describe('converterKb (fixture no formato do extrair_kb.py)', () => {
   it('monta a hierarquia a partir das pastas e dos _index.md', async () => {
     const { manifesto } = await converterKb(KB)
@@ -98,6 +114,40 @@ describe('converterKb (fixture no formato do extrair_kb.py)', () => {
     expect(com.manifesto.artigos.find((a) => a.id === '103')?.publicado).toBe(
       true,
     )
+  })
+
+  it('descarta blocos vazios, a não ser que se peça para mantê-los', async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), 'kbv-'))
+    await mkdir(path.join(dir, 'raiz/vazio'), { recursive: true })
+    const idx = (c: string) => `---\ncategoria: "${c}"\n---\n\n# ${c}\n`
+    await writeFile(path.join(dir, 'raiz/_index.md'), idx('Raiz'))
+    await writeFile(path.join(dir, 'raiz/vazio/_index.md'), idx('Vazio'))
+    await writeFile(
+      path.join(dir, 'raiz/a.md'),
+      '---\ntitulo: "A"\nid: 1\nurl: https://x/a/\natualizado_em: 2024-01-01T00:00:00\nstatus: ativo\n---\n\n# A\n\ntexto\n',
+    )
+    const r = await converterKb(dir)
+    expect(r.manifesto.blocos.map((b) => b.id)).toEqual(['raiz'])
+    expect(r.avisos).toContainEqual(
+      expect.stringContaining('bloco sem artigos descartado: Vazio'),
+    )
+    const mantido = await converterKb(dir, { manterVazios: true })
+    expect(mantido.manifesto.blocos.map((b) => b.id)).toEqual([
+      'raiz',
+      'raiz/vazio',
+    ])
+  })
+
+  it('--apenas converte só os artigos pedidos e os blocos que levam a eles', async () => {
+    const r = await converterKb(KB, { apenas: ['102', '999'] })
+    expect(r.manifesto.artigos.map((a) => a.id)).toEqual(['102'])
+    expect(r.manifesto.blocos.map((b) => b.id)).toEqual([
+      'smartshare',
+      'smartshare/smartshare-administrador-ecm-bpm',
+      'smartshare/smartshare-administrador-ecm-bpm/gerenciamento-de-atividades',
+    ])
+    expect([...r.arquivos.keys()]).toEqual(['artigos/102.md'])
+    expect(r.avisos).toContain('artigo 999 não encontrado')
   })
 
   it('classifica como técnico pela regex da categoria', async () => {

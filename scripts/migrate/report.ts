@@ -14,6 +14,11 @@ export function relatorioEmMarkdown(r: Relatorio, simulacao: boolean): string {
     `- Artigos: ${resumo.artigos} (${resumo.publicados} publicados, ${resumo.rascunhos} rascunhos)`,
     `- Imagens migradas: ${resumo.imagensOk}`,
     `- Imagens com falha: ${resumo.imagensComFalha}`,
+    ...(resumo.imagensPuladas
+      ? [
+          `- Imagens puladas (\`--sem-imagens\`): ${resumo.imagensPuladas}. Cada uma virou o texto \`[Imagem não migrada: …]\` no artigo; para trazê-las depois, importe de novo sem a opção e com \`--sobrescrever\`.`,
+        ]
+      : []),
     `- Links quebrados: ${resumo.linksQuebrados}`,
     `- Artigos sem bloco: ${resumo.artigosSemBloco}`,
     `- Artigos com erro: ${r.erros.length}`,

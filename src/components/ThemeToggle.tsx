@@ -1,18 +1,24 @@
+import { Moon, Sun } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
+  const rotulo = isDark ? 'Ativar tema claro' : 'Ativar tema escuro'
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
-      title={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'}
-      className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800"
+      aria-label={rotulo}
+      title={rotulo}
+      className="inline-flex size-9 items-center justify-center rounded-lg border border-borda bg-cartao text-suave transition hover:text-texto"
     >
-      {isDark ? '☀️ Claro' : '🌙 Escuro'}
+      {isDark ? (
+        <Sun className="size-4" aria-hidden />
+      ) : (
+        <Moon className="size-4" aria-hidden />
+      )}
     </button>
   )
 }

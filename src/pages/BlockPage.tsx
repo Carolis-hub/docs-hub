@@ -1,10 +1,22 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { FolderPlus, Layers, Pencil, Plus } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
+import { ArticleList } from '../components/ArticleList'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
 import { Breadcrumb } from '../components/Breadcrumb'
+import {
+  AlternarVisao,
+  BotaoOrdenar,
+  FiltroDaLista,
+  Interruptor,
+  TituloDeSecao,
+  type Visao,
+} from '../components/ListToolbar'
+import { PageHeader } from '../components/PageHeader'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
+import { usePreferencia } from '../hooks/usePreferencia'
 import {
   createBlock,
   deleteBlock,
@@ -16,6 +28,11 @@ import {
 } from '../services/blocks'
 import { listArticlesByBlock } from '../services/articles'
 import type { Block } from '../types/content'
+import { iconeDoArtigo } from '../utils/iconeDoArtigo'
+import { normalizar } from '../utils/search'
+
+const plural = (n: number, um: string, varios: string) =>
+  `${n} ${n === 1 ? um : varios}`
 
 export function BlockPage() {
   const { blockId = '' } = useParams()
@@ -33,19 +50,47 @@ export function BlockPage() {
   }, [blockId, isAdmin])
 
   const [modo, setModo] = useState<'novo' | 'editar' | null>(null)
-  const [aviso, setAviso] = useState<string | null>(null)
   const [editandoFilho, setEditandoFilho] = useState<Block | null>(null)
+  const [aviso, setAviso] = useState<string | null>(null)
+  const [organizar, setOrganizar] = useState(false)
+  const [filtroSecoes, setFiltroSecoes] = useState('')
+  const [filtroArtigos, setFiltroArtigos] = useState('')
+  const [crescente, setCrescente] = useState(true)
+  const [visao, setVisao] = usePreferencia<Visao>(
+    'docs-hub:visao-artigos',
+    'lista',
+    ['lista', 'grade'],
+  )
 
-  if (carregando && !dados) return <p className="text-slate-500">Carregando…</p>
+  const secoes = useMemo(() => {
+    const q = normalizar(filtroSecoes.trim())
+    return (dados?.filhos ?? []).filter(
+      (b) => !q || normalizar(b.nome).includes(q),
+    )
+  }, [dados, filtroSecoes])
+
+  const artigos = useMemo(() => {
+    const q = normalizar(filtroArtigos.trim())
+    const lista = (dados?.artigos ?? []).filter(
+      (a) => !q || normalizar(`${a.titulo} ${a.resumo}`).includes(q),
+    )
+    const ordenada = [...lista].sort((a, b) =>
+      a.titulo.localeCompare(b.titulo, 'pt-BR'),
+    )
+    return crescente ? ordenada : ordenada.reverse()
+  }, [dados, filtroArtigos, crescente])
+
+  if (carregando && !dados) return <p className="text-suave">Carregando…</p>
   if (erro)
     return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
+      <p role="alert" className="text-perigo">
         {erro}
       </p>
     )
   if (!dados) return <p>Bloco não encontrado.</p>
 
-  const { bloco, cadeia, filhos, artigos } = dados
+  const { bloco, cadeia, filhos, artigos: todosArtigos } = dados
+  const ehProduto = bloco.parentId === null
 
   async function excluirFilho(b: Block) {
     if (!window.confirm(`Excluir "${b.nome}"?`)) return
@@ -58,46 +103,48 @@ export function BlockPage() {
     }
   }
 
+  const subtitulo = ehProduto
+    ? `Produto · ${plural(filhos.length, 'subproduto ou seção', 'subprodutos e seções')}`
+    : bloco.descricao || undefined
+
   return (
     <div>
       <Breadcrumb cadeia={cadeia} />
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold">
-            <span aria-hidden>{bloco.icone} </span>
-            {bloco.nome}
-          </h1>
-          {bloco.descricao && (
-            <p className="mt-1 text-slate-600 dark:text-slate-400">
-              {bloco.descricao}
-            </p>
-          )}
-        </div>
-        {isAdmin && (
-          <div className="flex gap-2 text-sm">
-            <button
-              type="button"
-              onClick={() => setModo('editar')}
-              className="rounded-md border border-slate-300 px-3 py-1.5 dark:border-slate-600"
-            >
-              Editar bloco
-            </button>
-            <button
-              type="button"
-              onClick={() => setModo('novo')}
-              className="rounded-md border border-slate-300 px-3 py-1.5 dark:border-slate-600"
-            >
-              Novo subbloco
-            </button>
-            <Link
-              to={`/admin/artigos/novo?blockId=${bloco.id}`}
-              className="rounded-md bg-blue-600 px-3 py-1.5 font-medium text-white hover:bg-blue-700"
-            >
-              Novo artigo
-            </Link>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        icone={ehProduto ? Layers : iconeDoArtigo(bloco.nome, Layers)}
+        emoji={bloco.icone || undefined}
+        titulo={bloco.nome}
+        subtitulo={subtitulo}
+        acoes={
+          isAdmin && (
+            <>
+              <button
+                type="button"
+                onClick={() => setModo('editar')}
+                className="botao"
+              >
+                <Pencil className="size-4" aria-hidden />
+                Editar bloco
+              </button>
+              <button
+                type="button"
+                onClick={() => setModo('novo')}
+                className="botao"
+              >
+                <FolderPlus className="size-4" aria-hidden />
+                Novo subbloco
+              </button>
+              <Link
+                to={`/admin/artigos/novo?blockId=${bloco.id}`}
+                className="botao botao-primario"
+              >
+                <Plus className="size-4" aria-hidden />
+                Novo artigo
+              </Link>
+            </>
+          )
+        }
+      />
 
       {modo === 'novo' && (
         <BlockForm
@@ -135,63 +182,78 @@ export function BlockPage() {
         />
       )}
       {aviso && (
-        <p role="alert" className="mb-4 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mb-4 text-sm text-perigo">
           {aviso}
         </p>
       )}
 
       {filhos.length > 0 && (
-        <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">Subprodutos e seções</h2>
+        <section className="mb-10" aria-label="Subprodutos e seções">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <TituloDeSecao
+              titulo="Subprodutos e seções"
+              total={filhos.length}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <FiltroDaLista
+                valor={filtroSecoes}
+                aoMudar={setFiltroSecoes}
+                placeholder="Filtrar seções…"
+              />
+              {isAdmin && filhos.length > 1 && (
+                <Interruptor
+                  ligado={organizar}
+                  aoMudar={setOrganizar}
+                  rotulo="Organizar"
+                />
+              )}
+            </div>
+          </div>
           <BlockCards
-            blocos={filhos}
-            onReorder={
-              isAdmin
-                ? (o) => void reorderBlocks(o.map((b) => b.id)).then(recarregar)
-                : undefined
+            blocos={secoes}
+            editavel={isAdmin}
+            organizar={isAdmin && organizar && filtroSecoes.trim() === ''}
+            onReorder={(o) =>
+              void reorderBlocks(o.map((b) => b.id)).then(recarregar)
             }
             onEdit={setEditandoFilho}
             onDelete={(b) => void excluirFilho(b)}
+            onNovo={isAdmin ? () => setModo('novo') : undefined}
           />
+          {organizar && filtroSecoes.trim() !== '' && (
+            <p className="mt-2 text-xs text-suave">
+              Limpe o filtro para arrastar e reordenar.
+            </p>
+          )}
         </section>
       )}
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold">Artigos</h2>
-        {artigos.length === 0 ? (
-          <p className="text-slate-600 dark:text-slate-400">
-            Nenhum artigo neste bloco.
-          </p>
-        ) : (
-          <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-800">
-            {artigos.map((a) => (
-              <li key={a.id}>
-                <Link
-                  to={`/a/${a.id}`}
-                  className="block px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50"
-                >
-                  <span className="font-medium">{a.titulo}</span>
-                  {isAdmin && a.status === 'draft' && (
-                    <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-                      Rascunho
-                    </span>
-                  )}
-                  {a.publico === 'tecnico' && (
-                    <span className="ml-2 rounded bg-slate-200 px-1.5 py-0.5 text-xs dark:bg-slate-700">
-                      Técnico
-                    </span>
-                  )}
-                  {a.resumo && (
-                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                      {a.resumo}
-                    </p>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {(todosArtigos.length > 0 || !ehProduto) && (
+        <section aria-label="Artigos">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <TituloDeSecao titulo="Artigos" total={todosArtigos.length} />
+            <div className="flex flex-wrap items-center gap-2">
+              <FiltroDaLista
+                valor={filtroArtigos}
+                aoMudar={setFiltroArtigos}
+                placeholder="Filtrar neste bloco…"
+              />
+              <BotaoOrdenar
+                crescente={crescente}
+                aoAlternar={() => setCrescente((c) => !c)}
+              />
+              <AlternarVisao visao={visao} aoMudar={setVisao} />
+            </div>
+          </div>
+          {todosArtigos.length === 0 ? (
+            <p className="text-suave">Nenhum artigo neste bloco.</p>
+          ) : artigos.length === 0 ? (
+            <p className="text-suave">Nenhum artigo corresponde ao filtro.</p>
+          ) : (
+            <ArticleList artigos={artigos} visao={visao} admin={isAdmin} />
+          )}
+        </section>
+      )}
     </div>
   )
 }

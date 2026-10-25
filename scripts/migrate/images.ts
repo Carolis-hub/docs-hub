@@ -129,7 +129,13 @@ export async function enviarCloudinary(
   return dados.secure_url
 }
 
+/** Resultado de tratar uma imagem: enviada, com falha, ou deixada de lado de propósito. */
+export type ResultadoImagem =
+  { url: string } | { erro: string } | { pulada: true }
+
 export interface ResolvedorOpts {
+  /** Não baixa nem envia nenhuma imagem (`--sem-imagens`). */
+  pular?: boolean
   baseDir: string
   /** `null` = simulação: valida as imagens, mas não envia nada. */
   cloudinary: CloudinaryConfig | null
@@ -140,10 +146,8 @@ export interface ResolvedorOpts {
 
 export function criarResolvedorImagens(opts: ResolvedorOpts) {
   const enviar = opts.enviar ?? enviarCloudinary
-  return async (
-    src: string,
-    dirDoArtigo = '.',
-  ): Promise<{ url: string } | { erro: string }> => {
+  return async (src: string, dirDoArtigo = '.'): Promise<ResultadoImagem> => {
+    if (opts.pular) return { pulada: true }
     const img = await carregarImagem(src, opts.baseDir, dirDoArtigo)
     if ('erro' in img) return img
     const existente = opts.cache.get(img.hash)
