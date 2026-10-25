@@ -1,6 +1,9 @@
 import { useState } from 'react'
+import { Layers, Plus } from 'lucide-react'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
+import { Interruptor } from '../components/ListToolbar'
+import { PageHeader } from '../components/PageHeader'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
 import {
@@ -21,6 +24,7 @@ export function Home() {
     [isAdmin, profile?.uid],
   )
   const [criando, setCriando] = useState(false)
+  const [organizar, setOrganizar] = useState(false)
   const [editando, setEditando] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
 
@@ -44,18 +48,38 @@ export function Home() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Produtos</h1>
-        {isAdmin && !criando && (
-          <button
-            type="button"
-            onClick={() => setCriando(true)}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Novo produto
-          </button>
-        )}
-      </div>
+      <PageHeader
+        icone={Layers}
+        titulo="Produtos"
+        subtitulo={
+          produtos.length > 0
+            ? `${produtos.length} ${produtos.length === 1 ? 'produto' : 'produtos'} de documentação`
+            : undefined
+        }
+        acoes={
+          isAdmin && (
+            <>
+              {produtos.length > 1 && (
+                <Interruptor
+                  ligado={organizar}
+                  aoMudar={setOrganizar}
+                  rotulo="Organizar"
+                />
+              )}
+              {!criando && (
+                <button
+                  type="button"
+                  onClick={() => setCriando(true)}
+                  className="botao botao-primario"
+                >
+                  <Plus className="size-4" aria-hidden />
+                  Novo produto
+                </button>
+              )}
+            </>
+          )
+        }
+      />
 
       {criando && (
         <BlockForm
@@ -81,19 +105,19 @@ export function Home() {
         />
       )}
       {aviso && (
-        <p role="alert" className="mb-4 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mb-4 text-sm text-perigo">
           {aviso}
         </p>
       )}
 
-      {carregando && <p className="text-slate-500">Carregando…</p>}
+      {carregando && <p className="text-suave">Carregando…</p>}
       {erro && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-perigo">
           {erro}
         </p>
       )}
       {!carregando && !erro && produtos.length === 0 && (
-        <p className="text-slate-600 dark:text-slate-400">
+        <p className="text-suave">
           {isAdmin
             ? 'Nenhum produto ainda. Crie o primeiro em "Novo produto".'
             : 'Você ainda não tem acesso a nenhum produto. Fale com um administrador.'}
@@ -102,6 +126,9 @@ export function Home() {
       {produtos.length > 0 && (
         <BlockCards
           blocos={produtos}
+          variante="produto"
+          editavel={isAdmin}
+          organizar={isAdmin && organizar}
           onReorder={isAdmin ? (o) => void reordenar(o) : undefined}
           onEdit={setEditando}
           onDelete={(b) => void excluir(b)}

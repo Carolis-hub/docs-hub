@@ -7,7 +7,7 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-500 dark:text-slate-400">
+      <div className="flex min-h-screen items-center justify-center text-suave ">
         Carregando…
       </div>
     )
@@ -21,14 +21,10 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center">
         <h1 className="text-xl font-semibold">Sem acesso</h1>
-        <p className="max-w-sm text-slate-600 dark:text-slate-400">
+        <p className="max-w-sm text-suave ">
           Sua conta não está habilitada no docs-hub. Fale com um administrador.
         </p>
-        <button
-          type="button"
-          onClick={() => void signOut()}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600"
-        >
+        <button type="button" onClick={() => void signOut()} className="botao">
           Sair
         </button>
       </div>

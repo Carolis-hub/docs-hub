@@ -12,9 +12,9 @@ import type { Block } from '../../types/content'
 import type { AppUser, UserRole } from '../../types/user'
 
 const campo =
-  'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900'
+  'mt-1 w-full rounded-md border border-borda bg-cartao px-3 py-2 text-sm  '
 const botaoSec =
-  'rounded-md border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-slate-600'
+  'rounded-md border border-borda px-3 py-1.5 text-sm disabled:opacity-50 '
 
 interface FormProps {
   produtos: Block[]
@@ -88,7 +88,7 @@ function UserForm({
     <form
       onSubmit={(e) => void handleSubmit(e)}
       aria-label={editando ? 'Editar usuário' : 'Novo usuário'}
-      className="mb-6 max-w-lg space-y-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
+      className="mb-6 max-w-lg space-y-3 rounded-lg border border-borda bg-cartao p-4 "
     >
       <h2 className="font-semibold">
         {editando ? 'Editar usuário' : 'Novo usuário'}
@@ -135,7 +135,7 @@ function UserForm({
         </select>
       </label>
       {admin ? (
-        <p className="text-sm text-slate-600 dark:text-slate-400">
+        <p className="text-sm text-suave ">
           Admins veem todos os produtos e o conteúdo técnico.
         </p>
       ) : (
@@ -143,7 +143,7 @@ function UserForm({
           <fieldset className="text-sm">
             <legend className="mb-1">Produtos permitidos</legend>
             {produtos.length === 0 && (
-              <p className="text-slate-500">Nenhum produto cadastrado.</p>
+              <p className="text-suave">Nenhum produto cadastrado.</p>
             )}
             {produtos.map((p) => (
               <label key={p.id} className="mr-4 inline-flex items-center gap-1">
@@ -167,7 +167,7 @@ function UserForm({
         </>
       )}
       {erro && (
-        <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm text-perigo ">
           {erro}
         </p>
       )}
@@ -175,7 +175,7 @@ function UserForm({
         <button
           type="submit"
           disabled={salvando}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="rounded-md bg-destaque px-3 py-1.5 text-sm font-medium text-white hover:bg-destaque/90 disabled:opacity-50"
         >
           {salvando ? 'Salvando…' : 'Salvar'}
         </button>
@@ -222,7 +222,7 @@ export function UsersPage() {
           <button
             type="button"
             onClick={() => setModo('novo')}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+            className="rounded-md bg-destaque px-3 py-1.5 text-sm font-medium text-white hover:bg-destaque/90"
           >
             Novo usuário
           </button>
@@ -243,19 +243,19 @@ export function UsersPage() {
         />
       )}
       {aviso && (
-        <p role="alert" className="mb-4 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mb-4 text-sm text-perigo ">
           {aviso}
         </p>
       )}
-      {carregando && !dados && <p className="text-slate-500">Carregando…</p>}
+      {carregando && !dados && <p className="text-suave">Carregando…</p>}
       {erro && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-perigo ">
           {erro}
         </p>
       )}
 
       {dados && (
-        <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-800">
+        <ul className="divide-y divide-borda rounded-lg border border-borda bg-cartao ">
           {dados.usuarios.map((u) => (
             <li
               key={u.uid}
@@ -263,17 +263,17 @@ export function UsersPage() {
             >
               <div>
                 <span className="font-medium">{u.nome}</span>
-                <span className="ml-2 text-slate-500">{u.email}</span>
-                <span className="ml-2 rounded bg-slate-200 px-1.5 py-0.5 text-xs dark:bg-slate-700">
+                <span className="ml-2 text-suave">{u.email}</span>
+                <span className="ml-2 rounded bg-bloco px-1.5 py-0.5 text-xs ">
                   {u.role === 'admin' ? 'Admin' : 'Leitor'}
                 </span>
                 {u.ativo === false && (
-                  <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-800 dark:bg-red-900 dark:text-red-200">
+                  <span className="ml-2 rounded bg-perigo/15 px-1.5 py-0.5 text-xs text-perigo ">
                     Desativado
                   </span>
                 )}
                 {u.role === 'reader' && (
-                  <p className="mt-1 text-slate-600 dark:text-slate-400">
+                  <p className="mt-1 text-suave ">
                     Produtos:{' '}
                     {u.produtosPermitidos.length
                       ? u.produtosPermitidos

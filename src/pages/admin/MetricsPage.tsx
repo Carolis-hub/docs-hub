@@ -13,8 +13,7 @@ import {
   viewsPorArtigo,
 } from '../../utils/metrics'
 
-const campo =
-  'rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900'
+const campo = 'rounded-md border border-borda bg-cartao px-2 py-1 text-sm  '
 
 function Painel({
   titulo,
@@ -28,13 +27,9 @@ function Painel({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+    <section className="rounded-lg border border-borda bg-cartao p-4 ">
       <h2 className="mb-3 font-semibold">{titulo}</h2>
-      {total === 0 ? (
-        <p className="text-sm text-slate-500">{vazio}</p>
-      ) : (
-        children
-      )}
+      {total === 0 ? <p className="text-sm text-suave">{vazio}</p> : children}
     </section>
   )
 }
@@ -52,17 +47,17 @@ function ListaArtigos({
         <li key={a.id} className="flex justify-between gap-3">
           <Link
             to={`/a/${a.id}`}
-            className="truncate text-blue-700 hover:underline dark:text-blue-400"
+            className="truncate text-bloco-icone hover:underline "
           >
             {a.titulo}
           </Link>
-          <span className="shrink-0 text-slate-500">
+          <span className="shrink-0 text-suave">
             {new Date(a.revisadoEm).toLocaleDateString('pt-BR')}
           </span>
         </li>
       ))}
       {artigos.length > limite && (
-        <li className="text-slate-500">e mais {artigos.length - limite}…</li>
+        <li className="text-suave">e mais {artigos.length - limite}…</li>
       )}
     </ul>
   )
@@ -111,21 +106,21 @@ export function MetricsPage() {
             type="button"
             onClick={recarregar}
             disabled={carregando}
-            className="rounded-md border border-slate-300 px-3 py-1 disabled:opacity-50 dark:border-slate-600"
+            className="rounded-md border border-borda px-3 py-1 disabled:opacity-50 "
           >
             Atualizar
           </button>
         </div>
       </div>
 
-      <p className="mb-4 text-xs text-slate-500">
+      <p className="mb-4 text-xs text-suave">
         Cada carga lê um documento por artigo e um por artigo e dia com acesso
         no período. Atualize só quando precisar, para poupar a cota do Spark.
       </p>
 
-      {carregando && !dados && <p className="text-slate-500">Carregando…</p>}
+      {carregando && !dados && <p className="text-suave">Carregando…</p>}
       {erro && (
-        <p role="alert" className="text-red-600 dark:text-red-400">
+        <p role="alert" className="text-perigo ">
           {erro}
         </p>
       )}
@@ -140,9 +135,9 @@ export function MetricsPage() {
             ].map(([rotulo, valor]) => (
               <div
                 key={rotulo}
-                className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800"
+                className="rounded-lg border border-borda bg-cartao p-4 "
               >
-                <dt className="text-sm text-slate-500">{rotulo}</dt>
+                <dt className="text-sm text-suave">{rotulo}</dt>
                 <dd className="mt-1 text-3xl font-semibold tabular-nums">
                   {valor}
                 </dd>
@@ -150,7 +145,7 @@ export function MetricsPage() {
             ))}
           </dl>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+          <section className="rounded-lg border border-borda bg-cartao p-4 ">
             <h2 className="mb-3 font-semibold">Evolução por período</h2>
             <ViewsChart pontos={resumo.serie} />
           </section>
@@ -165,17 +160,17 @@ export function MetricsPage() {
                 {resumo.ranking.map(({ artigo, noPeriodo }, i) => (
                   <li key={artigo.id} className="flex justify-between gap-3">
                     <span className="truncate">
-                      <span className="mr-2 text-slate-500">{i + 1}.</span>
+                      <span className="mr-2 text-suave">{i + 1}.</span>
                       <Link
                         to={`/a/${artigo.id}`}
-                        className="text-blue-700 hover:underline dark:text-blue-400"
+                        className="text-bloco-icone hover:underline "
                       >
                         {artigo.titulo}
                       </Link>
                     </span>
                     <span className="shrink-0 tabular-nums">
                       {noPeriodo}{' '}
-                      <span className="text-slate-500">
+                      <span className="text-suave">
                         ({artigo.views} no total)
                       </span>
                     </span>
@@ -201,7 +196,7 @@ export function MetricsPage() {
                 {dados.buscasSemResultado.map((b) => (
                   <li key={b.id} className="flex justify-between gap-3">
                     <span className="truncate">{b.termo}</span>
-                    <span className="shrink-0 tabular-nums text-slate-500">
+                    <span className="shrink-0 tabular-nums text-suave">
                       {b.count}×
                     </span>
                   </li>
@@ -209,7 +204,7 @@ export function MetricsPage() {
               </ul>
             </Painel>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+            <section className="rounded-lg border border-borda bg-cartao p-4 ">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="font-semibold">Sem revisão há mais de</h2>
                 <select
@@ -224,7 +219,7 @@ export function MetricsPage() {
                 </select>
               </div>
               {resumo.desatualizados.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-suave">
                   Nenhum artigo desatualizado.
                 </p>
               ) : (

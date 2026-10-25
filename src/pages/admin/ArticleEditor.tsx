@@ -26,9 +26,9 @@ import type {
 import { EMPTY_DOC } from '../../utils/content'
 
 const campo =
-  'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900'
+  'mt-1 w-full rounded-md border border-borda bg-cartao px-3 py-2 text-sm  '
 const botaoSec =
-  'rounded-md border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-slate-600'
+  'rounded-md border border-borda px-3 py-1.5 text-sm disabled:opacity-50 '
 
 export function ArticleEditor() {
   const { articleId } = useParams()
@@ -79,10 +79,10 @@ export function ArticleEditor() {
     setEditorKey((k) => k + 1)
   }, [artigo, sugestao])
 
-  if (carregando && !dados) return <p className="text-slate-500">Carregando…</p>
+  if (carregando && !dados) return <p className="text-suave">Carregando…</p>
   if (erro)
     return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
+      <p role="alert" className="text-perigo ">
         {erro}
       </p>
     )
@@ -175,7 +175,7 @@ export function ArticleEditor() {
       <h1 className="mb-4 text-2xl font-semibold">
         {artigo ? 'Editar artigo' : 'Novo artigo'}
         {artigo && (
-          <span className="ml-3 rounded bg-slate-200 px-2 py-0.5 text-xs font-normal dark:bg-slate-700">
+          <span className="ml-3 rounded bg-bloco px-2 py-0.5 text-xs font-normal ">
             {artigo.status === 'published'
               ? `Publicado v${artigo.versao}`
               : 'Rascunho'}
@@ -186,7 +186,7 @@ export function ArticleEditor() {
       {sugestao?.status === 'pending' && (
         <p
           role="status"
-          className="mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-900/30 dark:text-blue-100"
+          className="mb-4 rounded-md bg-bloco p-3 text-sm text-texto "
         >
           Editando a partir da sugestão da IA ({sugestao.origem.arquivo}).
           Publicar aqui aprova a sugestão; nada muda até você publicar.
@@ -195,14 +195,14 @@ export function ArticleEditor() {
       {artigo?.flags.includes('prints_desatualizados') && (
         <div
           role="alert"
-          className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md bg-amber-100 p-3 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
+          className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md bg-ambar-fundo p-3 text-sm text-ambar "
         >
           <span>Os prints deste artigo podem estar desatualizados.</span>
           <button
             type="button"
             disabled={ocupado}
             onClick={() => void limparPrints()}
-            className="rounded-md border border-amber-400 px-2 py-1"
+            className="rounded-md border border-ambar/50 px-2 py-1"
           >
             Prints atualizados
           </button>
@@ -243,15 +243,12 @@ export function ArticleEditor() {
         <RichEditor key={editorKey} value={conteudo} onChange={setConteudo} />
 
         {falha && (
-          <p role="alert" className="text-sm text-red-600 dark:text-red-400">
+          <p role="alert" className="text-sm text-perigo ">
             {falha}
           </p>
         )}
         {mensagem && (
-          <p
-            role="status"
-            className="text-sm text-green-700 dark:text-green-400"
-          >
+          <p role="status" className="text-sm text-sucesso ">
             {mensagem}
           </p>
         )}
@@ -261,7 +258,7 @@ export function ArticleEditor() {
             type="button"
             disabled={ocupado}
             onClick={() => void salvar()}
-            className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded-md bg-destaque px-3 py-1.5 text-sm font-medium text-white hover:bg-destaque/90 disabled:opacity-50"
           >
             {artigo ? 'Salvar' : 'Criar rascunho'}
           </button>
@@ -271,7 +268,7 @@ export function ArticleEditor() {
                 type="button"
                 disabled={ocupado}
                 onClick={() => void publicar()}
-                className="rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                className="rounded-md bg-destaque px-3 py-1.5 text-sm font-medium text-white hover:bg-destaque/90 disabled:opacity-50"
               >
                 Publicar
               </button>
@@ -296,7 +293,7 @@ export function ArticleEditor() {
                 type="button"
                 disabled={ocupado}
                 onClick={() => void excluir()}
-                className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 disabled:opacity-50 dark:border-red-800 dark:text-red-400"
+                className="rounded-md border border-perigo/40 px-3 py-1.5 text-sm text-perigo disabled:opacity-50 "
               >
                 Excluir
               </button>
@@ -308,7 +305,7 @@ export function ArticleEditor() {
       {dados && dados.versoes.length > 0 && (
         <section className="mt-10">
           <h2 className="mb-3 text-lg font-semibold">Histórico de versões</h2>
-          <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-700 dark:border-slate-700 dark:bg-slate-800">
+          <ul className="divide-y divide-borda rounded-lg border border-borda bg-cartao ">
             {dados.versoes.map((v) => (
               <li
                 key={v.versao}

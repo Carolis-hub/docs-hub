@@ -9,7 +9,7 @@ interface Props {
 }
 
 const botao =
-  'rounded px-2 py-1 text-sm font-medium transition hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-40'
+  'rounded px-2 py-1 text-sm font-medium transition hover:bg-bloco  disabled:opacity-40'
 
 export function RichEditor({ value, onChange }: Props) {
   const inputArquivo = useRef<HTMLInputElement>(null)
@@ -25,9 +25,7 @@ export function RichEditor({ value, onChange }: Props) {
   if (!editor) return null
 
   const ativo = (nome: string, attrs?: Record<string, unknown>) =>
-    editor.isActive(nome, attrs)
-      ? `${botao} bg-slate-200 dark:bg-slate-700`
-      : botao
+    editor.isActive(nome, attrs) ? `${botao} bg-bloco ` : botao
 
   function pedirAlt(atual = ''): string | null {
     const alt = window.prompt(
@@ -86,11 +84,11 @@ export function RichEditor({ value, onChange }: Props) {
   const chain = () => editor.chain().focus()
 
   return (
-    <div className="rounded-md border border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800">
+    <div className="rounded-md border border-borda bg-cartao ">
       <div
         role="toolbar"
         aria-label="Formatação"
-        className="flex flex-wrap items-center gap-1 border-b border-slate-300 p-2 dark:border-slate-600"
+        className="flex flex-wrap items-center gap-1 border-b border-borda p-2 "
       >
         <button
           type="button"
@@ -109,7 +107,7 @@ export function RichEditor({ value, onChange }: Props) {
             Título {level}
           </button>
         ))}
-        <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-slate-600" />
+        <span className="mx-1 h-5 w-px bg-borda " />
         <button
           type="button"
           className={ativo('bold')}
@@ -138,7 +136,7 @@ export function RichEditor({ value, onChange }: Props) {
         >
           Bloco de código
         </button>
-        <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-slate-600" />
+        <span className="mx-1 h-5 w-px bg-borda " />
         <button
           type="button"
           className={ativo('bulletList')}
@@ -156,7 +154,7 @@ export function RichEditor({ value, onChange }: Props) {
         <button type="button" className={ativo('link')} onClick={definirLink}>
           Link
         </button>
-        <span className="mx-1 h-5 w-px bg-slate-300 dark:bg-slate-600" />
+        <span className="mx-1 h-5 w-px bg-borda " />
         <button
           type="button"
           className={botao}
@@ -183,10 +181,7 @@ export function RichEditor({ value, onChange }: Props) {
         />
       </div>
       {erro && (
-        <p
-          role="alert"
-          className="px-3 pt-2 text-sm text-red-600 dark:text-red-400"
-        >
+        <p role="alert" className="px-3 pt-2 text-sm text-perigo ">
           {erro}
         </p>
       )}

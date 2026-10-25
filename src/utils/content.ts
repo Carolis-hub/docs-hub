@@ -82,3 +82,15 @@ export function extrairLinks(doc: JSONContent): string[] {
   visitar(doc)
   return urls
 }
+
+/** Marcador que a migração deixa no lugar de cada imagem que ainda não foi enviada. */
+const MARCADOR_IMAGEM = /\[Imagem não migrada:[^\]]*\]?/g
+
+export function temImagemNaoMigrada(texto: string): boolean {
+  return texto.includes('[Imagem não migrada')
+}
+
+/** Tira os marcadores de imagem não migrada de um resumo, para a lista ficar legível. */
+export function limparMarcadores(texto: string): string {
+  return texto.replace(MARCADOR_IMAGEM, ' ').replace(/\s+/g, ' ').trim()
+}

@@ -27,10 +27,10 @@ export function SuggestionReview() {
   const [ocupado, setOcupado] = useState(false)
   const [falha, setFalha] = useState<string | null>(null)
 
-  if (carregando && !dados) return <p className="text-slate-500">Carregando…</p>
+  if (carregando && !dados) return <p className="text-suave">Carregando…</p>
   if (erro)
     return (
-      <p role="alert" className="text-red-600 dark:text-red-400">
+      <p role="alert" className="text-perigo ">
         {erro}
       </p>
     )
@@ -86,12 +86,12 @@ export function SuggestionReview() {
   return (
     <div className="mx-auto max-w-6xl">
       <p className="mb-2 text-sm">
-        <Link to="/admin/sugestoes" className="text-slate-500 hover:underline">
+        <Link to="/admin/sugestoes" className="text-suave hover:underline">
           ← Sugestões
         </Link>
       </p>
       <h1 className="text-2xl font-semibold">{artigo.titulo}</h1>
-      <p className="mt-1 text-sm text-slate-500">
+      <p className="mt-1 text-sm text-suave">
         Gerada de {sugestao.origem.arquivo} em{' '}
         {new Date(sugestao.criadoEm).toLocaleString('pt-BR')}
         {sugestao.origem.commit &&
@@ -99,10 +99,7 @@ export function SuggestionReview() {
       </p>
 
       {!pendente && (
-        <p
-          role="status"
-          className="mt-4 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800"
-        >
+        <p role="status" className="mt-4 rounded-md bg-bloco p-3 text-sm ">
           Esta sugestão já foi{' '}
           {sugestao.status === 'approved' ? 'aprovada' : 'descartada'}.
         </p>
@@ -110,42 +107,40 @@ export function SuggestionReview() {
       {defasada && pendente && (
         <p
           role="alert"
-          className="mt-4 rounded-md bg-amber-100 p-3 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100"
+          className="mt-4 rounded-md bg-ambar-fundo p-3 text-sm text-ambar "
         >
           O artigo foi alterado depois que a IA o leu. Compare com cuidado.
         </p>
       )}
       {sugestao.origem.tipo === 'alt-texto' && (
-        <p className="mt-4 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800">
+        <p className="mt-4 rounded-md bg-bloco p-3 text-sm ">
           Esta sugestão só troca textos alternativos de imagens. O que você vê
           nas duas colunas é igual; confira as descrições na lista abaixo.
         </p>
       )}
       {sugestao.automatico && (
-        <p className="mt-4 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800">
+        <p className="mt-4 rounded-md bg-bloco p-3 text-sm ">
           Este artigo foi escolhido por busca, não indicado nas regras. Descarte
           se não for o artigo certo.
         </p>
       )}
       {sugestao.pratsDesatualizados && (
-        <p className="mt-4 rounded-md bg-amber-100 p-3 text-sm text-amber-900 dark:bg-amber-900/40 dark:text-amber-100">
+        <p className="mt-4 rounded-md bg-ambar-fundo p-3 text-sm text-ambar ">
           As regras mudam telas ou campos: os prints deste artigo podem estar
           desatualizados.
         </p>
       )}
 
-      <section className="mt-6 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+      <section className="mt-6 rounded-lg border border-borda bg-cartao p-4 ">
         <h2 className="mb-2 font-semibold">O que mudou</h2>
-        <p className="mb-2 text-sm text-slate-600 dark:text-slate-400">
-          {sugestao.motivo}
-        </p>
+        <p className="mb-2 text-sm text-suave ">{sugestao.motivo}</p>
         <ul className="list-disc space-y-1 pl-5 text-sm">
           {sugestao.diffResumo.map((m, i) => (
             <li key={i}>{m}</li>
           ))}
         </ul>
         {sugestao.avisos.length > 0 && (
-          <div className="mt-3 text-sm text-amber-800 dark:text-amber-300">
+          <div className="mt-3 text-sm text-ambar ">
             <p className="font-medium">Atenção ao revisar:</p>
             <ul className="list-disc pl-5">
               {sugestao.avisos.map((a, i) => (
@@ -158,18 +153,18 @@ export function SuggestionReview() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section aria-label="Versão atual">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-suave">
             Versão atual
           </h2>
-          <div className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+          <div className="rounded-lg border border-borda bg-cartao p-4 ">
             <ArticleContent conteudo={artigo.conteudo} />
           </div>
         </section>
         <section aria-label="Sugestão da IA">
-          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-suave">
             Sugestão
           </h2>
-          <div className="rounded-lg border border-blue-300 bg-white p-4 dark:border-blue-700 dark:bg-slate-800">
+          <div className="rounded-lg border border-destaque/40 bg-cartao p-4 ">
             {sugestao.titulo !== artigo.titulo && (
               <p className="mb-3 text-sm">
                 Novo título: <strong>{sugestao.titulo}</strong>
@@ -181,7 +176,7 @@ export function SuggestionReview() {
       </div>
 
       {falha && (
-        <p role="alert" className="mt-4 text-sm text-red-600 dark:text-red-400">
+        <p role="alert" className="mt-4 text-sm text-perigo ">
           {falha}
         </p>
       )}
@@ -191,13 +186,13 @@ export function SuggestionReview() {
             type="button"
             disabled={ocupado}
             onClick={() => void aprovar()}
-            className={`${botao} bg-green-600 text-white hover:bg-green-700`}
+            className={`${botao} bg-destaque text-white hover:bg-destaque/90`}
           >
             Aprovar e publicar
           </button>
           <Link
             to={`/admin/artigos/${artigo.id}/editar?sugestao=${sugestao.id}`}
-            className={`${botao} border border-slate-300 dark:border-slate-600`}
+            className={`${botao} border border-borda `}
           >
             Editar antes de aprovar
           </Link>
@@ -205,7 +200,7 @@ export function SuggestionReview() {
             type="button"
             disabled={ocupado}
             onClick={() => void descartar()}
-            className={`${botao} border border-red-300 text-red-700 dark:border-red-800 dark:text-red-400`}
+            className={`${botao} border border-perigo/40 text-perigo `}
           >
             Descartar
           </button>
