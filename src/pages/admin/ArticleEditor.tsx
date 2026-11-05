@@ -11,7 +11,9 @@ import {
   getArticle,
   listVersions,
   publishArticle,
+  returnToDraft,
   saveArticle,
+  sendToReview,
   unpublishArticle,
 } from '../../services/articles'
 import { getBlock } from '../../services/blocks'
@@ -26,6 +28,7 @@ import type {
 } from '../../types/content'
 import { CATEGORIAS } from '../../utils/categorias'
 import { EMPTY_DOC } from '../../utils/content'
+import { rotuloDoStatus } from '../../utils/revisao'
 
 const campo =
   'mt-1 w-full rounded-md border border-borda bg-cartao px-3 py-2 text-sm  '
@@ -149,6 +152,24 @@ export function ArticleEditor() {
       return `Publicado (versão ${versao}).`
     })
 
+  const enviarParaRevisao = () =>
+    executar(async () => {
+      if (!artigo) return
+      // Grava o que está na tela antes: a fila mostra o texto salvo.
+      await saveArticle(artigo.id, draft(), uid)
+      await sendToReview(artigo.id, uid)
+      recarregar()
+      return 'Enviado para a fila de revisão.'
+    })
+
+  const devolverParaRascunho = () =>
+    executar(async () => {
+      if (!artigo) return
+      await returnToDraft(artigo.id, uid)
+      recarregar()
+      return 'Artigo voltou para rascunho.'
+    })
+
   const despublicar = () =>
     executar(async () => {
       if (!artigo) return
@@ -183,7 +204,7 @@ export function ArticleEditor() {
           <span className="ml-3 rounded bg-bloco px-2 py-0.5 text-xs font-normal ">
             {artigo.status === 'published'
               ? `Publicado v${artigo.versao}`
-              : 'Rascunho'}
+              : rotuloDoStatus(artigo.status)}
           </span>
         )}
       </h1>
@@ -290,8 +311,28 @@ export function ArticleEditor() {
                 onClick={() => void publicar()}
                 className="rounded-md bg-destaque px-3 py-1.5 text-sm font-medium text-white hover:bg-destaque/90 disabled:opacity-50"
               >
-                Publicar
+                {artigo.status === 'review' ? 'Aprovar e publicar' : 'Publicar'}
               </button>
+              {artigo.status === 'draft' && (
+                <button
+                  type="button"
+                  disabled={ocupado}
+                  onClick={() => void enviarParaRevisao()}
+                  className={botaoSec}
+                >
+                  Enviar para revisão
+                </button>
+              )}
+              {artigo.status === 'review' && (
+                <button
+                  type="button"
+                  disabled={ocupado}
+                  onClick={() => void devolverParaRascunho()}
+                  className={botaoSec}
+                >
+                  Devolver a rascunho
+                </button>
+              )}
               {artigo.status === 'published' && (
                 <button
                   type="button"

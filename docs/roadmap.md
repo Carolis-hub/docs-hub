@@ -43,13 +43,16 @@ próprio. Fonte inicial: `C:\projetos_selbetti\smartshare-di\docs`.
 - [ ] Classificação (sugere categoria, produto/subproduto, conteúdo técnico ou
       misto)
 - [ ] Detecção de duplicidade e de alteração por hash de conteúdo
-- [ ] Controle de origem (rastreabilidade)
-- [ ] Fila de revisão: nada importado é publicado automaticamente
+- [ ] Controle de origem (rastreabilidade) — já grava `origem.tipo`
+      (`editor` ou `importacao`); faltam arquivo e hash (parte B)
+- [x] Fila de revisão: nada importado é publicado automaticamente — status
+      "Em revisão", tela admin "Revisão" (aprovar um a um ou em lote, devolver a
+      rascunho) e `--publicar` no importador para o comportamento antigo
 - [ ] Sincronização: arquivo novo → registro para revisão; alterado → revisão
       pendente (a versão publicada continua no ar); removido → análise de
       despublicação; sem alteração → não reprocessa; erro → registra e permite
       reprocessar
-- [ ] Editor próprio: criar/editar, modelos de documentação funcional, imagens,
+- [ ] Editor próprio (já tem rascunho e "Enviar para revisão"): criar/editar, modelos de documentação funcional, imagens,
       tabelas e links, categorias, rascunho e envio para revisão
 
 Conclusão: documentos importados ou criados são classificados e vão para
@@ -126,10 +129,10 @@ publicação indevida. O SmartShare DI é o piloto.
 | Plano do time                        | Hoje no código                                                         |
 | ------------------------------------ | ---------------------------------------------------------------------- |
 | BU → Produto → Subproduto            | Hierarquia livre de blocos (produto → subproduto → …), sem nível de BU |
-| Categorias documentais               | Não existe                                                             |
-| Status em 6 estados                  | Rascunho/publicado e versões; sugestões da IA com aprovação do admin   |
+| Categorias documentais               | Campo do artigo, 4 categorias fixas                                    |
+| Status em 6 estados                  | Rascunho, em revisão e publicado; versões; sugestões da IA aprovadas   |
 | Importar `.md/.docx/.pdf/.txt/.html` | Importador de exportação neutra (`.md`/`.html`) e adaptador SmartShare |
-| Fila de revisão de importados        | Importação publica direto (com `--sem-imagens`, etc.)                  |
+| Fila de revisão de importados        | Existe: a importação entra "em revisão" (`--publicar` publica direto)  |
 | pgvector (Postgres)                  | Firestore; busca textual com MiniSearch, sem embeddings                |
 | Comentários na revisão               | Não existe                                                             |
 | Auditoria                            | Existe (`auditLog`)                                                    |
@@ -144,7 +147,7 @@ ou mudar de banco antes da Fase 5.
 - [x] Importar os 57 artigos só com texto no Firebase `dev`
 - [ ] Configurar o Cloudinary (conta, preset sem assinatura, pasta fixa)
 - [ ] Migrar as 211 imagens: rodar o importador sem `--sem-imagens` e com
-      `--sobrescrever` (fazer antes de editar os artigos à mão)
+      `--sobrescrever --publicar` (os 57 já estão no ar; fazer antes de editar os artigos à mão)
 - [ ] Gerar e revisar os textos alternativos (`npm run alt-texto`), com a chave
       da API da Anthropic
 - [ ] Decidir quais artigos são "técnicos" (`--tecnico "<regex>"` no adaptador)

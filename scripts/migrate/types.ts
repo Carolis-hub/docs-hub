@@ -37,6 +37,8 @@ export interface Relatorio {
     blocos: number
     artigos: number
     publicados: number
+    /** Aguardando aprovação de um admin (padrão da importação). */
+    emRevisao: number
     rascunhos: number
     imagensOk: number
     imagensComFalha: number

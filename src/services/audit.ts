@@ -17,6 +17,8 @@ export type AuditAction =
   | 'artigo.editar'
   | 'artigo.publicar'
   | 'artigo.despublicar'
+  | 'artigo.enviar-revisao'
+  | 'artigo.devolver-rascunho'
   | 'artigo.excluir'
   | 'sugestao.aprovar'
   | 'sugestao.descartar'

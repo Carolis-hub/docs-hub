@@ -11,7 +11,7 @@ export function relatorioEmMarkdown(r: Relatorio, simulacao: boolean): string {
     `# Relatório de migração${simulacao ? ' (simulação, nada foi gravado)' : ''}`,
     '',
     `- Blocos: ${resumo.blocos}`,
-    `- Artigos: ${resumo.artigos} (${resumo.publicados} publicados, ${resumo.rascunhos} rascunhos)`,
+    `- Artigos: ${resumo.artigos} (${resumo.publicados} publicados, ${resumo.emRevisao} em revisão, ${resumo.rascunhos} rascunhos)`,
     `- Imagens migradas: ${resumo.imagensOk}`,
     `- Imagens com falha: ${resumo.imagensComFalha}`,
     ...(resumo.imagensPuladas

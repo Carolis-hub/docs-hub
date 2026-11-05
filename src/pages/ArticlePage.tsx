@@ -11,6 +11,7 @@ import { getAncestors, getBlock } from '../services/blocks'
 import { registrarVisualizacao } from '../services/metrics'
 import { getUnidade } from '../services/unidades'
 import { nomeDaCategoria } from '../utils/categorias'
+import { rotuloDoStatus } from '../utils/revisao'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 
 export function ArticlePage() {
@@ -50,7 +51,7 @@ export function ArticlePage() {
     nomeDaCategoria(artigo.categoria),
     artigo.versaoProduto && `Versão do produto ${artigo.versaoProduto}`,
     artigo.publico === 'tecnico' && 'Técnico',
-    isAdmin && artigo.status === 'draft' && 'Rascunho',
+    isAdmin && artigo.status !== 'published' && rotuloDoStatus(artigo.status),
   ].filter(Boolean)
 
   return (

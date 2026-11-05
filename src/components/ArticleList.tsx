@@ -4,6 +4,7 @@ import type { Article } from '../types/content'
 import { nomeDaCategoria } from '../utils/categorias'
 import { limparMarcadores, temImagemNaoMigrada } from '../utils/content'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
+import { rotuloDoStatus } from '../utils/revisao'
 import type { Visao } from './ListToolbar'
 
 interface Props {
@@ -33,8 +34,10 @@ export function ArticleList({ artigos, visao, admin }: Props) {
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">{a.titulo}</span>
-                  {admin && a.status === 'draft' && (
-                    <span className="selo selo-ambar">Rascunho</span>
+                  {admin && a.status !== 'published' && (
+                    <span className="selo selo-ambar">
+                      {rotuloDoStatus(a.status)}
+                    </span>
                   )}
                   {nomeDaCategoria(a.categoria) && (
                     <span className="selo">{nomeDaCategoria(a.categoria)}</span>

@@ -7,6 +7,7 @@ import { QuickSearch } from './QuickSearch'
 import { ThemeToggle } from './ThemeToggle'
 
 const LINKS_ADMIN = [
+  { para: '/admin/revisao', rotulo: 'Revisão' },
   { para: '/admin/sugestoes', rotulo: 'Sugestões' },
   { para: '/admin/metricas', rotulo: 'Métricas' },
   { para: '/admin/unidades', rotulo: 'Unidades' },

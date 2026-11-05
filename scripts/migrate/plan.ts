@@ -20,6 +20,12 @@ export interface PlanoDeps {
   verificarLink?(href: string): Promise<string | null>
   agora: number
   autorId: string
+  /**
+   * Publica direto o que o manifesto marca como publicado. Padrão: `false`,
+   * o artigo entra na fila de revisão e só aparece aos leitores quando um
+   * admin aprova.
+   */
+  publicarDireto?: boolean
 }
 
 /** Id estável no Firestore: legível, e com sufixo de hash só em colisões. */
@@ -50,6 +56,7 @@ export function relatorioVazio(): Relatorio {
       blocos: 0,
       artigos: 0,
       publicados: 0,
+      emRevisao: 0,
       rascunhos: 0,
       imagensOk: 0,
       imagensComFalha: 0,
@@ -205,7 +212,13 @@ export async function planejar(
           mensagem: 'artigo sem texto',
         })
       }
-      const publicado = origem.publicado ?? true
+      const noAr = origem.publicado ?? true
+      const status: Article['status'] = !noAr
+        ? 'draft'
+        : deps.publicarDireto
+          ? 'published'
+          : 'review'
+      const publicado = status === 'published'
       const atualizado = origem.atualizadoEm
         ? Date.parse(origem.atualizadoEm)
         : deps.agora
@@ -225,7 +238,8 @@ export async function planejar(
         ...(origem.versaoProduto?.trim()
           ? { versaoProduto: origem.versaoProduto.trim() }
           : {}),
-        status: publicado ? 'published' : 'draft',
+        status,
+        origem: { tipo: 'importacao' },
         flags: [],
         views: 0,
         versao: publicado ? 1 : 0,
@@ -248,7 +262,12 @@ export async function planejar(
   relatorio.resumo.publicados = artigos.filter(
     (a) => a.status === 'published',
   ).length
-  relatorio.resumo.rascunhos = artigos.length - relatorio.resumo.publicados
+  relatorio.resumo.emRevisao = artigos.filter(
+    (a) => a.status === 'review',
+  ).length
+  relatorio.resumo.rascunhos = artigos.filter(
+    (a) => a.status === 'draft',
+  ).length
   relatorio.resumo.artigosSemBloco = relatorio.artigosSemBloco.length
   return { blocos, artigos, relatorio }
 }

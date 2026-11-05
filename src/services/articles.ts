@@ -17,6 +17,7 @@ import { invalidarCacheBusca } from './search'
 import type {
   Article,
   ArticleDraft,
+  ArticleOrigem,
   ArticleStatus,
   ArticleVersion,
 } from '../types/content'
@@ -73,6 +74,14 @@ export async function listArticlesByBlock(
     .sort((a, b) => a.titulo.localeCompare(b.titulo))
 }
 
+/** Artigos de um status, para a fila de revisão (só admin; leitor não passa nas regras). */
+export async function listArticlesByStatus(
+  status: ArticleStatus,
+): Promise<Article[]> {
+  const snap = await getDocs(query(articles, where('status', '==', status)))
+  return snap.docs.map(fromSnap).sort((a, b) => b.atualizadoEm - a.atualizadoEm)
+}
+
 export async function createArticle(
   draft: ArticleDraft,
   blockId: string,
@@ -88,6 +97,7 @@ export async function createArticle(
     blockId,
     productId,
     status: 'draft' satisfies ArticleStatus,
+    origem: { tipo: 'editor' } satisfies ArticleOrigem,
     flags: [],
     views: 0,
     versao: 0,
@@ -185,6 +195,40 @@ export async function publishArticle(
   })
   invalidarCacheBusca()
   return versao
+}
+
+/** Rascunho → fila de revisão. Só o rascunho muda: publicado e já em revisão ficam como estão. */
+export async function sendToReview(id: string, uid: string): Promise<void> {
+  const ref = doc(articles, id)
+  await runTransaction(db, async (tx) => {
+    const atual = fromSnap(await tx.get(ref))
+    if (atual.status !== 'draft') {
+      throw new Error('Só um rascunho pode ser enviado para revisão.')
+    }
+    tx.update(ref, {
+      status: 'review' satisfies ArticleStatus,
+      atualizadoPor: uid,
+      atualizadoEm: Date.now(),
+    })
+    registrarAuditoria(tx, uid, 'artigo.enviar-revisao', `articles/${id}`)
+  })
+}
+
+/** Fila de revisão → rascunho (pedido de ajustes). Não mexe em artigo publicado. */
+export async function returnToDraft(id: string, uid: string): Promise<void> {
+  const ref = doc(articles, id)
+  await runTransaction(db, async (tx) => {
+    const atual = fromSnap(await tx.get(ref))
+    if (atual.status !== 'review') {
+      throw new Error('Só um artigo em revisão pode voltar para rascunho.')
+    }
+    tx.update(ref, {
+      status: 'draft' satisfies ArticleStatus,
+      atualizadoPor: uid,
+      atualizadoEm: Date.now(),
+    })
+    registrarAuditoria(tx, uid, 'artigo.devolver-rascunho', `articles/${id}`)
+  })
 }
 
 export async function unpublishArticle(id: string, uid: string): Promise<void> {

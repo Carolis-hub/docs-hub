@@ -17,15 +17,15 @@ Interface e documentação em **português do Brasil**.
 
 ## Comandos
 
-| Comando                                                 | Para quê                                                          |
-| ------------------------------------------------------- | ----------------------------------------------------------------- |
-| `npm run dev`                                           | Sistema em `http://localhost:5173`                                |
-| `npm test`                                              | Testes unitários (Vitest)                                         |
-| `npm run test:rules`                                    | Regras do Firestore e scripts contra o Emulator (precisa de Java) |
-| `npm run lint` / `typecheck` / `format:check` / `build` | Conferências que o CI também roda                                 |
-| `npm run migrate -- <pasta> …`                          | Importador (simulação por padrão; `--gravar` grava)               |
-| `npm run alt-texto -- …`                                | Sugere textos alternativos de imagens (IA)                        |
-| `npm run doc-sync -- …`                                 | Sugere atualizações de artigos a partir de `.md` de regras        |
+| Comando                                                 | Para quê                                                                                           |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `npm run dev`                                           | Sistema em `http://localhost:5173`                                                                 |
+| `npm test`                                              | Testes unitários (Vitest)                                                                          |
+| `npm run test:rules`                                    | Regras do Firestore e scripts contra o Emulator (precisa de Java)                                  |
+| `npm run lint` / `typecheck` / `format:check` / `build` | Conferências que o CI também roda                                                                  |
+| `npm run migrate -- <pasta> …`                          | Importador (simulação por padrão; `--gravar` grava; entra em revisão, `--publicar` publica direto) |
+| `npm run alt-texto -- …`                                | Sugere textos alternativos de imagens (IA)                                                         |
+| `npm run doc-sync -- …`                                 | Sugere atualizações de artigos a partir de `.md` de regras                                         |
 
 Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 `test:rules` devem passar. Há 2 avisos de lint antigos (`useAuth`, `useTheme`).
@@ -95,7 +95,8 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 
 ## Estado atual (resumo; detalhes em `docs/roadmap.md`)
 
-- Fases 0 a 7 e o novo visual estão na branch padrão.
+- Fases 0 a 7, o novo visual e as Fases 1 (BU e categorias) e 2A (fila de
+  revisão) do roadmap do time estão na branch padrão.
 - Base do SmartShare 4 importada **só com texto** no Firebase `dev`
   (10 blocos, 57 artigos); imagens ainda não migradas (211 marcadores
   `[Imagem não migrada: …]`).

@@ -22,7 +22,7 @@ const EXEMPLO = path.resolve('scripts/migrate/exemplo')
 
 let testEnv: RulesTestEnvironment
 
-async function planoDoExemplo() {
+async function planoDoExemplo(publicarDireto = true) {
   const bruto = JSON.parse(
     await readFile(path.join(EXEMPLO, 'manifesto.json'), 'utf8'),
   )
@@ -31,6 +31,7 @@ async function planoDoExemplo() {
   return planejar(v.manifesto, {
     agora: 1_700_000_000_000,
     autorId: 'migracao',
+    publicarDireto,
     lerConteudo: (a: ManifestoArtigo) =>
       a.arquivo
         ? readFile(path.join(EXEMPLO, a.arquivo), 'utf8')
@@ -229,5 +230,63 @@ describe('migração gravada no Firestore (Emulator)', () => {
 
     const outro = testEnv.authenticatedContext('outro').firestore()
     await assertFails(getDoc(doc(outro, 'articles', login!.id)))
+  })
+})
+
+describe('importação com fila de revisão (Emulator)', () => {
+  const db = () =>
+    getFirestore(getApps()[0] ?? initializeApp({ projectId: PROJETO }))
+
+  it('por padrão grava em revisão: sem versão e fora do índice de busca', async () => {
+    await testEnv.clearFirestore()
+    const plano = await planoDoExemplo(false)
+    const r = await gravar(plano, opts)
+    expect(r).toMatchObject({ artigosGravados: 3, indices: 0 })
+    const login = plano.artigos[0]!
+    const snap = await db().collection('articles').doc(login.id).get()
+    expect(snap.data()).toMatchObject({
+      status: 'review',
+      versao: 0,
+      origem: { tipo: 'importacao' },
+    })
+    expect(
+      (await db().collection('searchIndex').doc(login.productId).get()).exists,
+    ).toBe(false)
+    expect(
+      (
+        await db()
+          .collection('articles')
+          .doc(login.id)
+          .collection('versions')
+          .get()
+      ).size,
+    ).toBe(0)
+  })
+
+  it('o leitor não enxerga o artigo em revisão', async () => {
+    const plano = await planoDoExemplo(false)
+    const login = plano.artigos[0]!
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await ctx
+        .firestore()
+        .doc('users/leitor')
+        .set({
+          role: 'reader',
+          produtosPermitidos: [login.productId],
+        })
+    })
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    await assertFails(getDoc(doc(leitor, `articles/${login.id}`)))
+  })
+
+  it('--sobrescrever nunca despublica um artigo que já está no ar', async () => {
+    await testEnv.clearFirestore()
+    await gravar(await planoDoExemplo(true), opts)
+    const plano = await planoDoExemplo(false)
+    const r = await gravar(plano, { ...opts, sobrescrever: true })
+    expect(r.artigosPublicadosMantidos).toBe(2)
+    const login = plano.artigos[0]!
+    const snap = await db().collection('articles').doc(login.id).get()
+    expect(snap.data()).toMatchObject({ status: 'published', versao: 1 })
   })
 })
