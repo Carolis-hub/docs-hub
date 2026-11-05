@@ -27,6 +27,8 @@ export interface ResultadoGravacao {
   blocosPulados: number
   artigosGravados: number
   artigosPulados: number
+  /** Já publicados que não foram substituídos por uma versão não publicada. */
+  artigosPublicadosMantidos: number
   indices: number
   /** Versões do histórico recriadas em artigos que já existiam sem elas. */
   versoesRecriadas: number
@@ -76,6 +78,7 @@ export async function gravar(
     blocosPulados: 0,
     artigosGravados: 0,
     artigosPulados: 0,
+    artigosPublicadosMantidos: 0,
     indices: 0,
     versoesRecriadas: 0,
   }
@@ -125,8 +128,16 @@ export async function gravar(
   plano.artigos.forEach((a, i) => {
     const ref = refsArtigos[i] as DocumentReference
     const anterior = existentes.get(ref.path)
-    if (anterior && !opts.sobrescrever) {
+    // Nunca despublica: um artigo no ar só é substituído por outro publicado
+    // (`--publicar`). Atualizar o que já está no ar passando por revisão fica
+    // para a sincronização (Fase 2, parte B).
+    const manterPublicado =
+      anterior?.status === 'published' && a.status !== 'published'
+    if (anterior && (!opts.sobrescrever || manterPublicado)) {
       resultado.artigosPulados++
+      if (opts.sobrescrever && manterPublicado) {
+        resultado.artigosPublicadosMantidos++
+      }
       if (anterior.status === 'published') {
         puladosPublicados.push({ ref, anterior })
         guardarItem(

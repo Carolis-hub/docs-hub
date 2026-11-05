@@ -40,6 +40,15 @@ período e até 20 termos buscados. No pior caso, com 300 artigos e período de
 só carrega ao abrir ou ao clicar em "Atualizar", e o período de 90 dias deve
 ser usado com parcimônia.
 
+## Fila de revisão (admin)
+
+Cada carga da tela "Revisão" lê um documento por artigo em revisão e todos os
+blocos (para mostrar o caminho). Com 60 artigos na fila e 15 blocos, são cerca
+de 75 leituras. Aprovar publica o artigo e atualiza o índice de busca do
+produto: 1 gravação do artigo, 1 da versão e as do índice (mais as regras de
+segurança), por artigo aprovado. Aprovar a fila inteira de uma vez custa
+algumas centenas de gravações, bem abaixo do limite diário.
+
 ## Onde a cota pode apertar
 
 1. **Painel de métricas com período longo**: o maior consumidor individual.

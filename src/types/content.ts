@@ -36,7 +36,12 @@ export type UnidadeInput = Pick<Unidade, 'nome' | 'descricao' | 'icone'>
 export type CategoriaId =
   'funcionalidades' | 'configuracoes' | 'processos' | 'regras-de-negocio'
 
-export type ArticleStatus = 'draft' | 'published'
+/** `review` = aguardando aprovação: some para os leitores, como o rascunho. */
+export type ArticleStatus = 'draft' | 'review' | 'published'
+/** De onde veio o artigo; o importado entra na fila de revisão. */
+export interface ArticleOrigem {
+  tipo: 'editor' | 'importacao'
+}
 export type ArticlePublico = 'usuario' | 'tecnico'
 
 export interface Article {
@@ -53,6 +58,7 @@ export interface Article {
   categoria?: CategoriaId | ''
   versaoProduto?: string
   status: ArticleStatus
+  origem?: ArticleOrigem
   flags: string[]
   views: number
   versao: number

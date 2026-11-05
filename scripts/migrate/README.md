@@ -113,11 +113,20 @@ npm run migrate -- caminho/do/export --gravar --projeto docs-hub-dev
 # 3. Só depois de revisar o relatório, repetir no prod
 ```
 
+**Fila de revisão (padrão):** os artigos que o export marca como publicados
+entram como **"Em revisão"**: ficam fora da busca e invisíveis aos leitores até
+um admin aprovar na tela **Revisão** (um a um ou em lote). O que o export já
+marca como não publicado continua rascunho. Para publicar direto, como antes,
+use `--publicar`. Um artigo que **já está no ar** nunca é despublicado pelo
+importador: com `--sobrescrever`, ele só é substituído se a importação também
+for com `--publicar` (atualizar o que está no ar passando por revisão fica para
+a sincronização contínua).
+
 **Só o texto, sem imagens:** `--sem-imagens` não baixa nem envia nenhuma imagem
 e dispensa o Cloudinary. No lugar de cada imagem o artigo recebe o parágrafo
 `[Imagem não migrada: <endereço original>]`, e o relatório conta quantas foram
 puladas (e não como falhas). Para trazer as imagens depois, rode de novo **sem**
-a opção e **com** `--sobrescrever`: o conteúdo dos artigos é refeito (as
+a opção e **com** `--sobrescrever --publicar` (se os artigos já estão no ar): o conteúdo dos artigos é refeito (as
 `views` ficam e a versão sobe), então faça isso antes de editar os artigos à mão.
 
 **Se a gravação travar** (erro `DEADLINE_EXCEEDED` ou `UNAVAILABLE`): é quase
@@ -127,7 +136,7 @@ escrita até 8 vezes. Se ainda assim falhar, ele termina com uma mensagem curta
 gravado e completa o índice de busca). Tente a opção `--rest`, que grava por
 HTTP comum em vez de gRPC, ou desligue a VPN, ou use outra conexão.
 
-Opções: `--rest`, `--sem-imagens`, `--sobrescrever` (substitui o que já existe, mantém `views`),
+Opções: `--publicar`, `--rest`, `--sem-imagens`, `--sobrescrever` (substitui o que já existe, mantém `views`),
 `--verificar-links` (confere links externos por HTTP), `--autor <uid>`,
 `--saida <pasta>` (padrão `<export>/.migracao`), `--estrito` (código de saída 1
 se houver pendências) e `--ajuda`. Para testar contra o Emulator, defina

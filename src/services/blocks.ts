@@ -45,6 +45,12 @@ export async function listProducts(
   return ordenar(snap.docs.map(fromSnap))
 }
 
+/** Todos os blocos (só admin): usado para mostrar o caminho dos artigos na fila de revisão. */
+export async function listAllBlocks(): Promise<Block[]> {
+  const snap = await getDocs(blocks)
+  return snap.docs.map(fromSnap)
+}
+
 export async function listChildren(parentId: string): Promise<Block[]> {
   const snap = await getDocs(query(blocks, where('parentId', '==', parentId)))
   return ordenar(snap.docs.map(fromSnap))

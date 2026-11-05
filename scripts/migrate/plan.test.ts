@@ -13,6 +13,7 @@ const EXEMPLO = path.resolve(import.meta.dirname, 'exemplo')
 
 async function planoDoExemplo(
   verificarLink?: (h: string) => Promise<string | null>,
+  publicarDireto = true,
 ) {
   const bruto = JSON.parse(
     await readFile(path.join(EXEMPLO, 'manifesto.json'), 'utf8'),
@@ -22,6 +23,7 @@ async function planoDoExemplo(
   return planejar(v.manifesto, {
     agora: 1_700_000_000_000,
     autorId: 'migracao',
+    publicarDireto,
     verificarLink,
     lerConteudo: (a: ManifestoArtigo) =>
       a.arquivo
@@ -139,6 +141,22 @@ describe('planejar (export de exemplo)', () => {
       revisadoEm: Date.parse('2025-03-10'),
     })
     expect(artigos[2]).toMatchObject({ status: 'draft', versao: 0 })
+  })
+
+  it('sem publicarDireto, o que estava no ar entra na fila de revisão', async () => {
+    const { artigos, relatorio } = await planoDoExemplo(undefined, false)
+    expect(artigos[0]).toMatchObject({
+      status: 'review',
+      versao: 0,
+      origem: { tipo: 'importacao' },
+    })
+    // O que o export já marca como não publicado continua rascunho.
+    expect(artigos[2]).toMatchObject({ status: 'draft', versao: 0 })
+    expect(relatorio.resumo).toMatchObject({
+      publicados: 0,
+      emRevisao: 2,
+      rascunhos: 1,
+    })
   })
 
   it('troca imagens válidas, gera alt faltante e relata falhas', async () => {

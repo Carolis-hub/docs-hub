@@ -15,7 +15,11 @@ const AJUDA = `Uso: node scripts/migrate/index.ts <pasta-do-export> [opções]
   --projeto <id>        Projeto Firebase (ou FIREBASE_PROJECT_ID / VITE_FIREBASE_PROJECT_ID)
   --sem-imagens         Importa só o texto: não baixa nem envia imagens (não pede o Cloudinary)
   --rest                Grava por REST em vez de gRPC (para redes com proxy/firewall que travam)
-  --sobrescrever        Substitui artigos e blocos que já existem (mantém views)
+  --sobrescrever        Substitui artigos e blocos que já existem (mantém views).
+                        Um artigo já publicado só é substituído com --publicar
+  --publicar            Publica direto o que o export marca como publicado. Sem isto,
+                        os artigos entram na FILA DE REVISÃO (tela "Revisão") e só
+                        aparecem aos leitores quando um admin aprova
   --verificar-links     Confere links externos (faz requisições HTTP)
   --autor <uid>         Autor gravado nos artigos (padrão: migracao)
   --saida <pasta>       Onde salvar relatório e cache (padrão: <pasta-do-export>/.migracao)
@@ -34,6 +38,7 @@ async function main() {
       projeto: { type: 'string' },
       sobrescrever: { type: 'boolean', default: false },
       'sem-imagens': { type: 'boolean', default: false },
+      publicar: { type: 'boolean', default: false },
       rest: { type: 'boolean', default: false },
       'verificar-links': { type: 'boolean', default: false },
       autor: { type: 'string', default: 'migracao' },
@@ -106,6 +111,7 @@ async function main() {
   const plano = await planejar(validado.manifesto, {
     agora,
     autorId: values.autor,
+    publicarDireto: values.publicar,
     verificarLink,
     lerConteudo: async (a: ManifestoArtigo) =>
       a.arquivo
@@ -154,6 +160,9 @@ async function main() {
     console.log(
       `Gravado em ${projeto}: ${r.blocosGravados} blocos (${r.blocosPulados} já existiam), ` +
         `${r.artigosGravados} artigos (${r.artigosPulados} já existiam), ${r.indices} índices de busca` +
+        (r.artigosPublicadosMantidos
+          ? `, ${r.artigosPublicadosMantidos} já publicados mantidos (use --publicar para atualizá-los)`
+          : '') +
         (r.versoesRecriadas
           ? `, ${r.versoesRecriadas} versões do histórico recriadas.`
           : '.'),
