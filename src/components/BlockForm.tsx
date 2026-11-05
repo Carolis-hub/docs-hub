@@ -1,17 +1,26 @@
 import { useState, type FormEvent } from 'react'
-import type { BlockInput } from '../types/content'
+import type { BlockInput, Unidade } from '../types/content'
 
 interface Props {
   titulo: string
   inicial?: BlockInput
+  /** Quando informado (formulário de produto), mostra o seletor de unidade. */
+  unidades?: Unidade[]
   onSubmit: (input: BlockInput) => Promise<void>
   onCancel: () => void
 }
 
-export function BlockForm({ titulo, inicial, onSubmit, onCancel }: Props) {
+export function BlockForm({
+  titulo,
+  inicial,
+  unidades,
+  onSubmit,
+  onCancel,
+}: Props) {
   const [nome, setNome] = useState(inicial?.nome ?? '')
   const [descricao, setDescricao] = useState(inicial?.descricao ?? '')
   const [icone, setIcone] = useState(inicial?.icone ?? '')
+  const [unidadeId, setUnidadeId] = useState(inicial?.unidadeId ?? '')
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
 
@@ -24,7 +33,12 @@ export function BlockForm({ titulo, inicial, onSubmit, onCancel }: Props) {
     setSalvando(true)
     setErro(null)
     try {
-      await onSubmit({ nome, descricao, icone })
+      await onSubmit({
+        nome,
+        descricao,
+        icone,
+        ...(unidades ? { unidadeId: unidadeId || null } : {}),
+      })
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível salvar.')
     } finally {
@@ -65,6 +79,23 @@ export function BlockForm({ titulo, inicial, onSubmit, onCancel }: Props) {
           onChange={(e) => setIcone(e.target.value)}
         />
       </label>
+      {unidades && (
+        <label className="block text-sm">
+          Unidade de negócio
+          <select
+            className="campo mt-1"
+            value={unidadeId}
+            onChange={(e) => setUnidadeId(e.target.value)}
+          >
+            <option value="">Sem unidade</option>
+            {unidades.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {erro && (
         <p role="alert" className="text-sm text-perigo">
           {erro}

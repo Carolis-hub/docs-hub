@@ -9,6 +9,8 @@ import { useAuth } from '../hooks/useAuth'
 import { getArticle } from '../services/articles'
 import { getAncestors, getBlock } from '../services/blocks'
 import { registrarVisualizacao } from '../services/metrics'
+import { getUnidade } from '../services/unidades'
+import { nomeDaCategoria } from '../utils/categorias'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 
 export function ArticlePage() {
@@ -19,7 +21,9 @@ export function ArticlePage() {
     if (!artigo) return null
     const bloco = await getBlock(artigo.blockId)
     const cadeia = bloco ? await getAncestors(bloco) : []
-    return { artigo, cadeia }
+    const unidadeId = cadeia[0]?.unidadeId
+    const unidade = unidadeId ? await getUnidade(unidadeId) : null
+    return { artigo, cadeia, unidade }
   }, [articleId])
 
   const artigoId = dados?.artigo.id
@@ -40,9 +44,10 @@ export function ArticlePage() {
     )
   if (!dados) return <p>Artigo não encontrado.</p>
 
-  const { artigo, cadeia } = dados
+  const { artigo, cadeia, unidade } = dados
   const meta = [
     `Atualizado em ${new Date(artigo.atualizadoEm).toLocaleDateString('pt-BR')}`,
+    nomeDaCategoria(artigo.categoria),
     artigo.versaoProduto && `Versão do produto ${artigo.versaoProduto}`,
     artigo.publico === 'tecnico' && 'Técnico',
     isAdmin && artigo.status === 'draft' && 'Rascunho',
@@ -50,7 +55,7 @@ export function ArticlePage() {
 
   return (
     <article className="mx-auto max-w-4xl">
-      <Breadcrumb cadeia={cadeia} artigo={artigo} />
+      <Breadcrumb cadeia={cadeia} unidade={unidade} artigo={artigo} />
       <PageHeader
         icone={iconeDoArtigo(artigo.titulo)}
         titulo={artigo.titulo}

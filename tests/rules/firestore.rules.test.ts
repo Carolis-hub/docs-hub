@@ -44,6 +44,7 @@ beforeAll(async () => {
       produtosPermitidos: ['p1'],
       verTecnico: true,
     })
+    await setDoc(doc(db, 'unidades/u1'), { nome: 'Process Solution', ordem: 0 })
     await setDoc(doc(db, 'blocks/p1'), { productId: 'p1', parentId: null })
     await setDoc(doc(db, 'blocks/p2'), { productId: 'p2', parentId: null })
     await setDoc(doc(db, 'articles/pub'), {
@@ -360,5 +361,48 @@ describe('firestore.rules — sugestões da IA (Fase 6)', () => {
     await assertSucceeds(updateDoc(doc(admin, ref), { status: 'discarded' }))
     await assertFails(getDoc(doc(leitor, ref)))
     await assertFails(updateDoc(doc(leitor, ref), { status: 'approved' }))
+  })
+})
+
+describe('firestore.rules — unidades de negócio', () => {
+  it('nega a leitura sem login e a conta sem perfil ou inativa', async () => {
+    await assertFails(
+      getDoc(doc(testEnv.unauthenticatedContext().firestore(), 'unidades/u1')),
+    )
+    await assertFails(
+      getDoc(
+        doc(
+          testEnv.authenticatedContext('sem-perfil').firestore(),
+          'unidades/u1',
+        ),
+      ),
+    )
+    await assertFails(
+      getDoc(
+        doc(testEnv.authenticatedContext('inativo').firestore(), 'unidades/u1'),
+      ),
+    )
+  })
+
+  it('qualquer usuário ativo lê as unidades', async () => {
+    const db = testEnv.authenticatedContext('leitor').firestore()
+    await assertSucceeds(getDoc(doc(db, 'unidades/u1')))
+  })
+
+  it('só admin cria, edita e exclui unidades', async () => {
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    await assertFails(setDoc(doc(leitor, 'unidades/nova'), { nome: 'X' }))
+    await assertFails(updateDoc(doc(leitor, 'unidades/u1'), { nome: 'Y' }))
+    await assertFails(deleteDoc(doc(leitor, 'unidades/u1')))
+
+    const admin = testEnv.authenticatedContext('admin').firestore()
+    await assertSucceeds(setDoc(doc(admin, 'unidades/nova'), { nome: 'X' }))
+    await assertSucceeds(updateDoc(doc(admin, 'unidades/nova'), { nome: 'Y' }))
+    await assertSucceeds(deleteDoc(doc(admin, 'unidades/nova')))
+  })
+
+  it('a unidade não dá acesso a produtos: o bloco continua restrito', async () => {
+    const db = testEnv.authenticatedContext('leitor').firestore()
+    await assertFails(getDoc(doc(db, 'blocks/p2')))
   })
 })

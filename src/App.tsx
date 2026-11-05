@@ -10,6 +10,7 @@ import { SearchPage } from './pages/SearchPage'
 import { SuggestionReview } from './pages/admin/SuggestionReview'
 import { SuggestionsPage } from './pages/admin/SuggestionsPage'
 import { MetricsPage } from './pages/admin/MetricsPage'
+import { UnidadesPage } from './pages/admin/UnidadesPage'
 import { UsersPage } from './pages/admin/UsersPage'
 import { ArticleEditor } from './pages/admin/ArticleEditor'
 
@@ -48,6 +49,14 @@ function App() {
                   element={
                     <RequireAdmin>
                       <MetricsPage />
+                    </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="/admin/unidades"
+                  element={
+                    <RequireAdmin>
+                      <UnidadesPage />
                     </RequireAdmin>
                   }
                 />

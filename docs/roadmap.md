@@ -23,12 +23,12 @@ Objetivo: estrutura organizacional BU → Produto → Subproduto, com categorias
 documentação funcional (funcionalidades, configurações, processos, regras de
 negócio).
 
-- [ ] Cadastro de BUs (unidades de negócio)
-- [ ] Cadastro de produtos vinculados às BUs
-- [ ] Cadastro de subprodutos vinculados aos produtos
-- [ ] Relacionamento hierárquico e navegação entre níveis
-- [ ] Categorias documentais (classificação funcional)
-- [ ] Estrutura inicial da KB
+- [x] Cadastro de BUs (unidades de negócio) — tela admin "Unidades"
+- [x] Cadastro de produtos vinculados às BUs — seletor no formulário do produto; `npm run estrutura` liga os já importados
+- [x] Cadastro de subprodutos vinculados aos produtos (já existia: subblocos)
+- [x] Relacionamento hierárquico e navegação entre níveis — Home agrupada por BU e breadcrumb com a BU
+- [x] Categorias documentais (classificação funcional) — campo do artigo, filtro na página do bloco
+- [ ] Estrutura inicial da KB — falta ligar o SmartShare-4 à BU "Process Solution" no Firebase `dev` e criar o SmartShare DI
 
 Conclusão: navegar BU → Produto → Subproduto e ver as categorias disponíveis.
 

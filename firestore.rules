@@ -36,6 +36,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Unidades de negócio (BU): qualquer usuário ativo lê o nome para montar a
+    // navegação; o acesso aos produtos continua sendo decidido em `blocks`.
+    match /unidades/{unidadeId} {
+      allow read: if hasProfile();
+      allow write: if isAdmin();
+    }
+
     match /blocks/{blockId} {
       allow read: if canSeeProduct(resource.data.productId);
       allow write: if isAdmin();

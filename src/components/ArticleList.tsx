@@ -1,6 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Article } from '../types/content'
+import { nomeDaCategoria } from '../utils/categorias'
 import { limparMarcadores, temImagemNaoMigrada } from '../utils/content'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import type { Visao } from './ListToolbar'
@@ -34,6 +35,9 @@ export function ArticleList({ artigos, visao, admin }: Props) {
                   <span className="font-semibold">{a.titulo}</span>
                   {admin && a.status === 'draft' && (
                     <span className="selo selo-ambar">Rascunho</span>
+                  )}
+                  {nomeDaCategoria(a.categoria) && (
+                    <span className="selo">{nomeDaCategoria(a.categoria)}</span>
                   )}
                   {a.publico === 'tecnico' && (
                     <span className="selo">Técnico</span>

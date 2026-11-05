@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Layers, Plus } from 'lucide-react'
+import { Building2, Layers, Plus } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
-import { Interruptor } from '../components/ListToolbar'
+import { Interruptor, TituloDeSecao } from '../components/ListToolbar'
 import { PageHeader } from '../components/PageHeader'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
@@ -13,22 +14,28 @@ import {
   reorderBlocks,
   updateBlock,
 } from '../services/blocks'
+import { listUnidades } from '../services/unidades'
 import type { Block } from '../types/content'
+import { agruparPorUnidade } from '../utils/unidades'
 
 export function Home() {
   const { user, profile, isAdmin } = useAuth()
   const uid = user?.uid ?? ''
-  const { dados, erro, carregando, recarregar } = useAsync(
-    () =>
+  const { dados, erro, carregando, recarregar } = useAsync(async () => {
+    const [produtos, unidades] = await Promise.all([
       listProducts(isAdmin ? undefined : (profile?.produtosPermitidos ?? [])),
-    [isAdmin, profile?.uid],
-  )
+      listUnidades(),
+    ])
+    return { produtos, unidades }
+  }, [isAdmin, profile?.uid])
   const [criando, setCriando] = useState(false)
   const [organizar, setOrganizar] = useState(false)
   const [editando, setEditando] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
 
-  const produtos = dados ?? []
+  const produtos = dados?.produtos ?? []
+  const unidades = dados?.unidades ?? []
+  const grupos = agruparPorUnidade(produtos, unidades, isAdmin)
 
   async function reordenar(ordenados: Block[]) {
     await reorderBlocks(ordenados.map((b) => b.id))
@@ -66,6 +73,10 @@ export function Home() {
                   rotulo="Organizar"
                 />
               )}
+              <Link to="/admin/unidades" className="botao">
+                <Building2 className="size-4" aria-hidden />
+                Unidades de negócio
+              </Link>
               {!criando && (
                 <button
                   type="button"
@@ -84,6 +95,7 @@ export function Home() {
       {criando && (
         <BlockForm
           titulo="Novo produto"
+          unidades={unidades}
           onCancel={() => setCriando(false)}
           onSubmit={async (input) => {
             await createBlock(input, null, produtos.length, uid)
@@ -95,6 +107,7 @@ export function Home() {
       {editando && (
         <BlockForm
           titulo="Editar produto"
+          unidades={unidades}
           inicial={editando}
           onCancel={() => setEditando(null)}
           onSubmit={async (input) => {
@@ -123,7 +136,7 @@ export function Home() {
             : 'Você ainda não tem acesso a nenhum produto. Fale com um administrador.'}
         </p>
       )}
-      {produtos.length > 0 && (
+      {unidades.length === 0 && produtos.length > 0 && (
         <BlockCards
           blocos={produtos}
           variante="produto"
@@ -134,6 +147,41 @@ export function Home() {
           onDelete={(b) => void excluir(b)}
         />
       )}
+      {unidades.length > 0 &&
+        grupos.map((g) => (
+          <section
+            key={g.chave}
+            id={g.unidade ? `unidade-${g.unidade.id}` : undefined}
+            aria-label={g.unidade?.nome ?? 'Sem unidade'}
+            className="mb-10 scroll-mt-4"
+          >
+            <div className="mb-4">
+              <TituloDeSecao
+                titulo={g.unidade?.nome ?? 'Sem unidade'}
+                total={g.produtos.length}
+              />
+              {g.unidade?.descricao && (
+                <p className="mt-1 text-sm text-suave">{g.unidade.descricao}</p>
+              )}
+            </div>
+            {g.produtos.length === 0 ? (
+              <p className="text-sm text-suave">
+                Nenhum produto nesta unidade ainda. Edite um produto e escolha
+                esta unidade.
+              </p>
+            ) : (
+              <BlockCards
+                blocos={g.produtos}
+                variante="produto"
+                editavel={isAdmin}
+                organizar={isAdmin && organizar}
+                onReorder={isAdmin ? (o) => void reordenar(o) : undefined}
+                onEdit={setEditando}
+                onDelete={(b) => void excluir(b)}
+              />
+            )}
+          </section>
+        ))}
     </div>
   )
 }

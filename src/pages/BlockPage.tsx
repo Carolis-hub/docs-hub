@@ -27,8 +27,10 @@ import {
   updateBlock,
 } from '../services/blocks'
 import { listArticlesByBlock } from '../services/articles'
+import { getUnidade, listUnidades } from '../services/unidades'
 import type { Block } from '../types/content'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
+import { CATEGORIAS } from '../utils/categorias'
 import { normalizar } from '../utils/search'
 
 const plural = (n: number, um: string, varios: string) =>
@@ -46,7 +48,13 @@ export function BlockPage() {
       listChildren(blockId),
       listArticlesByBlock(blockId, !isAdmin),
     ])
-    return { bloco, cadeia, filhos, artigos }
+    const unidadeId = cadeia[0]?.unidadeId
+    const [unidade, unidades] = await Promise.all([
+      unidadeId ? getUnidade(unidadeId) : null,
+      // O seletor de unidade só aparece para o admin, ao editar um produto.
+      isAdmin && bloco.parentId === null ? listUnidades() : [],
+    ])
+    return { bloco, cadeia, unidade, unidades, filhos, artigos }
   }, [blockId, isAdmin])
 
   const [modo, setModo] = useState<'novo' | 'editar' | null>(null)
@@ -55,6 +63,7 @@ export function BlockPage() {
   const [organizar, setOrganizar] = useState(false)
   const [filtroSecoes, setFiltroSecoes] = useState('')
   const [filtroArtigos, setFiltroArtigos] = useState('')
+  const [filtroCategoria, setFiltroCategoria] = useState('')
   const [crescente, setCrescente] = useState(true)
   const [visao, setVisao] = usePreferencia<Visao>(
     'docs-hub:visao-artigos',
@@ -72,13 +81,15 @@ export function BlockPage() {
   const artigos = useMemo(() => {
     const q = normalizar(filtroArtigos.trim())
     const lista = (dados?.artigos ?? []).filter(
-      (a) => !q || normalizar(`${a.titulo} ${a.resumo}`).includes(q),
+      (a) =>
+        (!q || normalizar(`${a.titulo} ${a.resumo}`).includes(q)) &&
+        (!filtroCategoria || a.categoria === filtroCategoria),
     )
     const ordenada = [...lista].sort((a, b) =>
       a.titulo.localeCompare(b.titulo, 'pt-BR'),
     )
     return crescente ? ordenada : ordenada.reverse()
-  }, [dados, filtroArtigos, crescente])
+  }, [dados, filtroArtigos, filtroCategoria, crescente])
 
   if (carregando && !dados) return <p className="text-suave">Carregando…</p>
   if (erro)
@@ -89,7 +100,14 @@ export function BlockPage() {
     )
   if (!dados) return <p>Bloco não encontrado.</p>
 
-  const { bloco, cadeia, filhos, artigos: todosArtigos } = dados
+  const {
+    bloco,
+    cadeia,
+    unidade,
+    unidades,
+    filhos,
+    artigos: todosArtigos,
+  } = dados
   const ehProduto = bloco.parentId === null
 
   async function excluirFilho(b: Block) {
@@ -109,7 +127,7 @@ export function BlockPage() {
 
   return (
     <div>
-      <Breadcrumb cadeia={cadeia} />
+      <Breadcrumb cadeia={cadeia} unidade={unidade} />
       <PageHeader
         icone={ehProduto ? Layers : iconeDoArtigo(bloco.nome, Layers)}
         emoji={bloco.icone || undefined}
@@ -161,6 +179,7 @@ export function BlockPage() {
         <BlockForm
           titulo="Editar bloco"
           inicial={bloco}
+          unidades={ehProduto ? unidades : undefined}
           onCancel={() => setModo(null)}
           onSubmit={async (input) => {
             await updateBlock(bloco.id, input, uid)
@@ -238,6 +257,19 @@ export function BlockPage() {
                 aoMudar={setFiltroArtigos}
                 placeholder="Filtrar neste bloco…"
               />
+              <select
+                aria-label="Filtrar por categoria"
+                className="campo w-auto"
+                value={filtroCategoria}
+                onChange={(e) => setFiltroCategoria(e.target.value)}
+              >
+                <option value="">Todas as categorias</option>
+                {CATEGORIAS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
               <BotaoOrdenar
                 crescente={crescente}
                 aoAlternar={() => setCrescente((c) => !c)}
@@ -248,7 +280,7 @@ export function BlockPage() {
           {todosArtigos.length === 0 ? (
             <p className="text-suave">Nenhum artigo neste bloco.</p>
           ) : artigos.length === 0 ? (
-            <p className="text-suave">Nenhum artigo corresponde ao filtro.</p>
+            <p className="text-suave">Nenhum artigo corresponde aos filtros.</p>
           ) : (
             <ArticleList artigos={artigos} visao={visao} admin={isAdmin} />
           )}

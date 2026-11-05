@@ -19,6 +19,10 @@ vi.mock('../services/blocks', () => ({
   deleteBlock: vi.fn(),
   reorderBlocks: vi.fn(),
 }))
+vi.mock('../services/unidades', () => ({
+  getUnidade: vi.fn(async () => null),
+  listUnidades: vi.fn(async () => []),
+}))
 vi.mock('../services/articles', () => ({
   listArticlesByBlock: (...a: unknown[]) => listArticlesByBlock(...a),
 }))
@@ -33,9 +37,15 @@ const bloco = (id: string, nome: string, parentId: string | null): Block => ({
   parentId,
   productId: 'p',
 })
-const artigo = (id: string, titulo: string, resumo = ''): Article =>
+const artigo = (
+  id: string,
+  titulo: string,
+  resumo = '',
+  categoria = '',
+): Article =>
   ({
     id,
+    categoria,
     titulo,
     resumo,
     textoPlano: resumo,
@@ -146,8 +156,24 @@ describe('BlockPage', () => {
       target: { value: 'zzz' },
     })
     expect(
-      screen.getByText('Nenhum artigo corresponde ao filtro.'),
+      screen.getByText('Nenhum artigo corresponde aos filtros.'),
     ).toBeInTheDocument()
+  })
+
+  it('filtra os artigos por categoria', async () => {
+    listArticlesByBlock.mockResolvedValue([
+      artigo('1', 'Como excluir anexos?', '', 'processos'),
+      artigo('2', 'Como adicionar anexos?', '', 'configuracoes'),
+      artigo('3', 'Sem categoria'),
+    ])
+    await abrir('anexos')
+    await screen.findByText('Como excluir anexos?')
+    fireEvent.change(screen.getByLabelText('Filtrar por categoria'), {
+      target: { value: 'processos' },
+    })
+    const regiao = within(screen.getByRole('region', { name: 'Artigos' }))
+    expect(regiao.getAllByRole('link')).toHaveLength(1)
+    expect(regiao.getByText('Como excluir anexos?')).toBeInTheDocument()
   })
 
   it('alterna entre lista e grade e lembra a escolha', async () => {
