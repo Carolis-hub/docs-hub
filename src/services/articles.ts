@@ -37,6 +37,7 @@ export function camposDerivados(draft: ArticleDraft) {
     slug: slugify(draft.titulo),
     conteudo: draft.conteudo,
     publico: draft.publico,
+    categoria: draft.categoria ?? '',
     ...(draft.versaoProduto?.trim()
       ? { versaoProduto: draft.versaoProduto.trim() }
       : {}),

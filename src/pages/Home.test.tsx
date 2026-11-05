@@ -5,6 +5,7 @@ import { Home } from './Home'
 
 const useAuth = vi.fn()
 const listProducts = vi.fn()
+const listUnidades = vi.fn()
 
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => useAuth() }))
 vi.mock('../services/blocks', () => ({
@@ -13,6 +14,10 @@ vi.mock('../services/blocks', () => ({
   deleteBlock: vi.fn(),
   reorderBlocks: vi.fn(),
   updateBlock: vi.fn(),
+}))
+
+vi.mock('../services/unidades', () => ({
+  listUnidades: (...args: unknown[]) => listUnidades(...args),
 }))
 
 const produto = {
@@ -36,6 +41,7 @@ function renderHome() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  listUnidades.mockResolvedValue([])
 })
 
 describe('Home', () => {
@@ -73,5 +79,32 @@ describe('Home', () => {
     expect(
       await screen.findByText(/não tem acesso a nenhum produto/i),
     ).toBeInTheDocument()
+  })
+
+  it('agrupa os produtos por unidade de negócio', async () => {
+    useAuth.mockReturnValue({ isAdmin: true, profile: { uid: 'a' } })
+    listUnidades.mockResolvedValue([
+      {
+        id: 'u1',
+        nome: 'Process Solution',
+        slug: 'process-solution',
+        descricao: '',
+        icone: '',
+        ordem: 0,
+      },
+    ])
+    listProducts.mockResolvedValue([
+      { ...produto, unidadeId: 'u1' },
+      { ...produto, id: 'p2', productId: 'p2', nome: 'Solto' },
+    ])
+    renderHome()
+    expect(
+      await screen.findByRole('heading', { name: /process solution/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: /sem unidade/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Smartshare')).toBeInTheDocument()
+    expect(screen.getByText('Solto')).toBeInTheDocument()
   })
 })

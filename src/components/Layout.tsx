@@ -9,6 +9,7 @@ import { ThemeToggle } from './ThemeToggle'
 const LINKS_ADMIN = [
   { para: '/admin/sugestoes', rotulo: 'Sugestões' },
   { para: '/admin/metricas', rotulo: 'Métricas' },
+  { para: '/admin/unidades', rotulo: 'Unidades' },
   { para: '/admin/usuarios', rotulo: 'Usuários' },
 ]
 

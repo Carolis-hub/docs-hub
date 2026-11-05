@@ -19,6 +19,7 @@ describe('CLIs rodam no Node puro', () => {
     ],
     ['scripts/verificar-links/index.ts', /Uso: node scripts\/verificar-links/],
     ['scripts/alt-texto/index.ts', /Uso: node scripts\/alt-texto/],
+    ['scripts/estrutura/index.ts', /Uso: node scripts\/estrutura/],
     [
       'scripts/migrate/adaptadores/smartshare-kb.ts',
       /Uso: node scripts\/migrate\/adaptadores/,

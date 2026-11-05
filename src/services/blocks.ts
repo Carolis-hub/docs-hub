@@ -84,6 +84,8 @@ export async function createBlock(
     ordem: proximaOrdem,
     parentId: parent ? parent.id : null,
     productId: parent ? parent.productId : ref.id,
+    // Só produtos (raiz) pertencem a uma unidade de negócio.
+    ...(!parent && input.unidadeId ? { unidadeId: input.unidadeId } : {}),
   }
   const batch = writeBatch(db)
   batch.set(ref, block)
@@ -103,6 +105,10 @@ export async function updateBlock(
     slug: slugify(input.nome),
     descricao: input.descricao.trim(),
     icone: input.icone.trim(),
+    // `undefined` mantém a unidade; `null` ou '' tira o produto da unidade.
+    ...(input.unidadeId !== undefined
+      ? { unidadeId: input.unidadeId || null }
+      : {}),
   })
   registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`)
   await batch.commit()

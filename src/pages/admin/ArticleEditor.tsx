@@ -21,8 +21,10 @@ import type {
   ArticleDraft,
   ArticlePublico,
   ArticleVersion,
+  CategoriaId,
   Suggestion,
 } from '../../types/content'
+import { CATEGORIAS } from '../../utils/categorias'
 import { EMPTY_DOC } from '../../utils/content'
 
 const campo =
@@ -55,6 +57,7 @@ export function ArticleEditor() {
 
   const [titulo, setTitulo] = useState('')
   const [publico, setPublico] = useState<ArticlePublico>('usuario')
+  const [categoria, setCategoria] = useState<CategoriaId | ''>('')
   const [versaoProduto, setVersaoProduto] = useState('')
   const [conteudo, setConteudo] = useState<JSONContent>(EMPTY_DOC)
   const [editorKey, setEditorKey] = useState(0)
@@ -69,6 +72,7 @@ export function ArticleEditor() {
     if (!artigo) return
     setTitulo(artigo.titulo)
     setPublico(artigo.publico)
+    setCategoria(artigo.categoria ?? '')
     setVersaoProduto(artigo.versaoProduto ?? '')
     setConteudo(artigo.conteudo)
     // Vindo da revisão de uma sugestão, o editor abre com o texto da IA.
@@ -92,6 +96,7 @@ export function ArticleEditor() {
     titulo,
     conteudo,
     publico,
+    categoria,
     versaoProduto,
   })
 
@@ -218,7 +223,22 @@ export function ArticleEditor() {
             onChange={(e) => setTitulo(e.target.value)}
           />
         </label>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="block text-sm">
+            Categoria
+            <select
+              className={campo}
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value as CategoriaId | '')}
+            >
+              <option value="">Sem categoria</option>
+              {CATEGORIAS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className="block text-sm">
             Público
             <select

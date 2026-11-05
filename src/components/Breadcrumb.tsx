@@ -1,13 +1,15 @@
 import { ChevronRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import type { Article, Block } from '../types/content'
+import type { Article, Block, Unidade } from '../types/content'
 
 interface Props {
   cadeia: Block[]
+  /** Unidade de negócio do produto, mostrada logo depois do início. */
+  unidade?: Unidade | null
   artigo?: Pick<Article, 'titulo'>
 }
 
-export function Breadcrumb({ cadeia, artigo }: Props) {
+export function Breadcrumb({ cadeia, unidade, artigo }: Props) {
   return (
     <nav aria-label="Navegação estrutural" className="mb-5 text-sm">
       <ol className="flex flex-wrap items-center gap-1.5 text-suave">
@@ -16,6 +18,17 @@ export function Breadcrumb({ cadeia, artigo }: Props) {
             Início
           </Link>
         </li>
+        {unidade && (
+          <li className="flex items-center gap-1.5">
+            <ChevronRight className="size-3.5" aria-hidden />
+            <Link
+              to={`/#unidade-${unidade.id}`}
+              className="hover:text-texto hover:underline"
+            >
+              {unidade.nome}
+            </Link>
+          </li>
+        )}
         {cadeia.map((b, i) => {
           const ultimo = i === cadeia.length - 1 && !artigo
           return (
