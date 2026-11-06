@@ -37,21 +37,22 @@ Conclusão: navegar BU → Produto → Subproduto e ver as categorias disponíve
 Objetivo: alimentar a KB por importação de arquivos externos e pelo editor
 próprio. Fonte inicial: `C:\projetos_selbetti\smartshare-di\docs`.
 
-- [ ] Serviço de ingestão (identifica arquivos, extrai conteúdo, detecta
-      alterações e duplicidades)
-- [ ] Extração de `.md`, `.docx`, `.pdf`, `.txt` e `.html`
-- [ ] Classificação (sugere categoria, produto/subproduto, conteúdo técnico ou
-      misto)
-- [ ] Detecção de duplicidade e de alteração por hash de conteúdo
-- [ ] Controle de origem (rastreabilidade) — já grava `origem.tipo`
-      (`editor` ou `importacao`); faltam arquivo e hash (parte B)
+- [x] Serviço de ingestão (identifica arquivos, extrai conteúdo, detecta
+      alterações e duplicidades) — `npm run ingestao` (`scripts/ingestao`)
+- [ ] Extração de `.md`, `.docx`, `.pdf`, `.txt` e `.html` — `.md`, `.txt` e
+      `.html` feitos; `.docx` e `.pdf` ficaram de fora por decisão
+- [x] Classificação (sugere categoria, produto/subproduto, conteúdo técnico ou
+      misto) — por regras, sem IA; pastas viram subprodutos
+- [x] Detecção de duplicidade e de alteração por hash de conteúdo
+- [x] Controle de origem (rastreabilidade) — `origem` no artigo e coleção `fontes`
 - [x] Fila de revisão: nada importado é publicado automaticamente — status
       "Em revisão", tela admin "Revisão" (aprovar um a um ou em lote, devolver a
       rascunho) e `--publicar` no importador para o comportamento antigo
-- [ ] Sincronização: arquivo novo → registro para revisão; alterado → revisão
+- [x] Sincronização: arquivo novo → registro para revisão; alterado → revisão
       pendente (a versão publicada continua no ar); removido → análise de
       despublicação; sem alteração → não reprocessa; erro → registra e permite
-      reprocessar
+      reprocessar — rodada manual com `npm run ingestao`; o monitoramento
+      contínuo é da Fase 6
 - [ ] Editor próprio (já tem rascunho e "Enviar para revisão"): criar/editar, modelos de documentação funcional, imagens,
       tabelas e links, categorias, rascunho e envio para revisão
 
@@ -131,7 +132,7 @@ publicação indevida. O SmartShare DI é o piloto.
 | BU → Produto → Subproduto            | Hierarquia livre de blocos (produto → subproduto → …), sem nível de BU |
 | Categorias documentais               | Campo do artigo, 4 categorias fixas                                    |
 | Status em 6 estados                  | Rascunho, em revisão e publicado; versões; sugestões da IA aprovadas   |
-| Importar `.md/.docx/.pdf/.txt/.html` | Importador de exportação neutra (`.md`/`.html`) e adaptador SmartShare |
+| Importar `.md/.docx/.pdf/.txt/.html` | `npm run ingestao` lê `.md`, `.html` e `.txt` (sem `.docx` e `.pdf`)   |
 | Fila de revisão de importados        | Existe: a importação entra "em revisão" (`--publicar` publica direto)  |
 | pgvector (Postgres)                  | Firestore; busca textual com MiniSearch, sem embeddings                |
 | Comentários na revisão               | Não existe                                                             |

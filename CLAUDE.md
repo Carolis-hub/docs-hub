@@ -13,7 +13,7 @@ Interface e documentação em **português do Brasil**.
   uma tarefa** (marque o item e faça commit).
 - `README.md`: como rodar, checklist de configuração dos workflows do GitHub.
 - `scripts/<pasta>/README.md`: cada ferramenta (migrate, doc-sync, alt-texto,
-  backup, cloudinary-limpeza, verificar-links) tem o seu.
+  backup, cloudinary-limpeza, verificar-links, estrutura, ingestao) tem o seu.
 
 ## Comandos
 
@@ -24,6 +24,8 @@ Interface e documentação em **português do Brasil**.
 | `npm run test:rules`                                    | Regras do Firestore e scripts contra o Emulator (precisa de Java)                                  |
 | `npm run lint` / `typecheck` / `format:check` / `build` | Conferências que o CI também roda                                                                  |
 | `npm run migrate -- <pasta> …`                          | Importador (simulação por padrão; `--gravar` grava; entra em revisão, `--publicar` publica direto) |
+| `npm run ingestao -- <pasta> --produto …`               | Leva os `.md`/`.html`/`.txt` de uma pasta para a fila de revisão (simulação por padrão)            |
+| `npm run estrutura -- …`                                | Cria uma BU e liga produtos já importados a ela                                                    |
 | `npm run alt-texto -- …`                                | Sugere textos alternativos de imagens (IA)                                                         |
 | `npm run doc-sync -- …`                                 | Sugere atualizações de artigos a partir de `.md` de regras                                         |
 
@@ -95,8 +97,9 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 
 ## Estado atual (resumo; detalhes em `docs/roadmap.md`)
 
-- Fases 0 a 7, o novo visual e as Fases 1 (BU e categorias) e 2A (fila de
-  revisão) do roadmap do time estão na branch padrão.
+- Fases 0 a 7, o novo visual e as Fases 1 (BU e categorias), 2A (fila de
+  revisão) e 2B (ingestão de `.md`/`.html`/`.txt`, sem `.docx`/`.pdf`) do
+  roadmap do time. Próximo: editor próprio com modelos (fim da Fase 2) e Fase 3.
 - Base do SmartShare 4 importada **só com texto** no Firebase `dev`
   (10 blocos, 57 artigos); imagens ainda não migradas (211 marcadores
   `[Imagem não migrada: …]`).
