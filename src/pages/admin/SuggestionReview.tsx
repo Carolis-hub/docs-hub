@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArticleContent } from '../../components/ArticleContent'
 import { useAsync } from '../../hooks/useAsync'
 import { useAuth } from '../../hooks/useAuth'
-import { getArticle, publishArticle } from '../../services/articles'
+import { getArticle } from '../../services/articles'
+import { aprovarSugestao } from '../../services/governanca'
 import {
   discardSuggestion,
   getSuggestion,
@@ -39,6 +40,8 @@ export function SuggestionReview() {
   const { artigo, sugestao } = dados
   const pendente = sugestao.status === 'pending'
   const defasada = sugestaoDefasada(sugestao, artigo)
+  // Aprovar aqui troca a versão no ar: só vale com o artigo publicado e sem outra alteração pendente.
+  const podeAprovarAqui = artigo.status === 'published' && !artigo.revisao
 
   async function executar(acao: () => Promise<void>) {
     setOcupado(true)
@@ -62,12 +65,13 @@ export function SuggestionReview() {
       ) {
         throw new Error('Aprovação cancelada.')
       }
-      await publishArticle(
-        artigo,
+      await aprovarSugestao(
+        artigo.id,
         {
           titulo: sugestao.titulo,
           conteudo: sugestao.conteudo,
           publico: artigo.publico,
+          categoria: artigo.categoria ?? '',
           versaoProduto: artigo.versaoProduto,
         },
         uid,
@@ -180,11 +184,18 @@ export function SuggestionReview() {
           {falha}
         </p>
       )}
+      {pendente && !podeAprovarAqui && (
+        <p role="note" className="mt-4 rounded-md bg-bloco p-3 text-sm ">
+          {artigo.revisao
+            ? 'Este artigo já tem uma alteração pendente. Abra o editor para incorporar a sugestão a ela, ou conclua a alteração antes.'
+            : 'Este artigo não está publicado, então não há versão no ar para trocar. Abra a sugestão no editor para incorporá-la ao texto.'}
+        </p>
+      )}
       {pendente && (
         <div className="mt-6 flex flex-wrap gap-2">
           <button
             type="button"
-            disabled={ocupado}
+            disabled={ocupado || !podeAprovarAqui}
             onClick={() => void aprovar()}
             className={`${botao} bg-destaque text-white hover:bg-destaque/90`}
           >

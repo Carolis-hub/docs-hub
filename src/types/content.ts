@@ -36,8 +36,62 @@ export type UnidadeInput = Pick<Unidade, 'nome' | 'descricao' | 'icone'>
 export type CategoriaId =
   'funcionalidades' | 'configuracoes' | 'processos' | 'regras-de-negocio'
 
-/** `review` = aguardando aprovação: some para os leitores, como o rascunho. */
-export type ArticleStatus = 'draft' | 'review' | 'published'
+/**
+ * Ciclo de vida do artigo. Só `published` aparece para os leitores; os outros
+ * cinco ficam restritos a admins (ver `src/utils/ciclo.ts` para as transições).
+ */
+export type ArticleStatus =
+  'draft' | 'review' | 'approved' | 'published' | 'rejected' | 'archived'
+
+/** Estados de uma alteração pendente de um artigo já publicado. */
+export type RevisaoStatus = 'draft' | 'review' | 'approved' | 'rejected'
+
+/** Resumo da alteração pendente, guardado no artigo (o conteúdo fica em `revisoes/atual`). */
+export interface RevisaoResumo {
+  status: RevisaoStatus
+  autorId: string
+  atualizadoEm: number
+}
+
+/**
+ * Alteração pendente de um artigo publicado (`articles/{id}/revisoes/atual`).
+ * A versão publicada continua no ar até esta ser aprovada e publicada.
+ */
+export interface Revisao {
+  titulo: string
+  conteudo: JSONContent
+  textoPlano: string
+  resumo: string
+  publico: ArticlePublico
+  categoria?: CategoriaId | ''
+  versaoProduto?: string
+  status: RevisaoStatus
+  /** Versão publicada em que a alteração se baseia. */
+  baseVersao: number
+  autorId: string
+  atualizadoPor: string
+  criadoEm: number
+  atualizadoEm: number
+  aprovadoPor?: string
+  aprovadoEm?: number
+  /** Sugestão (IA ou ingestão) que originou a alteração; é aprovada ao publicar. */
+  sugestaoId?: string
+}
+
+export type ComentarioTipo =
+  'comentario' | 'ajuste' | 'reprovacao' | 'aprovacao'
+
+/** Comentário de revisão (`articles/{id}/comentarios/{cid}`). */
+export interface Comentario {
+  id: string
+  tipo: ComentarioTipo
+  texto: string
+  autorId: string
+  autorNome: string
+  /** Sobre o artigo em si ou sobre a alteração pendente. */
+  alvo: 'artigo' | 'revisao'
+  criadoEm: number
+}
 /** De onde veio o artigo; o importado entra na fila de revisão. */
 export interface ArticleOrigem {
   tipo: 'editor' | 'importacao'
@@ -73,6 +127,10 @@ export interface Article {
   categoria?: CategoriaId | ''
   versaoProduto?: string
   status: ArticleStatus
+  /** Alteração pendente (só em artigo publicado). */
+  revisao?: RevisaoResumo
+  aprovadoPor?: string
+  aprovadoEm?: number
   origem?: ArticleOrigem
   flags: string[]
   views: number
@@ -99,6 +157,9 @@ export interface ArticleVersion {
   origem: 'manual' | 'ia'
   autorId: string
   criadoEm: number
+  /** Quem aprovou o conteúdo desta versão antes da publicação. */
+  aprovadoPor?: string
+  aprovadoEm?: number
 }
 
 export type SuggestionStatus = 'pending' | 'approved' | 'discarded'

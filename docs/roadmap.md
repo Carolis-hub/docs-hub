@@ -73,15 +73,23 @@ Conclusão: achar uma documentação publicada sem saber o caminho nem o nome ex
 
 ### Fase 4 — Governança editorial e publicação (semanas 9–10, sprint 5)
 
-- [ ] Ciclo de vida e status: rascunho, em revisão, aprovado, publicado,
-      reprovado, arquivado
-- [ ] Fluxo de revisão e comentários (pedido de ajustes)
-- [ ] Aprovação e publicação
-- [ ] Versionamento (histórico de versões)
-- [ ] Auditoria (responsáveis e decisões)
+- [x] Ciclo de vida e status: rascunho, em revisão, aprovado, publicado,
+      reprovado, arquivado — `src/utils/ciclo.ts` define as transições
+- [x] Fluxo de revisão e comentários (pedido de ajustes) — reprovar exige
+      comentário; conversa no editor e fila na tela "Revisão"
+- [x] Aprovação e publicação — só um artigo aprovado é publicado
+- [x] Versionamento (histórico de versões) — cada versão guarda quem aprovou e
+      quem publicou; artigo publicado é alterado por uma "alteração pendente"
+      e a versão no ar só muda quando ela é aprovada e publicada
+- [x] Auditoria (responsáveis e decisões) — trilha no editor e tela "Auditoria"
 
-Conclusão: só documento aprovado é publicado; a versão publicada anterior
-continua disponível até a nova ser aprovada.
+Conclusão: somente documentos aprovados podem ser publicados, e versões
+anteriormente publicadas permanecem disponíveis até que uma nova versão seja
+aprovada.
+
+Ainda não existe papel de "revisor" separado do admin: quem tem permissão de
+admin pode escrever, aprovar e publicar. Separar quem escreve de quem aprova é
+um passo futuro (precisa de um novo papel de usuário e de regras novas).
 
 ### Fase 5 — Inteligência artificial e RAG (semanas 11–14, sprints 6–7)
 
@@ -128,16 +136,16 @@ publicação indevida. O SmartShare DI é o piloto.
 
 ### Diferenças em relação ao que está implementado
 
-| Plano do time                        | Hoje no código                                                         |
-| ------------------------------------ | ---------------------------------------------------------------------- |
-| BU → Produto → Subproduto            | Hierarquia livre de blocos (produto → subproduto → …), sem nível de BU |
-| Categorias documentais               | Campo do artigo, 4 categorias fixas                                    |
-| Status em 6 estados                  | Rascunho, em revisão e publicado; versões; sugestões da IA aprovadas   |
-| Importar `.md/.docx/.pdf/.txt/.html` | `npm run ingestao` lê `.md`, `.html` e `.txt` (sem `.docx` e `.pdf`)   |
-| Fila de revisão de importados        | Existe: a importação entra "em revisão" (`--publicar` publica direto)  |
-| pgvector (Postgres)                  | Firestore; busca textual com MiniSearch, sem embeddings                |
-| Comentários na revisão               | Não existe                                                             |
-| Auditoria                            | Existe (`auditLog`)                                                    |
+| Plano do time                        | Hoje no código                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------- |
+| BU → Produto → Subproduto            | Hierarquia livre de blocos (produto → subproduto → …), sem nível de BU  |
+| Categorias documentais               | Campo do artigo, 4 categorias fixas                                     |
+| Status em 6 estados                  | Existe: rascunho, em revisão, aprovado, publicado, reprovado, arquivado |
+| Importar `.md/.docx/.pdf/.txt/.html` | `npm run ingestao` lê `.md`, `.html` e `.txt` (sem `.docx` e `.pdf`)    |
+| Fila de revisão de importados        | Existe: a importação entra "em revisão" (`--publicar` publica direto)   |
+| pgvector (Postgres)                  | Firestore; busca textual com MiniSearch, sem embeddings                 |
+| Comentários na revisão               | Existe: no editor, com pedido de ajuste obrigatório ao reprovar         |
+| Auditoria                            | Existe (`auditLog`)                                                     |
 
 Decisão pendente: manter Firebase/Firestore (e buscar vetores noutro serviço)
 ou mudar de banco antes da Fase 5.

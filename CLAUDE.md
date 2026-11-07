@@ -64,6 +64,12 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   `status == 'published'` e, sem permissão técnica, `publico == 'usuario'`).
   Admin passa sem filtros, por isso o erro só aparece para leitor.
   `tests/rules/consultas-leitor.test.ts` cobre isso; use `getDoc` quando der.
+- **Artigo publicado não se edita no lugar**: salvar um publicado grava uma
+  _alteração pendente_ (`articles/{id}/revisoes/atual`) e a versão no ar só
+  muda ao publicar a alteração. Toda mudança de estado passa por
+  `transitar()` (`src/services/governanca.ts`), que valida pelo ciclo de
+  `src/utils/ciclo.ts`, atualiza a busca e grava a auditoria. Não escreva
+  `status` direto.
 - **Gravação no Firestore** pode dar `DEADLINE_EXCEEDED` em redes com
   proxy/VPN: o importador tenta de novo e aceita `--rest`. Rodar de novo é
   seguro (idempotente).
@@ -106,7 +112,9 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 - Fases 0 a 7, o novo visual e as Fases 1 (BU e categorias), 2A (fila de
   revisão) e 2B (ingestão de `.md`/`.html`/`.txt`, sem `.docx`/`.pdf`) do
   e Fase 3 (busca com filtros, categorias, relacionados) do roadmap do time.
-  Próximo: editor próprio com modelos (fim da Fase 2) e Fase 4 (governança).
+  Fase 4 (governança: ciclo de vida de 6 estados, comentários, alteração
+  pendente de artigo publicado, auditoria). Próximo: editor próprio com
+  modelos (fim da Fase 2) e Fase 5 (IA e RAG).
 - Base do SmartShare 4 importada **só com texto** no Firebase `dev`
   (10 blocos, 57 artigos); imagens ainda não migradas (211 marcadores
   `[Imagem não migrada: …]`).

@@ -417,3 +417,53 @@ describe('firestore.rules — registro das fontes de ingestão', () => {
     await assertSucceeds(getDoc(doc(admin, 'fontes/f1')))
   })
 })
+
+describe('firestore.rules — governança editorial (Fase 4)', () => {
+  const admin = () => testEnv.authenticatedContext('admin').firestore()
+  const leitor = () => testEnv.authenticatedContext('leitor').firestore()
+
+  it('a alteração pendente e os comentários são só de admin', async () => {
+    await assertSucceeds(
+      setDoc(doc(admin(), 'articles/pub/revisoes/atual'), {
+        status: 'draft',
+        titulo: 'x',
+      }),
+    )
+    await assertSucceeds(
+      setDoc(doc(admin(), 'articles/pub/comentarios/c1'), {
+        texto: 'x',
+        tipo: 'comentario',
+      }),
+    )
+    await assertSucceeds(getDoc(doc(admin(), 'articles/pub/revisoes/atual')))
+    await assertFails(getDoc(doc(leitor(), 'articles/pub/revisoes/atual')))
+    await assertFails(getDoc(doc(leitor(), 'articles/pub/comentarios/c1')))
+    await assertFails(
+      setDoc(doc(leitor(), 'articles/pub/comentarios/c2'), { texto: 'x' }),
+    )
+    await assertFails(
+      setDoc(doc(leitor(), 'articles/pub/revisoes/atual'), { titulo: 'x' }),
+    )
+  })
+
+  it('leitor só enxerga artigo publicado: em revisão, aprovado, reprovado e arquivado ficam escondidos', async () => {
+    for (const status of [
+      'draft',
+      'review',
+      'approved',
+      'rejected',
+      'archived',
+    ]) {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), `articles/st-${status}`), {
+          productId: 'p1',
+          status,
+          publico: 'usuario',
+          views: 0,
+        })
+      })
+      await assertFails(getDoc(doc(leitor(), `articles/st-${status}`)))
+      await assertSucceeds(getDoc(doc(admin(), `articles/st-${status}`)))
+    }
+  })
+})

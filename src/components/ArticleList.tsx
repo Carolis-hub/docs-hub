@@ -34,6 +34,11 @@ export function ArticleList({ artigos, visao, admin }: Props) {
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">{a.titulo}</span>
+                  {admin && a.revisao && (
+                    <span className="selo selo-ambar">
+                      Alteração pendente: {rotuloDoStatus(a.revisao.status)}
+                    </span>
+                  )}
                   {admin && a.status !== 'published' && (
                     <span className="selo selo-ambar">
                       {rotuloDoStatus(a.status)}
