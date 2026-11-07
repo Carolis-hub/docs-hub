@@ -108,6 +108,34 @@ describe('atualizarIndiceTx', () => {
     expect(bpm.itens.some((i) => i.id === 'novo')).toBe(true)
   })
 
+  it('com índice dividido, uma parte que estoura o limite tem o texto encurtado em vez de falhar', async () => {
+    const grande = 'z'.repeat(4000)
+    // ~900 KB só no subproduto "bpm": mais que o limite de um documento.
+    const existentes = Array.from({ length: 230 }, (_, i) =>
+      item(`a${i}`, 'bpm', grande),
+    )
+    const tx = fakeTx({
+      'searchIndex/p': { itens: [], dividido: true },
+      'searchIndex/p/partes/bpm': { itens: existentes },
+    })
+    await atualizarIndiceTx(
+      tx as never,
+      'p',
+      'bpm',
+      'novo',
+      item('novo', 'bpm', grande),
+    )
+    const parte = tx.escritas['searchIndex/p/partes/bpm'] as {
+      itens: SearchItem[]
+    }
+    expect(parte.itens).toHaveLength(231)
+    expect(
+      new TextEncoder().encode(JSON.stringify(parte)).length,
+    ).toBeLessThanOrEqual(800_000)
+    expect(parte.itens.every((i) => i.titulo.length > 0)).toBe(true)
+    expect(parte.itens[0]!.textoPlano.length).toBeLessThan(4000)
+  })
+
   it('com índice dividido, grava só a parte do subproduto', async () => {
     const tx = fakeTx({
       'searchIndex/p': { itens: [], dividido: true },

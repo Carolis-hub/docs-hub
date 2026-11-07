@@ -34,6 +34,22 @@ export interface DepsAssistente {
   config: ConfigAssistente
   /** Relógio injetável, para os testes. */
   agora?: () => number
+  /**
+   * Responde sem mexer na cota, nos contadores de uso nem no registro de
+   * perguntas. É o modo da avaliação de qualidade (`assistente-avaliar`), que
+   * não deve poluir os números de uso real.
+   */
+  semRegistro?: boolean
+  /** Chamado ao terminar uma pergunta respondida, com o que ela gastou. */
+  aoConcluir?: (gasto: GastoDaPergunta) => void
+}
+
+export interface GastoDaPergunta {
+  custoUsd: number
+  tokensEntrada: number
+  tokensSaida: number
+  /** Quantas chamadas à IA a pergunta fez (0 a 3). */
+  chamadas: number
 }
 
 const SEM_RESULTADO =
@@ -145,7 +161,9 @@ export async function responder(
     .slice(-config.maxHistorico)
     .map((m) => ({ papel: m.papel, texto: limitar(m.texto, 1000) }))
 
-  const restantesHoje = await reservarCota(deps, uid, dia)
+  const restantesHoje = deps.semRegistro
+    ? config.perguntasPorUsuarioDia
+    : await reservarCota(deps, uid, dia)
   const usos: UsoIA[] = []
   let concluida = false
 
@@ -230,8 +248,17 @@ export async function responder(
     }
 
     const gasto = somar(usos)
-    await registrarGasto(deps, uid, dia, gasto, false)
     concluida = true
+    deps.aoConcluir?.({
+      custoUsd: gasto.custoUsd,
+      tokensEntrada: gasto.entrada,
+      tokensSaida: gasto.saida,
+      chamadas: usos.length,
+    })
+    if (deps.semRegistro) {
+      return { logId: '', encontrou, resposta, fontes: citadas, restantesHoje }
+    }
+    await registrarGasto(deps, uid, dia, gasto, false)
     const ms = (deps.agora ?? Date.now)() - inicio
     const log = await db.collection('assistenteLog').add({
       uid,
@@ -256,7 +283,7 @@ export async function responder(
       restantesHoje,
     }
   } catch (e) {
-    if (!concluida) {
+    if (!concluida && !deps.semRegistro) {
       // A pergunta não foi respondida: devolve-a à cota e soma o que já foi gasto.
       await registrarGasto(
         deps,

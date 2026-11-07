@@ -14,6 +14,33 @@ export function truncarTexto(texto: string, max = TEXTO_INDEX_MAX): string {
   return texto.length <= max ? texto : texto.slice(0, max)
 }
 
+/**
+ * Faz uma lista de itens caber no limite de um documento do Firestore. Se
+ * passar, encurta o texto de todos os itens (pela metade, até 200 caracteres;
+ * depois tira o texto): título e resumo ficam, e a busca perde só o fim dos
+ * artigos mais longos. Sem isto, publicar mais um artigo num subproduto muito
+ * grande falharia com "documento grande demais". Se nem sem texto couber (são
+ * milhares de artigos num só subproduto), devolve como está.
+ */
+export function caberNoLimite(
+  itens: SearchItem[],
+  limite = INDEX_LIMITE_BYTES,
+): SearchItem[] {
+  if (tamanhoBytes({ itens }) <= limite) return itens
+  for (
+    let max = Math.floor(TEXTO_INDEX_MAX / 2);
+    max >= 200;
+    max = Math.floor(max / 2)
+  ) {
+    const menor = itens.map((i) => ({
+      ...i,
+      textoPlano: truncarTexto(i.textoPlano, max),
+    }))
+    if (tamanhoBytes({ itens: menor }) <= limite) return menor
+  }
+  return itens.map((i) => ({ ...i, textoPlano: '' }))
+}
+
 /** Insere, substitui (mesmo id) ou remove (`item === null`) um item. */
 export function aplicarItem(
   itens: SearchItem[],
@@ -86,6 +113,10 @@ export function montarIndice(
   }
   return {
     principal: { itens: [], dividido: true },
-    partes: dividirPorParte(itens, (b) => parteDoBloco(arvore, b)),
+    partes: Object.fromEntries(
+      Object.entries(
+        dividirPorParte(itens, (b) => parteDoBloco(arvore, b)),
+      ).map(([parte, lista]) => [parte, caberNoLimite(lista)]),
+    ),
   }
 }

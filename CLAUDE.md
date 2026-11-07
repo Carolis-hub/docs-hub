@@ -29,6 +29,7 @@ Interface e documentação em **português do Brasil**.
 | `npm run ingestao -- … --observar --gravar`             | Fica vigiando a pasta e sincroniza quando algo muda (não gasta cota enquanto nada muda)            |
 | `npm run estrutura -- …`                                | Cria uma BU e liga produtos já importados a ela                                                    |
 | `npm run assistente -- --projeto …`                     | Servidor do assistente de IA (precisa de `ANTHROPIC_API_KEY`)                                      |
+| `npm run assistente-avaliar -- --casos …`               | Mede a qualidade do assistente com perguntas suas (gasta com a IA; sem `--executar` só confere)    |
 | `npm run alt-texto -- …`                                | Sugere textos alternativos de imagens (IA)                                                         |
 | `npm run doc-sync -- …`                                 | Sugere atualizações de artigos a partir de `.md` de regras                                         |
 
@@ -77,6 +78,11 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   todo conteúdo que ele entrega à IA precisa ser conferido em código (publicado,
   produto permitido, técnico só para quem pode). Está em `carregarFontes`
   (`scripts/assistente/recuperar.ts`); não leia artigo por outro caminho.
+- **Coleção nova nas regras exige linha na matriz de permissões**
+  (`tests/rules/matriz-permissoes.test.ts`): o último teste dele falha se faltar.
+- **Índice de busca tem teto de 1 MiB por documento**: toda gravação de parte
+  passa por `caberNoLimite` (`src/utils/searchIndex.ts`), que encurta o texto
+  em vez de deixar a publicação falhar.
 - **Gravação no Firestore** pode dar `DEADLINE_EXCEEDED` em redes com
   proxy/VPN: o importador tenta de novo e aceita `--rest`. Rodar de novo é
   seguro (idempotente).
@@ -122,9 +128,10 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   `.md`/`.html`/`.txt` (sem `.docx`/`.pdf`); busca com filtros, categorias e
   relacionados; governança (ciclo de vida de 6 estados, comentários, alteração
   pendente de artigo publicado, auditoria); assistente de IA com RAG sem
-  embeddings; Fase 6A (sincronização: vigília da pasta, workflow de Git e painel).
-  Próximo: Fase 6B (qualidade das respostas da IA, matriz de permissões e
-  desempenho).
+  embeddings; Fase 6 inteira (sincronização com vigília da pasta, workflow de
+  Git e painel; avaliação de qualidade da IA; matriz de permissões; desempenho).
+  O roadmap do time está concluído em código: o que sobra é de dados, de
+  configuração e de testes com dados e chaves reais (veja abaixo).
 - O assistente de IA roda só localmente (`npm run assistente`): falta escolher
   a hospedagem de produção.
 - Base do SmartShare 4 importada **só com texto** no Firebase `dev`

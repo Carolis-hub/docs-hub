@@ -10,6 +10,7 @@ import {
   INDEX_LIMITE_BYTES,
   PARTE_RAIZ,
   aplicarItem,
+  caberNoLimite,
   dividirPorParte,
   itemDoArtigo,
   parteDoBloco,
@@ -54,7 +55,7 @@ export async function atualizarIndiceTx(
     const arvore = await listProductTree(productId)
     const partes = dividirPorParte(itens, (b) => parteDoBloco(arvore, b))
     for (const [parteId, lista] of Object.entries(partes)) {
-      tx.set(parteRef(productId, parteId), { itens: lista })
+      tx.set(parteRef(productId, parteId), { itens: caberNoLimite(lista) })
     }
     tx.set(indexRef(productId), { itens: [], dividido: true })
     return
@@ -65,7 +66,7 @@ export async function atualizarIndiceTx(
   const parte = await tx.get(parteRef(productId, parteId))
   const atuais = ((parte.data() ?? {}) as IndexDoc).itens ?? []
   tx.set(parteRef(productId, parteId), {
-    itens: aplicarItem(atuais, articleId, item),
+    itens: caberNoLimite(aplicarItem(atuais, articleId, item)),
   })
 }
 
