@@ -41,6 +41,21 @@ export type ArticleStatus = 'draft' | 'review' | 'published'
 /** De onde veio o artigo; o importado entra na fila de revisão. */
 export interface ArticleOrigem {
   tipo: 'editor' | 'importacao'
+  /** Ingestão de arquivos: identifica a pasta de origem e o arquivo dentro dela. */
+  fonte?: string
+  arquivo?: string
+  /** SHA-256 do conteúdo do arquivo na última ingestão. */
+  hash?: string
+  classificacao?: Classificacao
+}
+
+/** Sugestão automática (por regras, sem IA) feita na ingestão; o revisor decide. */
+export interface Classificacao {
+  conteudo: 'funcional' | 'tecnico' | 'misto'
+  confianca: 'alta' | 'media' | 'baixa'
+  categoria: CategoriaId | ''
+  publico: ArticlePublico
+  motivos: string[]
 }
 export type ArticlePublico = 'usuario' | 'tecnico'
 
@@ -103,7 +118,7 @@ export interface Suggestion {
   automatico: boolean
   status: SuggestionStatus
   origem: {
-    tipo: 'regras-md' | 'alt-texto'
+    tipo: 'regras-md' | 'alt-texto' | 'ingestao'
     arquivo: string
     hash: string
     repo?: string

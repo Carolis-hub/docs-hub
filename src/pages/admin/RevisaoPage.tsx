@@ -5,15 +5,22 @@ import { PageHeader } from '../../components/PageHeader'
 import { useAsync } from '../../hooks/useAsync'
 import { useAuth } from '../../hooks/useAuth'
 import {
+  clearFlag,
+  listArticlesByFlag,
   listArticlesByStatus,
   publishArticle,
   returnToDraft,
+  unpublishArticle,
 } from '../../services/articles'
 import { listAllBlocks } from '../../services/blocks'
 import type { Article } from '../../types/content'
 import { nomeDaCategoria } from '../../utils/categorias'
 import { limparMarcadores, temImagemNaoMigrada } from '../../utils/content'
-import { caminhoDoBloco, rascunhoDoArtigo } from '../../utils/revisao'
+import {
+  caminhoDoBloco,
+  rascunhoDoArtigo,
+  rotuloDoStatus,
+} from '../../utils/revisao'
 
 const plural = (n: number, um: string, varios: string) =>
   `${n} ${n === 1 ? um : varios}`
@@ -22,11 +29,12 @@ export function RevisaoPage() {
   const { user } = useAuth()
   const uid = user?.uid ?? ''
   const { dados, erro, carregando, recarregar } = useAsync(async () => {
-    const [artigos, blocos] = await Promise.all([
+    const [artigos, blocos, removidos] = await Promise.all([
       listArticlesByStatus('review'),
       listAllBlocks(),
+      listArticlesByFlag('origem_removida'),
     ])
-    return { artigos, blocos }
+    return { artigos, blocos, removidos }
   }, [])
   const [produto, setProduto] = useState('')
   const [marcados, setMarcados] = useState<Set<string>>(new Set())
@@ -106,6 +114,33 @@ export function RevisaoPage() {
       recarregar()
     })
 
+  const manterRemovido = (a: Article) =>
+    executar(async () => {
+      try {
+        await clearFlag(a.id, 'origem_removida', uid)
+        setMensagem(`"${a.titulo}" continua no ar; o aviso foi dispensado.`)
+      } catch (e) {
+        setFalhas([
+          e instanceof Error ? e.message : 'Não foi possível dispensar.',
+        ])
+      }
+      recarregar()
+    })
+
+  const despublicarRemovido = (a: Article) =>
+    executar(async () => {
+      try {
+        if (a.status === 'published') await unpublishArticle(a.id, uid)
+        await clearFlag(a.id, 'origem_removida', uid)
+        setMensagem(`"${a.titulo}" foi despublicado (voltou para rascunho).`)
+      } catch (e) {
+        setFalhas([
+          e instanceof Error ? e.message : 'Não foi possível despublicar.',
+        ])
+      }
+      recarregar()
+    })
+
   const selecionados = artigos.filter((a) => marcados.has(a.id))
 
   return (
@@ -140,6 +175,55 @@ export function RevisaoPage() {
             ))}
           </ul>
         </div>
+      )}
+
+      {dados && dados.removidos.length > 0 && (
+        <section
+          aria-label="Arquivos removidos na origem"
+          className="mb-8 rounded-lg border border-ambar/40 bg-ambar-fundo p-4"
+        >
+          <h2 className="font-semibold text-ambar">
+            Arquivo removido na origem ({dados.removidos.length})
+          </h2>
+          <p className="mb-3 text-sm text-suave">
+            O arquivo que gerou estes artigos sumiu da pasta de origem. Nada foi
+            despublicado: decida o que fazer com cada um.
+          </p>
+          <ul className="space-y-2">
+            {dados.removidos.map((a) => (
+              <li key={a.id} className="cartao flex items-center gap-3 p-3">
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to={`/admin/artigos/${a.id}/editar`}
+                    className="font-medium hover:underline"
+                  >
+                    {a.titulo}
+                  </Link>
+                  <p className="text-xs text-suave">
+                    {a.origem?.arquivo ?? caminhoDoBloco(blocos, a.blockId)} ·{' '}
+                    {rotuloDoStatus(a.status)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="botao"
+                  disabled={ocupado}
+                  onClick={() => void manterRemovido(a)}
+                >
+                  Manter
+                </button>
+                <button
+                  type="button"
+                  className="botao"
+                  disabled={ocupado}
+                  onClick={() => void despublicarRemovido(a)}
+                >
+                  {a.status === 'published' ? 'Despublicar' : 'Dispensar'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {dados && dados.artigos.length === 0 && (
@@ -224,7 +308,16 @@ export function RevisaoPage() {
                     </div>
                     <p className="text-xs text-suave">
                       {caminhoDoBloco(blocos, a.blockId)}
+                      {a.origem?.arquivo && ` · ${a.origem.arquivo}`}
                     </p>
+                    {a.origem?.classificacao && (
+                      <p className="text-xs text-suave">
+                        Categoria e público sugeridos automaticamente (
+                        {a.origem.classificacao.conteudo}, confiança{' '}
+                        {a.origem.classificacao.confianca}): confira antes de
+                        aprovar.
+                      </p>
+                    )}
                     {resumo && (
                       <p className="mt-1 line-clamp-2 text-sm text-suave">
                         {resumo}

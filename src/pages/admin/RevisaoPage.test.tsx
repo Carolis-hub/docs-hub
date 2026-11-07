@@ -8,6 +8,9 @@ const listArticlesByStatus = vi.fn()
 const listAllBlocks = vi.fn()
 const publishArticle = vi.fn()
 const returnToDraft = vi.fn()
+const listArticlesByFlag = vi.fn()
+const unpublishArticle = vi.fn()
+const clearFlag = vi.fn()
 
 vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({ user: { uid: 'admin' }, isAdmin: true }),
@@ -16,6 +19,9 @@ vi.mock('../../services/articles', () => ({
   listArticlesByStatus: (...a: unknown[]) => listArticlesByStatus(...a),
   publishArticle: (...a: unknown[]) => publishArticle(...a),
   returnToDraft: (...a: unknown[]) => returnToDraft(...a),
+  listArticlesByFlag: (...a: unknown[]) => listArticlesByFlag(...a),
+  unpublishArticle: (...a: unknown[]) => unpublishArticle(...a),
+  clearFlag: (...a: unknown[]) => clearFlag(...a),
 }))
 vi.mock('../../services/blocks', () => ({
   listAllBlocks: (...a: unknown[]) => listAllBlocks(...a),
@@ -67,6 +73,9 @@ beforeEach(() => {
   ])
   publishArticle.mockResolvedValue(1)
   returnToDraft.mockResolvedValue(undefined)
+  listArticlesByFlag.mockResolvedValue([])
+  unpublishArticle.mockResolvedValue(undefined)
+  clearFlag.mockResolvedValue(undefined)
 })
 
 describe('RevisaoPage', () => {
@@ -137,5 +146,52 @@ describe('RevisaoPage', () => {
         name: /aprovar e publicar selecionados \(0\)/i,
       }),
     ).toBeDisabled()
+  })
+
+  it('mostra os artigos cujo arquivo sumiu da origem e deixa despublicar ou manter', async () => {
+    listArticlesByFlag.mockResolvedValue([
+      artigo('9', 'Guia antigo', {
+        status: 'published',
+        origem: { tipo: 'importacao', arquivo: 'guias/antigo.md' },
+        flags: ['origem_removida'],
+      }),
+    ])
+    abrir()
+    expect(await screen.findByText('Guia antigo')).toBeInTheDocument()
+    expect(listArticlesByFlag).toHaveBeenCalledWith('origem_removida')
+    expect(screen.getByText(/guias\/antigo\.md/)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Despublicar' }))
+    await waitFor(() =>
+      expect(unpublishArticle).toHaveBeenCalledWith('9', 'admin'),
+    )
+    await waitFor(() =>
+      expect(clearFlag).toHaveBeenCalledWith('9', 'origem_removida', 'admin'),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manter' }))
+    await waitFor(() => expect(clearFlag).toHaveBeenCalledTimes(2))
+    expect(unpublishArticle).toHaveBeenCalledTimes(1)
+  })
+
+  it('mostra o arquivo de origem e o aviso de classificação automática', async () => {
+    listArticlesByStatus.mockResolvedValue([
+      artigo('1', 'Configurar e-mail', {
+        origem: {
+          tipo: 'importacao',
+          arquivo: 'config/email.md',
+          classificacao: {
+            conteudo: 'funcional',
+            confianca: 'media',
+            categoria: 'configuracoes',
+            publico: 'usuario',
+            motivos: [],
+          },
+        },
+      }),
+    ])
+    abrir()
+    expect(await screen.findByText(/config\/email\.md/)).toBeInTheDocument()
+    expect(screen.getByText(/sugeridos automaticamente/)).toBeInTheDocument()
   })
 })

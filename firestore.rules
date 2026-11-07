@@ -43,6 +43,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Registro dos arquivos de origem da ingestão (hash, estado, erro). Só admin;
+    // quem escreve é o script de ingestão (Admin SDK).
+    match /fontes/{fonteId} {
+      allow read, write: if isAdmin();
+    }
+
     match /blocks/{blockId} {
       allow read: if canSeeProduct(resource.data.productId);
       allow write: if isAdmin();

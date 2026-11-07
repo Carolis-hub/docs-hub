@@ -406,3 +406,14 @@ describe('firestore.rules — unidades de negócio', () => {
     await assertFails(getDoc(doc(db, 'blocks/p2')))
   })
 })
+
+describe('firestore.rules — registro das fontes de ingestão', () => {
+  it('só admin lê e escreve', async () => {
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    await assertFails(getDoc(doc(leitor, 'fontes/f1')))
+    await assertFails(setDoc(doc(leitor, 'fontes/f1'), { fonteId: 'x' }))
+    const admin = testEnv.authenticatedContext('admin').firestore()
+    await assertSucceeds(setDoc(doc(admin, 'fontes/f1'), { fonteId: 'x' }))
+    await assertSucceeds(getDoc(doc(admin, 'fontes/f1')))
+  })
+})

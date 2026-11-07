@@ -214,8 +214,11 @@ export function ArticleEditor() {
           role="status"
           className="mb-4 rounded-md bg-bloco p-3 text-sm text-texto "
         >
-          Editando a partir da sugestão da IA ({sugestao.origem.arquivo}).
-          Publicar aqui aprova a sugestão; nada muda até você publicar.
+          {sugestao.origem.tipo === 'ingestao'
+            ? 'Editando a partir da atualização do arquivo'
+            : 'Editando a partir da sugestão da IA'}{' '}
+          ({sugestao.origem.arquivo}). Publicar aqui aprova a sugestão; nada
+          muda até você publicar.
         </p>
       )}
       {artigo?.flags.includes('prints_desatualizados') && (

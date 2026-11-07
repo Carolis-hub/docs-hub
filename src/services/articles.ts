@@ -82,6 +82,16 @@ export async function listArticlesByStatus(
   return snap.docs.map(fromSnap).sort((a, b) => b.atualizadoEm - a.atualizadoEm)
 }
 
+/** Artigos com um alerta (ex.: `origem_removida`), para a fila de revisão. */
+export async function listArticlesByFlag(flag: string): Promise<Article[]> {
+  const snap = await getDocs(
+    query(articles, where('flags', 'array-contains', flag)),
+  )
+  return snap.docs
+    .map(fromSnap)
+    .sort((a, b) => a.titulo.localeCompare(b.titulo))
+}
+
 export async function createArticle(
   draft: ArticleDraft,
   blockId: string,
@@ -276,6 +286,11 @@ export async function clearFlag(
 ): Promise<void> {
   const batch = writeBatch(db)
   batch.update(doc(articles, id), { flags: arrayRemove(flag) })
-  registrarAuditoria(batch, uid, 'artigo.prints', `articles/${id}`)
+  registrarAuditoria(
+    batch,
+    uid,
+    flag === 'origem_removida' ? 'artigo.origem-removida' : 'artigo.prints',
+    `articles/${id}`,
+  )
   await batch.commit()
 }

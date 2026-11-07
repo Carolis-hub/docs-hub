@@ -23,6 +23,7 @@ export type AuditAction =
   | 'sugestao.aprovar'
   | 'sugestao.descartar'
   | 'artigo.prints'
+  | 'artigo.origem-removida'
   | 'usuario.criar'
   | 'usuario.editar'
   | 'usuario.desativar'
