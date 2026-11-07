@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Article, Suggestion } from '../../types/content'
 
 const getArticle = vi.fn()
-const publishArticle = vi.fn()
+const aprovarSugestao = vi.fn()
 const getSuggestion = vi.fn()
 const discardSuggestion = vi.fn()
 
@@ -18,7 +18,9 @@ vi.mock('../../components/ArticleContent', () => ({
 }))
 vi.mock('../../services/articles', () => ({
   getArticle: (...a: unknown[]) => getArticle(...a),
-  publishArticle: (...a: unknown[]) => publishArticle(...a),
+}))
+vi.mock('../../services/governanca', () => ({
+  aprovarSugestao: (...a: unknown[]) => aprovarSugestao(...a),
 }))
 vi.mock('../../services/suggestions', async () => {
   const real = await vi
@@ -40,6 +42,7 @@ const artigo = {
   id: 'a1',
   titulo: 'Anexos',
   versao: 2,
+  status: 'published',
   atualizadoEm: 100,
   publico: 'usuario',
   conteudo: {
@@ -94,7 +97,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   getArticle.mockResolvedValue(artigo)
   getSuggestion.mockResolvedValue(sugestao())
-  publishArticle.mockResolvedValue(3)
+  aprovarSugestao.mockResolvedValue(3)
 })
 
 describe('SuggestionReview', () => {
@@ -114,14 +117,14 @@ describe('SuggestionReview', () => {
     fireEvent.click(
       await screen.findByRole('button', { name: /aprovar e publicar/i }),
     )
-    await waitFor(() => expect(publishArticle).toHaveBeenCalled())
-    const [art, draft, uid, sid] = publishArticle.mock.calls[0] as [
-      Article,
+    await waitFor(() => expect(aprovarSugestao).toHaveBeenCalled())
+    const [artigoId, draft, uid, sid] = aprovarSugestao.mock.calls[0] as [
+      string,
       { conteudo: unknown },
       string,
       string,
     ]
-    expect(art.id).toBe('a1')
+    expect(artigoId).toBe('a1')
     expect(JSON.stringify(draft.conteudo)).toContain('novo')
     expect([uid, sid]).toEqual(['admin1', 's1'])
     expect(await screen.findByText('fila')).toBeInTheDocument()
@@ -181,5 +184,33 @@ describe('SuggestionReview', () => {
     await waitFor(() =>
       expect(discardSuggestion).toHaveBeenCalledWith('a1', 's1', 'admin1'),
     )
+  })
+
+  it('em artigo não publicado não aprova direto: manda abrir no editor', async () => {
+    getArticle.mockResolvedValue({ ...artigo, status: 'draft' })
+    await renderizar()
+    expect(
+      await screen.findByText(/não está publicado, então não há versão no ar/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /aprovar e publicar/i }),
+    ).toBeDisabled()
+    expect(
+      screen.getByRole('link', { name: /editar antes de aprovar/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('com alteração pendente no artigo também não aprova direto', async () => {
+    getArticle.mockResolvedValue({
+      ...artigo,
+      revisao: { status: 'draft', autorId: 'x', atualizadoEm: 1 },
+    })
+    await renderizar()
+    expect(
+      await screen.findByText(/já tem uma alteração pendente/i),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /aprovar e publicar/i }),
+    ).toBeDisabled()
   })
 })

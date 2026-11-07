@@ -68,6 +68,17 @@ service cloud.firestore {
         allow read, write: if isAdmin();
       }
 
+      // Alteração pendente de um artigo publicado: o conteúdo novo só é visto
+      // por admins até ser aprovado e publicado.
+      match /revisoes/{revisaoId} {
+        allow read, write: if isAdmin();
+      }
+
+      // Comentários da revisão (pedidos de ajuste, aprovações).
+      match /comentarios/{comentarioId} {
+        allow read, write: if isAdmin();
+      }
+
       // Sugestões da IA (doc-sync): só admins leem e decidem; a versão
       // publicada não muda até um admin aprovar.
       match /suggestions/{suggestionId} {

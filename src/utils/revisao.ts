@@ -1,4 +1,5 @@
 import type { Article, ArticleDraft, Block } from '../types/content'
+import { ROTULOS_STATUS } from './ciclo'
 
 /** "Produto › Seção › Subseção" do bloco, para situar o artigo na fila. */
 export function caminhoDoBloco(blocos: Block[], blockId: string): string {
@@ -27,9 +28,5 @@ export function rascunhoDoArtigo(a: Article): ArticleDraft {
 
 /** Rótulo do status para o admin. */
 export function rotuloDoStatus(status: Article['status']): string {
-  return status === 'published'
-    ? 'Publicado'
-    : status === 'review'
-      ? 'Em revisão'
-      : 'Rascunho'
+  return ROTULOS_STATUS[status] ?? status
 }

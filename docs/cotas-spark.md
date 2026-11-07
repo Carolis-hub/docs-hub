@@ -40,6 +40,15 @@ período e até 20 termos buscados. No pior caso, com 300 artigos e período de
 só carrega ao abrir ou ao clicar em "Atualizar", e o período de 90 dias deve
 ser usado com parcimônia.
 
+## Governança (admin)
+
+Cada mudança de estado (enviar, aprovar, publicar…) é uma transação: lê o
+artigo (e a alteração pendente, se houver) e grava o artigo, a trilha de
+auditoria e, ao publicar, a versão e o índice de busca do produto: cerca de
+6 a 10 operações. Abrir o editor lê o artigo, as versões, os comentários, a
+trilha do artigo (até 100) e a lista de usuários. A tela "Auditoria" lê até 200
+registros por carga.
+
 ## Fila de revisão (admin)
 
 Cada carga da tela "Revisão" lê um documento por artigo em revisão e todos os

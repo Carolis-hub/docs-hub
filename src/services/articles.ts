@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore'
 import { registrarAuditoria } from './audit'
 import { db } from './firebase'
-import { atualizarIndiceTx, itemDoArtigo } from './searchIndex'
+import { atualizarIndiceTx } from './searchIndex'
 import { invalidarCacheBusca } from './search'
 import type {
   Article,
@@ -20,13 +20,14 @@ import type {
   ArticleOrigem,
   ArticleStatus,
   ArticleVersion,
+  RevisaoStatus,
 } from '../types/content'
 import { extrairTextoPlano, gerarResumo, imagensSemAlt } from '../utils/content'
 import { slugify } from '../utils/slug'
 
 const articles = collection(db, 'articles')
 
-function fromSnap(snap: { id: string; data(): unknown }): Article {
+export function fromSnap(snap: { id: string; data(): unknown }): Article {
   return { id: snap.id, ...(snap.data() as Omit<Article, 'id'>) }
 }
 
@@ -47,7 +48,7 @@ export function camposDerivados(draft: ArticleDraft) {
   }
 }
 
-function validar(draft: ArticleDraft) {
+export function validar(draft: ArticleDraft) {
   if (!draft.titulo.trim()) throw new Error('Informe o título do artigo.')
   const faltando = imagensSemAlt(draft.conteudo)
   if (faltando > 0) {
@@ -95,6 +96,20 @@ export async function listArticlesByStatus(
   return snap.docs.map(fromSnap).sort((a, b) => b.atualizadoEm - a.atualizadoEm)
 }
 
+/** Artigos publicados cuja alteração pendente está num estado (ex.: aguardando revisão). */
+export async function listArticlesByRevisaoStatus(
+  status: RevisaoStatus,
+): Promise<Article[]> {
+  const snap = await getDocs(
+    query(articles, where('revisao.status', '==', status)),
+  )
+  return snap.docs
+    .map(fromSnap)
+    .sort(
+      (a, b) => (b.revisao?.atualizadoEm ?? 0) - (a.revisao?.atualizadoEm ?? 0),
+    )
+}
+
 /** Artigos com um alerta (ex.: `origem_removida`), para a fila de revisão. */
 export async function listArticlesByFlag(flag: string): Promise<Article[]> {
   const snap = await getDocs(
@@ -135,149 +150,20 @@ export async function createArticle(
   return ref.id
 }
 
-/**
- * Salva as edições. Um artigo publicado continua publicado, então o índice de
- * busca acompanha a edição na mesma transação.
- */
-export async function saveArticle(
-  id: string,
-  draft: ArticleDraft,
-  uid: string,
-): Promise<void> {
-  validar(draft)
-  const ref = doc(articles, id)
-  await runTransaction(db, async (tx) => {
-    const atual = fromSnap(await tx.get(ref))
-    const campos = camposDerivados(draft)
-    if (atual.status === 'published') {
-      await atualizarIndiceTx(
-        tx,
-        atual.productId,
-        atual.blockId,
-        id,
-        itemDoArtigo({ ...campos, id, blockId: atual.blockId }),
-      )
-    }
-    tx.update(ref, { ...campos, atualizadoPor: uid, atualizadoEm: Date.now() })
-    registrarAuditoria(tx, uid, 'artigo.editar', `articles/${id}`)
-  })
-  invalidarCacheBusca()
-}
-
-/** Publica, grava o snapshot da versão e atualiza o índice de busca. */
-export async function publishArticle(
-  article: Article,
-  draft: ArticleDraft,
-  uid: string,
-  /** Quando a publicação aplica uma sugestão da IA, marca-a como aprovada. */
-  sugestaoId?: string,
-): Promise<number> {
-  validar(draft)
-  const versao = article.versao + 1
-  const agora = Date.now()
-  const campos = camposDerivados(draft)
-  await runTransaction(db, async (tx) => {
-    await atualizarIndiceTx(
-      tx,
-      article.productId,
-      article.blockId,
-      article.id,
-      itemDoArtigo({ ...campos, id: article.id, blockId: article.blockId }),
-    )
-    tx.update(doc(articles, article.id), {
-      ...campos,
-      status: 'published' satisfies ArticleStatus,
-      versao,
-      atualizadoPor: uid,
-      atualizadoEm: agora,
-      revisadoEm: agora,
-    })
-    const snapshot: ArticleVersion = {
-      versao,
-      titulo: draft.titulo.trim(),
-      conteudo: draft.conteudo,
-      origem: sugestaoId ? 'ia' : 'manual',
-      autorId: uid,
-      criadoEm: agora,
-    }
-    tx.set(doc(articles, article.id, 'versions', String(versao)), snapshot)
-    registrarAuditoria(tx, uid, 'artigo.publicar', `articles/${article.id}`)
-    if (sugestaoId) {
-      tx.update(doc(articles, article.id, 'suggestions', sugestaoId), {
-        status: 'approved',
-        decididoPor: uid,
-        decididoEm: agora,
-      })
-      registrarAuditoria(
-        tx,
-        uid,
-        'sugestao.aprovar',
-        `articles/${article.id}/suggestions/${sugestaoId}`,
-      )
-    }
-  })
-  invalidarCacheBusca()
-  return versao
-}
-
-/** Rascunho → fila de revisão. Só o rascunho muda: publicado e já em revisão ficam como estão. */
-export async function sendToReview(id: string, uid: string): Promise<void> {
-  const ref = doc(articles, id)
-  await runTransaction(db, async (tx) => {
-    const atual = fromSnap(await tx.get(ref))
-    if (atual.status !== 'draft') {
-      throw new Error('Só um rascunho pode ser enviado para revisão.')
-    }
-    tx.update(ref, {
-      status: 'review' satisfies ArticleStatus,
-      atualizadoPor: uid,
-      atualizadoEm: Date.now(),
-    })
-    registrarAuditoria(tx, uid, 'artigo.enviar-revisao', `articles/${id}`)
-  })
-}
-
-/** Fila de revisão → rascunho (pedido de ajustes). Não mexe em artigo publicado. */
-export async function returnToDraft(id: string, uid: string): Promise<void> {
-  const ref = doc(articles, id)
-  await runTransaction(db, async (tx) => {
-    const atual = fromSnap(await tx.get(ref))
-    if (atual.status !== 'review') {
-      throw new Error('Só um artigo em revisão pode voltar para rascunho.')
-    }
-    tx.update(ref, {
-      status: 'draft' satisfies ArticleStatus,
-      atualizadoPor: uid,
-      atualizadoEm: Date.now(),
-    })
-    registrarAuditoria(tx, uid, 'artigo.devolver-rascunho', `articles/${id}`)
-  })
-}
-
-export async function unpublishArticle(id: string, uid: string): Promise<void> {
-  const ref = doc(articles, id)
-  await runTransaction(db, async (tx) => {
-    const atual = fromSnap(await tx.get(ref))
-    await atualizarIndiceTx(tx, atual.productId, atual.blockId, id, null)
-    tx.update(ref, {
-      status: 'draft' satisfies ArticleStatus,
-      atualizadoPor: uid,
-      atualizadoEm: Date.now(),
-    })
-    registrarAuditoria(tx, uid, 'artigo.despublicar', `articles/${id}`)
-  })
-  invalidarCacheBusca()
-}
-
 export async function deleteArticle(id: string, uid: string): Promise<void> {
   const ref = doc(articles, id)
-  const versoes = await getDocs(collection(articles, id, 'versions'))
+  const [versoes, comentarios] = await Promise.all([
+    getDocs(collection(articles, id, 'versions')),
+    getDocs(collection(articles, id, 'comentarios')),
+  ])
   await runTransaction(db, async (tx) => {
     const atual = fromSnap(await tx.get(ref))
     if (atual.status === 'published') {
       await atualizarIndiceTx(tx, atual.productId, atual.blockId, id, null)
     }
     versoes.docs.forEach((v) => tx.delete(v.ref))
+    comentarios.docs.forEach((c) => tx.delete(c.ref))
+    tx.delete(doc(articles, id, 'revisoes', 'atual'))
     tx.delete(ref)
     registrarAuditoria(tx, uid, 'artigo.excluir', `articles/${id}`)
   })

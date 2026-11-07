@@ -12,6 +12,7 @@ import { SuggestionReview } from './pages/admin/SuggestionReview'
 import { SuggestionsPage } from './pages/admin/SuggestionsPage'
 import { MetricsPage } from './pages/admin/MetricsPage'
 import { RevisaoPage } from './pages/admin/RevisaoPage'
+import { AuditoriaPage } from './pages/admin/AuditoriaPage'
 import { UnidadesPage } from './pages/admin/UnidadesPage'
 import { UsersPage } from './pages/admin/UsersPage'
 import { ArticleEditor } from './pages/admin/ArticleEditor'
@@ -60,6 +61,14 @@ function App() {
                   element={
                     <RequireAdmin>
                       <RevisaoPage />
+                    </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="/admin/auditoria"
+                  element={
+                    <RequireAdmin>
+                      <AuditoriaPage />
                     </RequireAdmin>
                   }
                 />

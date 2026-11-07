@@ -7,34 +7,52 @@ import { useAuth } from '../../hooks/useAuth'
 import {
   clearFlag,
   listArticlesByFlag,
+  listArticlesByRevisaoStatus,
   listArticlesByStatus,
-  publishArticle,
-  returnToDraft,
-  unpublishArticle,
 } from '../../services/articles'
+import { aprovarEPublicar, transitar } from '../../services/governanca'
 import { listAllBlocks } from '../../services/blocks'
 import type { Article } from '../../types/content'
 import { nomeDaCategoria } from '../../utils/categorias'
 import { limparMarcadores, temImagemNaoMigrada } from '../../utils/content'
-import {
-  caminhoDoBloco,
-  rascunhoDoArtigo,
-  rotuloDoStatus,
-} from '../../utils/revisao'
+import { caminhoDoBloco, rotuloDoStatus } from '../../utils/revisao'
 
 const plural = (n: number, um: string, varios: string) =>
   `${n} ${n === 1 ? um : varios}`
 
 export function RevisaoPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const uid = user?.uid ?? ''
+  const autorNome = profile?.nome || user?.email || uid
   const { dados, erro, carregando, recarregar } = useAsync(async () => {
-    const [artigos, blocos, removidos] = await Promise.all([
+    const [
+      novos,
+      alteracoes,
+      aprovados,
+      alteracoesAprovadas,
+      blocos,
+      removidos,
+    ] = await Promise.all([
       listArticlesByStatus('review'),
+      listArticlesByRevisaoStatus('review'),
+      listArticlesByStatus('approved'),
+      listArticlesByRevisaoStatus('approved'),
       listAllBlocks(),
       listArticlesByFlag('origem_removida'),
     ])
-    return { artigos, blocos, removidos }
+    const item = (alteracao: boolean) => (artigo: Article) => ({
+      artigo,
+      alteracao,
+    })
+    return {
+      fila: [...novos.map(item(false)), ...alteracoes.map(item(true))],
+      aprovados: [
+        ...aprovados.map(item(false)),
+        ...alteracoesAprovadas.map(item(true)),
+      ],
+      blocos,
+      removidos,
+    }
   }, [])
   const [produto, setProduto] = useState('')
   const [marcados, setMarcados] = useState<Set<string>>(new Set())
@@ -46,11 +64,21 @@ export function RevisaoPage() {
   const produtos = blocos
     .filter((b) => b.parentId === null)
     .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-  const artigos = useMemo(
+  const fila = useMemo(
     () =>
-      (dados?.artigos ?? []).filter((a) => !produto || a.productId === produto),
+      (dados?.fila ?? []).filter(
+        (i) => !produto || i.artigo.productId === produto,
+      ),
     [dados, produto],
   )
+  const aprovados = useMemo(
+    () =>
+      (dados?.aprovados ?? []).filter(
+        (i) => !produto || i.artigo.productId === produto,
+      ),
+    [dados, produto],
+  )
+  const artigos = fila.map((i) => i.artigo)
   const todosMarcados =
     artigos.length > 0 && artigos.every((a) => marcados.has(a.id))
 
@@ -80,11 +108,11 @@ export function RevisaoPage() {
   const aprovar = (lista: Article[]) =>
     executar(async () => {
       const erros: string[] = []
-      let aprovados = 0
+      let publicados = 0
       for (const a of lista) {
         try {
-          await publishArticle(a, rascunhoDoArtigo(a), uid)
-          aprovados++
+          await aprovarEPublicar(a.id, uid, { autorNome })
+          publicados++
         } catch (e) {
           erros.push(
             `${a.titulo}: ${e instanceof Error ? e.message : 'não foi possível publicar.'}`,
@@ -93,8 +121,8 @@ export function RevisaoPage() {
       }
       setFalhas(erros)
       setMensagem(
-        aprovados > 0
-          ? `${plural(aprovados, 'artigo publicado', 'artigos publicados')}.`
+        publicados > 0
+          ? `${plural(publicados, 'artigo publicado', 'artigos publicados')}.`
           : null,
       )
       setMarcados(new Set())
@@ -104,11 +132,37 @@ export function RevisaoPage() {
   const devolver = (a: Article) =>
     executar(async () => {
       try {
-        await returnToDraft(a.id, uid)
+        await transitar(a.id, 'reabrir', uid)
         setMensagem(`"${a.titulo}" voltou para rascunho.`)
       } catch (e) {
         setFalhas([
           e instanceof Error ? e.message : 'Não foi possível devolver.',
+        ])
+      }
+      recarregar()
+    })
+
+  const soAprovar = (a: Article) =>
+    executar(async () => {
+      try {
+        await transitar(a.id, 'aprovar', uid, { autorNome })
+        setMensagem(`"${a.titulo}" foi aprovado e espera a publicação.`)
+      } catch (e) {
+        setFalhas([
+          e instanceof Error ? e.message : 'Não foi possível aprovar.',
+        ])
+      }
+      recarregar()
+    })
+
+  const publicarAprovado = (a: Article) =>
+    executar(async () => {
+      try {
+        const { versao } = await transitar(a.id, 'publicar', uid, { autorNome })
+        setMensagem(`"${a.titulo}" publicado (versão ${versao}).`)
+      } catch (e) {
+        setFalhas([
+          e instanceof Error ? e.message : 'Não foi possível publicar.',
         ])
       }
       recarregar()
@@ -130,7 +184,7 @@ export function RevisaoPage() {
   const despublicarRemovido = (a: Article) =>
     executar(async () => {
       try {
-        if (a.status === 'published') await unpublishArticle(a.id, uid)
+        if (a.status === 'published') await transitar(a.id, 'despublicar', uid)
         await clearFlag(a.id, 'origem_removida', uid)
         setMensagem(`"${a.titulo}" foi despublicado (voltou para rascunho).`)
       } catch (e) {
@@ -142,6 +196,7 @@ export function RevisaoPage() {
     })
 
   const selecionados = artigos.filter((a) => marcados.has(a.id))
+  const totalFila = (dados?.fila.length ?? 0) + (dados?.aprovados.length ?? 0)
 
   return (
     <div>
@@ -150,7 +205,7 @@ export function RevisaoPage() {
         titulo="Fila de revisão"
         subtitulo={
           dados
-            ? `${plural(dados.artigos.length, 'artigo aguardando', 'artigos aguardando')} aprovação. Nada aqui aparece para os leitores.`
+            ? `${plural(dados.fila.length, 'item aguardando', 'itens aguardando')} revisão e ${dados.aprovados.length} aprovado${dados.aprovados.length === 1 ? '' : 's'} aguardando publicação. Nada aqui aparece para os leitores.`
             : undefined
         }
       />
@@ -226,14 +281,14 @@ export function RevisaoPage() {
         </section>
       )}
 
-      {dados && dados.artigos.length === 0 && (
+      {dados && totalFila === 0 && (
         <p className="text-suave">
           Nenhum artigo na fila. Os importados e os enviados para revisão no
           editor aparecem aqui.
         </p>
       )}
 
-      {dados && dados.artigos.length > 0 && (
+      {dados && dados.fila.length > 0 && (
         <>
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm">
@@ -273,7 +328,7 @@ export function RevisaoPage() {
           </div>
 
           <ul className="space-y-3">
-            {artigos.map((a) => {
+            {fila.map(({ artigo: a, alteracao }) => {
               const resumo = limparMarcadores(a.resumo)
               const categoria = nomeDaCategoria(a.categoria)
               return (
@@ -293,7 +348,12 @@ export function RevisaoPage() {
                       >
                         {a.titulo}
                       </Link>
-                      {a.origem?.tipo === 'importacao' && (
+                      {alteracao && (
+                        <span className="selo selo-ambar">
+                          Alteração do artigo publicado (v{a.versao})
+                        </span>
+                      )}
+                      {!alteracao && a.origem?.tipo === 'importacao' && (
                         <span className="selo">Importado</span>
                       )}
                       {categoria && <span className="selo">{categoria}</span>}
@@ -335,9 +395,17 @@ export function RevisaoPage() {
                       type="button"
                       className="botao"
                       disabled={ocupado}
-                      onClick={() => void aprovar([a])}
+                      onClick={() => void soAprovar(a)}
                     >
                       Aprovar
+                    </button>
+                    <button
+                      type="button"
+                      className="botao"
+                      disabled={ocupado}
+                      onClick={() => void aprovar([a])}
+                    >
+                      Aprovar e publicar
                     </button>
                     <button
                       type="button"
@@ -353,6 +421,59 @@ export function RevisaoPage() {
             })}
           </ul>
         </>
+      )}
+
+      {dados && dados.aprovados.length > 0 && (
+        <section aria-label="Aprovados" className="mt-10">
+          <h2 className="mb-3 text-lg font-semibold">
+            Aprovados, aguardando publicação ({aprovados.length})
+          </h2>
+          <ul className="space-y-3">
+            {aprovados.map(({ artigo: a, alteracao }) => (
+              <li key={a.id} className="cartao flex gap-3 p-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Link
+                      to={`/admin/artigos/${a.id}/editar`}
+                      className="font-semibold hover:underline"
+                    >
+                      {a.titulo}
+                    </Link>
+                    {alteracao && (
+                      <span className="selo selo-ambar">
+                        Alteração do artigo publicado (v{a.versao})
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-suave">
+                    {caminhoDoBloco(blocos, a.blockId)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-start gap-2">
+                  <Link to={`/admin/artigos/${a.id}/editar`} className="botao">
+                    Revisar
+                  </Link>
+                  <button
+                    type="button"
+                    className="botao botao-primario"
+                    disabled={ocupado}
+                    onClick={() => void publicarAprovado(a)}
+                  >
+                    Publicar
+                  </button>
+                  <button
+                    type="button"
+                    className="botao"
+                    disabled={ocupado}
+                    onClick={() => void devolver(a)}
+                  >
+                    Devolver
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   )

@@ -60,6 +60,9 @@ export function ArticlePage() {
     artigo.versaoProduto && `Versão do produto ${artigo.versaoProduto}`,
     artigo.publico === 'tecnico' && 'Técnico',
     isAdmin && artigo.status !== 'published' && rotuloDoStatus(artigo.status),
+    isAdmin &&
+      artigo.revisao &&
+      `Alteração pendente: ${rotuloDoStatus(artigo.revisao.status)}`,
   ].filter(Boolean)
 
   return (
