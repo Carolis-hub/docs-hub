@@ -125,6 +125,26 @@
   .doc-content pre code {
     @apply bg-transparent p-0;
   }
+  .doc-content .tableWrapper {
+    @apply overflow-x-auto;
+  }
+  .doc-content table {
+    @apply w-full border-collapse text-sm;
+  }
+  .doc-content th,
+  .doc-content td {
+    @apply min-w-[6rem] border border-borda px-3 py-2 text-left align-top;
+  }
+  .doc-content th {
+    @apply bg-bloco font-semibold;
+  }
+  .doc-content td > p,
+  .doc-content th > p {
+    @apply m-0;
+  }
+  .doc-content .selectedCell {
+    @apply bg-destaque/10;
+  }
   .doc-content img {
     @apply h-auto max-w-full rounded-md border border-borda;
   }

@@ -53,8 +53,12 @@ próprio. Fonte inicial: `C:\projetos_selbetti\smartshare-di\docs`.
       despublicação; sem alteração → não reprocessa; erro → registra e permite
       reprocessar — rodada manual com `npm run ingestao`; o monitoramento
       contínuo é da Fase 6
-- [ ] Editor próprio (já tem rascunho e "Enviar para revisão"): criar/editar, modelos de documentação funcional, imagens,
-      tabelas e links, categorias, rascunho e envio para revisão
+- [x] Editor próprio: criar/editar com modelos de documentação funcional
+      (funcionalidade, configuração, processo, regra de negócio e em branco),
+      imagens, tabelas e links, categorias, rascunho e envio para revisão.
+      Os modelos ficam no código (`src/utils/modelos.ts`) e marcam o que falta
+      escrever com "[Preencher: …]": enquanto houver, o artigo não vai para a
+      revisão nem para o ar
 
 Conclusão: documentos importados ou criados são classificados e vão para
 revisão, sem publicação automática.
@@ -171,7 +175,9 @@ ou mudar de banco antes da Fase 5.
       da API da Anthropic
 - [ ] Decidir quais artigos são "técnicos" (`--tecnico "<regex>"` no adaptador)
 - [ ] Decidir sobre o rodapé "Possui alguma dúvida ou sugestão?" (24 artigos)
-- [ ] Conferir artigos com tabelas (o editor não tem tabela; viram texto)
+- [ ] Conferir artigos com tabelas: o editor agora tem tabela, mas os 57 já
+      importados foram gravados com a tabela achatada em texto; para recuperar,
+      importar de novo o conteúdo (`--sobrescrever --publicar`, junto com as imagens)
 - [ ] Importar o produto **SmartShare** (clássico), se for entrar no sistema
 
 ### Ambientes e segurança

@@ -21,6 +21,7 @@ import {
   type EstadoCiclo,
 } from '../utils/ciclo'
 import { imagensSemAlt } from '../utils/content'
+import { mensagemTrechos, trechosParaPreencher } from '../utils/modelos'
 import { slugify } from '../utils/slug'
 import { registrarAuditoria, type AuditAction } from './audit'
 import { camposDerivados, fromSnap, validar } from './articles'
@@ -116,6 +117,12 @@ export async function transitar(
 
     const agora = Date.now()
     const trabalho = naRevisao ? (revisao as Revisao) : artigo
+
+    // Um modelo esquecido pela metade não vai para a revisão nem para o ar.
+    if (acao === 'enviar' || acao === 'publicar') {
+      const faltam = trechosParaPreencher(trabalho.conteudo)
+      if (faltam > 0) throw new Error(mensagemTrechos(faltam))
+    }
 
     if (acao === 'publicar') {
       if (imagensSemAlt(trabalho.conteudo) > 0) {

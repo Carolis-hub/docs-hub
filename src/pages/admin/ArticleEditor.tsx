@@ -36,7 +36,7 @@ import type {
   Suggestion,
 } from '../../types/content'
 import { rotuloDaAuditoria } from '../../utils/auditoria'
-import { CATEGORIAS } from '../../utils/categorias'
+import { CATEGORIAS, nomeDaCategoria } from '../../utils/categorias'
 import {
   acoesDisponiveis,
   exigeComentario,
@@ -44,6 +44,12 @@ import {
   type AcaoCiclo,
 } from '../../utils/ciclo'
 import { EMPTY_DOC } from '../../utils/content'
+import {
+  MODELOS,
+  mensagemTrechos,
+  modeloPorId,
+  trechosParaPreencher,
+} from '../../utils/modelos'
 import { rotuloDoStatus } from '../../utils/revisao'
 
 const campo =
@@ -115,6 +121,12 @@ export function ArticleEditor() {
   const [conteudo, setConteudo] = useState<JSONContent>(EMPTY_DOC)
   const [editorKey, setEditorKey] = useState(0)
   const [baseline, setBaseline] = useState('')
+  // Artigo novo: o modelo escolhido (`null` = ainda escolhendo).
+  const [modelo, setModelo] = useState<string | null>(
+    params.get('modelo') && modeloPorId(params.get('modelo'))
+      ? params.get('modelo')
+      : null,
+  )
   const [comentario, setComentario] = useState('')
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [falha, setFalha] = useState<string | null>(null)
@@ -153,6 +165,17 @@ export function ArticleEditor() {
     setEditorKey((k) => k + 1)
   }, [artigo, revisao, sugestaoPendente])
 
+  useEffect(() => {
+    // Artigo novo: aplica o modelo escolhido (estrutura, categoria e público).
+    if (articleId) return
+    const m = modeloPorId(modelo)
+    if (!m) return
+    setConteudo(m.conteudo)
+    setCategoria(m.categoria)
+    setPublico(m.publico)
+    setEditorKey((k) => k + 1)
+  }, [articleId, modelo])
+
   const nomes = useMemo(
     () => new Map((dados?.usuarios ?? []).map((u) => [u.uid, u.nome])),
     [dados],
@@ -167,6 +190,40 @@ export function ArticleEditor() {
       </p>
     )
   if (articleId && !artigo) return <p>Artigo não encontrado.</p>
+
+  if (!articleId && modelo === null) {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <h1 className="mb-1 text-2xl font-semibold">Novo artigo</h1>
+        <p className="mb-6 text-sm text-suave">
+          Escolha um modelo. Ele já traz a estrutura e a categoria; os trechos
+          marcados como "[Preencher: …]" são para você escrever.
+        </p>
+        <ul
+          className="grid gap-4 sm:grid-cols-2"
+          aria-label="Modelos de documento"
+        >
+          {MODELOS.map((m) => (
+            <li key={m.id}>
+              <button
+                type="button"
+                onClick={() => setModelo(m.id)}
+                className="cartao flex h-full w-full flex-col gap-1 p-4 text-left transition hover:border-destaque/50"
+              >
+                <span className="font-semibold">{m.nome}</span>
+                <span className="text-sm text-suave">{m.descricao}</span>
+                {m.categoria && (
+                  <span className="selo mt-1 self-start">
+                    {nomeDaCategoria(m.categoria)}
+                  </span>
+                )}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
 
   const draft = (): ArticleDraft => ({
     titulo,
@@ -323,6 +380,14 @@ export function ArticleEditor() {
         )}
       </h1>
 
+      {trechosParaPreencher(conteudo) > 0 && (
+        <p
+          role="status"
+          className="mb-4 rounded-md bg-ambar-fundo p-3 text-sm text-ambar"
+        >
+          {mensagemTrechos(trechosParaPreencher(conteudo))}
+        </p>
+      )}
       {publicado && !revisao && (
         <p
           role="note"
@@ -399,6 +464,7 @@ export function ArticleEditor() {
           <input
             className={campo}
             value={titulo}
+            placeholder={artigo ? undefined : 'Ex.: Como cadastrar um cliente'}
             onChange={(e) => setTitulo(e.target.value)}
           />
         </label>

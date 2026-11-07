@@ -59,6 +59,29 @@ function lista(no: JSONContent): string {
     .join('\n')
 }
 
+/** Texto de uma célula numa linha só: o Markdown de tabela não aceita quebra dentro da célula. */
+function celula(no: JSONContent): string {
+  return blocos(no.content, ' ')
+    .replace(/\n+/g, ' ')
+    .replace(/\|/g, '\\|')
+    .trim()
+}
+
+/** Tabela em Markdown (GFM). A primeira linha vira o cabeçalho, como o formato exige. */
+function tabela(no: JSONContent): string {
+  const linhas = (no.content ?? []).map((tr) => (tr.content ?? []).map(celula))
+  const colunas = Math.max(0, ...linhas.map((l) => l.length))
+  if (linhas.length === 0 || colunas === 0) return ''
+  const completar = (l: string[]) =>
+    `| ${[...l, ...Array<string>(colunas - l.length).fill('')].join(' | ')} |`
+  const [cabecalho = [], ...corpo] = linhas
+  return [
+    completar(cabecalho),
+    `| ${Array<string>(colunas).fill('---').join(' | ')} |`,
+    ...corpo.map(completar),
+  ].join('\n')
+}
+
 function bloco(no: JSONContent): string {
   switch (no.type) {
     case 'paragraph':
@@ -75,6 +98,8 @@ function bloco(no: JSONContent): string {
     }
     case 'blockquote':
       return indentar(blocos(no.content, '\n\n'), '> ', '> ')
+    case 'table':
+      return tabela(no)
     case 'horizontalRule':
       return '---'
     case 'image':

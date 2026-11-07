@@ -19,6 +19,8 @@ export function RichEditor({ value, onChange }: Props) {
   const editor = useEditor({
     extensions,
     content: value,
+    // A barra de ferramentas precisa acompanhar o cursor (negrito ativo, dentro de tabela…).
+    shouldRerenderOnTransaction: true,
     onUpdate: ({ editor: e }) => onChange(e.getJSON()),
   })
 
@@ -154,6 +156,55 @@ export function RichEditor({ value, onChange }: Props) {
         <button type="button" className={ativo('link')} onClick={definirLink}>
           Link
         </button>
+        <span className="mx-1 h-5 w-px bg-borda " />
+        <button
+          type="button"
+          className={botao}
+          onClick={() =>
+            chain().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()
+          }
+        >
+          Tabela
+        </button>
+        {editor.isActive('table') && (
+          <>
+            <button
+              type="button"
+              className={botao}
+              onClick={() => chain().addRowAfter().run()}
+            >
+              + Linha
+            </button>
+            <button
+              type="button"
+              className={botao}
+              onClick={() => chain().deleteRow().run()}
+            >
+              − Linha
+            </button>
+            <button
+              type="button"
+              className={botao}
+              onClick={() => chain().addColumnAfter().run()}
+            >
+              + Coluna
+            </button>
+            <button
+              type="button"
+              className={botao}
+              onClick={() => chain().deleteColumn().run()}
+            >
+              − Coluna
+            </button>
+            <button
+              type="button"
+              className={botao}
+              onClick={() => chain().deleteTable().run()}
+            >
+              Excluir tabela
+            </button>
+          </>
+        )}
         <span className="mx-1 h-5 w-px bg-borda " />
         <button
           type="button"

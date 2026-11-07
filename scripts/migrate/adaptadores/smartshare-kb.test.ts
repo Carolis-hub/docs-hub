@@ -202,7 +202,7 @@ describe('converterKb (fixture no formato do extrair_kb.py)', () => {
     expect(
       plano.artigos.find((a) => a.titulo === 'Módulo antigo')?.status,
     ).toBe('draft')
-    // H4 virou H3 e a tabela do gerenciamento virou texto, com aviso.
+    // H4 virou H3.
     expect(JSON.stringify(anexos?.conteudo)).toContain('"level":3')
     expect(plano.relatorio.imagensComFalha.map((i) => i.src)).toContain(
       'imagem-embutida-no-site',
