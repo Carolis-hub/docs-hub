@@ -115,14 +115,15 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 
 ## Estado atual (resumo; detalhes em `docs/roadmap.md`)
 
-- Fases 0 a 7, o novo visual e as Fases 1 (BU e categorias), 2A (fila de
-  revisão) e 2B (ingestão de `.md`/`.html`/`.txt`, sem `.docx`/`.pdf`) do
-  e Fase 3 (busca com filtros, categorias, relacionados) do roadmap do time.
-  Fase 4 (governança: ciclo de vida de 6 estados, comentários, alteração
-  pendente de artigo publicado, auditoria). Próximo: editor próprio com
-  modelos (fim da Fase 2) e Fase 6 (sincronização contínua e estabilização).
-  Fase 5 (assistente de IA com RAG sem embeddings) feita, com o servidor
-  rodando só localmente: falta escolher a hospedagem de produção.
+- Fases 0 a 7 e o novo visual estão na branch padrão. Do roadmap do time
+  (`docs/roadmap.md`), já estão feitas as Fases 1 a 5 e o editor com modelos e
+  tabelas (que fecha a Fase 2): BU e categorias; fila de revisão; ingestão de
+  `.md`/`.html`/`.txt` (sem `.docx`/`.pdf`); busca com filtros, categorias e
+  relacionados; governança (ciclo de vida de 6 estados, comentários, alteração
+  pendente de artigo publicado, auditoria); assistente de IA com RAG sem
+  embeddings. Próximo: Fase 6 (sincronização contínua e estabilização).
+- O assistente de IA roda só localmente (`npm run assistente`): falta escolher
+  a hospedagem de produção.
 - Base do SmartShare 4 importada **só com texto** no Firebase `dev`
   (10 blocos, 57 artigos); imagens ainda não migradas (211 marcadores
   `[Imagem não migrada: …]`).

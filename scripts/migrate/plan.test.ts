@@ -209,9 +209,20 @@ describe('planejar (export de exemplo)', () => {
     expect(relatorio.avisos).toEqual([
       expect.objectContaining({
         artigo: 'tabela',
-        mensagem: expect.stringContaining('table'),
+        mensagem: expect.stringContaining('iframe'),
       }),
     ])
+  })
+
+  it('mantém as tabelas (cabeçalho e células) e o texto delas entra na busca', async () => {
+    const { artigos } = await planoDoExemplo()
+    const tabela = artigos.find((a) => a.titulo.includes('Tipos'))
+    const json = JSON.stringify(tabela?.conteudo)
+    expect(json).toContain('"type":"table"')
+    expect(json).toContain('"type":"tableHeader"')
+    expect(json).toContain('"type":"tableCell"')
+    expect(tabela?.textoPlano).toContain('Contrato')
+    expect(tabela?.textoPlano).toContain('PDF')
   })
 })
 

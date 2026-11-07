@@ -426,3 +426,50 @@ describe('excluir artigo (Emulator)', () => {
     expect(await indice()).toEqual([])
   })
 })
+
+describe('modelos por preencher (Emulator)', () => {
+  const comModelo = (t: string) => rascunho(`[Preencher: ${t}]`)
+  const mensagem = 'Ainda há 1 trecho do modelo para preencher'
+
+  it('não deixa enviar para revisão com trecho do modelo sem preencher', async () => {
+    const id = await createArticle(comModelo('explique'), 'p1', 'p1', ADMIN)
+    await expect(transitar(id, 'enviar', ADMIN)).rejects.toThrow(mensagem)
+    expect((await getArticle(id))?.status).toBe('draft')
+
+    await salvarAlteracoes(id, rascunho('texto de verdade'), ADMIN)
+    await expect(transitar(id, 'enviar', ADMIN)).resolves.toBeDefined()
+    expect((await getArticle(id))?.status).toBe('review')
+  })
+
+  it('também barra a publicação, mesmo que o conteúdo tenha chegado por outro caminho', async () => {
+    const id = await novoArtigo('ok')
+    await transitar(id, 'enviar', ADMIN)
+    await transitar(id, 'aprovar', ADMIN)
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), `articles/${id}`), {
+        conteudo: texto('[Preencher: ficou]'),
+      })
+    })
+    await expect(transitar(id, 'publicar', ADMIN)).rejects.toThrow(mensagem)
+    expect((await getArticle(id))?.status).toBe('approved')
+  })
+
+  it('vale também para a alteração pendente de um artigo publicado', async () => {
+    const id = await publicado('um')
+    await salvarAlteracoes(id, comModelo('novo trecho'), ADMIN)
+    await expect(transitar(id, 'enviar', ADMIN)).rejects.toThrow(mensagem)
+    expect((await getRevisao(id))?.status).toBe('draft')
+    await expect(transitar(id, 'arquivar', ADMIN)).rejects.toThrow(
+      'alteração pendente',
+    )
+  })
+
+  it('ações que não levam para o ar (como comentar ou reprovar) não são travadas', async () => {
+    const id = await novoArtigo('ok')
+    await transitar(id, 'enviar', ADMIN)
+    await salvarAlteracoes(id, comModelo('editado depois'), ADMIN)
+    await expect(
+      transitar(id, 'reprovar', ADMIN, { comentario: 'ajustar' }),
+    ).resolves.toBeDefined()
+  })
+})

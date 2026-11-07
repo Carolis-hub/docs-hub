@@ -148,8 +148,8 @@ se houver pendências) e `--ajuda`. Para testar contra o Emulator, defina
   **rodar de novo não duplica**: o que já existe é pulado (ou substituído, com
   `--sobrescrever`).
 - Converte HTML ou Markdown no JSON do editor (mesmas extensões do app). Remove
-  `<script>` e `<style>`; tabelas, iframes e vídeos viram texto e entram nos
-  avisos.
+  `<script>` e `<style>`; as tabelas são mantidas (o editor tem tabela); iframes,
+  vídeos e outros elementos sem suporte viram texto e entram nos avisos.
 - Envia cada imagem ao Cloudinary uma única vez (dedupe por conteúdo, cache em
   `cache-imagens.json`). Imagem sem texto alternativo recebe um gerado e entra
   na lista para revisão, porque o app exige alt.

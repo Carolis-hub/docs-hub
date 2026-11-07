@@ -127,3 +127,85 @@ describe('ida e volta (doc → Markdown → doc)', () => {
     expect(docParaMarkdown(volta)).toBe(md1)
   })
 })
+
+describe('tabelas', () => {
+  const celula = (
+    tipo: 'tableHeader' | 'tableCell',
+    texto: string,
+  ): JSONContent => ({
+    type: tipo,
+    attrs: { colspan: 1, rowspan: 1, colwidth: null },
+    content: [p(t(texto))],
+  })
+  const tabela: JSONContent = {
+    type: 'doc',
+    content: [
+      p(t('Antes')),
+      {
+        type: 'table',
+        content: [
+          {
+            type: 'tableRow',
+            content: [
+              celula('tableHeader', 'Tipo'),
+              celula('tableHeader', 'Formato'),
+            ],
+          },
+          {
+            type: 'tableRow',
+            content: [
+              celula('tableCell', 'Contrato'),
+              celula('tableCell', 'a | b'),
+            ],
+          },
+        ],
+      },
+      p(t('Depois')),
+    ],
+  }
+
+  it('vira uma tabela Markdown, com o "|" do texto protegido', () => {
+    expect(docParaMarkdown(tabela)).toBe(
+      'Antes\n\n| Tipo | Formato |\n| --- | --- |\n| Contrato | a \\| b |\n\nDepois\n',
+    )
+  })
+
+  it('completa linhas curtas e usa a primeira linha como cabeçalho mesmo sem células de cabeçalho', () => {
+    const md = docParaMarkdown({
+      type: 'doc',
+      content: [
+        {
+          type: 'table',
+          content: [
+            {
+              type: 'tableRow',
+              content: [celula('tableCell', 'A'), celula('tableCell', 'B')],
+            },
+            { type: 'tableRow', content: [celula('tableCell', 'só um')] },
+          ],
+        },
+      ],
+    })
+    expect(md).toBe('| A | B |\n| --- | --- |\n| só um |  |\n')
+  })
+
+  it('ida e volta: a tabela continua tabela, com cabeçalho e o mesmo texto', async () => {
+    const { doc: volta } = await converter(
+      docParaMarkdown(tabela),
+      'markdown',
+      identidade,
+    )
+    const tiposVolta = tipos(volta)
+    expect(tiposVolta).toContain('table')
+    expect(tiposVolta.filter((x) => x === 'tableHeader')).toHaveLength(2)
+    expect(tiposVolta.filter((x) => x === 'tableCell')).toHaveLength(2)
+    expect(extrairTextoPlano(volta)).toContain('a | b')
+  })
+
+  it('o texto da tabela entra no texto de busca', () => {
+    const texto = extrairTextoPlano(tabela)
+    for (const palavra of ['Tipo', 'Formato', 'Contrato']) {
+      expect(texto).toContain(palavra)
+    }
+  })
+})

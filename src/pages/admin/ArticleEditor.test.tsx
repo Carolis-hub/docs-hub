@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Article, Revisao } from '../../types/content'
@@ -310,6 +316,71 @@ describe('ArticleEditor: artigo publicado', () => {
     fireEvent.click(botao('Descartar alteração'))
     await waitFor(() =>
       expect(descartarRevisao).toHaveBeenCalledWith('a1', 'admin'),
+    )
+  })
+})
+
+describe('ArticleEditor: artigo novo com modelos', () => {
+  function abrirNovo(consulta = '?blockId=b1') {
+    render(
+      <MemoryRouter initialEntries={[`/admin/artigos/novo${consulta}`]}>
+        <Routes>
+          <Route path="/admin/artigos/novo" element={<ArticleEditor />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+  }
+
+  it('pede para escolher um modelo antes de abrir o editor', async () => {
+    abrirNovo()
+    const lista = await screen.findByRole('list', {
+      name: 'Modelos de documento',
+    })
+    expect(within(lista).getAllByRole('button')).toHaveLength(5)
+    expect(within(lista).getByText('Em branco')).toBeInTheDocument()
+    expect(within(lista).getByText('Regra de negócio')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Título')).toBeNull()
+  })
+
+  it('escolher um modelo abre o editor com a categoria e os trechos a preencher', async () => {
+    abrirNovo()
+    fireEvent.click(await screen.findByRole('button', { name: /Processo/ }))
+    expect(
+      (await screen.findByLabelText('Categoria')) as HTMLSelectElement,
+    ).toHaveValue('processos')
+    expect(screen.getByLabelText('Título')).toHaveAttribute(
+      'placeholder',
+      expect.stringContaining('Como'),
+    )
+    expect(
+      await screen.findByText(/Ainda há \d+ trechos do modelo para preencher/),
+    ).toBeInTheDocument()
+    expect(botao('Criar rascunho')).toBeInTheDocument()
+  })
+
+  it('o modelo em branco não traz categoria nem aviso', async () => {
+    abrirNovo()
+    fireEvent.click(await screen.findByRole('button', { name: /Em branco/ }))
+    expect(await screen.findByLabelText('Categoria')).toHaveValue('')
+    expect(screen.queryByText(/trechos? do modelo/)).toBeNull()
+  })
+
+  it('?modelo= pula a escolha', async () => {
+    abrirNovo('?blockId=b1&modelo=configuracao')
+    expect(await screen.findByLabelText('Categoria')).toHaveValue(
+      'configuracoes',
+    )
+    expect(
+      screen.queryByRole('list', { name: 'Modelos de documento' }),
+    ).toBeNull()
+  })
+
+  it('o aviso some quando o texto do modelo é substituído', async () => {
+    abrirNovo('?blockId=b1&modelo=funcionalidade')
+    await screen.findByText(/trechos do modelo para preencher/)
+    fireEvent.click(botao('editar texto'))
+    await waitFor(() =>
+      expect(screen.queryByText(/trechos? do modelo/)).toBeNull(),
     )
   })
 })

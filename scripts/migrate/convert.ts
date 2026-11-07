@@ -6,7 +6,6 @@ import { extensions } from '../../src/components/editor/extensions.ts'
 
 /** Elementos que o editor não suporta e que o texto "achata". */
 const NAO_SUPORTADOS = [
-  'table',
   'iframe',
   'video',
   'audio',
