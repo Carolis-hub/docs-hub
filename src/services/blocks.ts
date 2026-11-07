@@ -51,8 +51,21 @@ export async function listAllBlocks(): Promise<Block[]> {
   return snap.docs.map(fromSnap)
 }
 
-export async function listChildren(parentId: string): Promise<Block[]> {
-  const snap = await getDocs(query(blocks, where('parentId', '==', parentId)))
+/**
+ * Filhos de um bloco. O `productId` vai na consulta porque a regra de leitura
+ * depende dele: sem esse filtro o Firestore nega a consulta a um leitor.
+ */
+export async function listChildren(
+  parentId: string,
+  productId: string,
+): Promise<Block[]> {
+  const snap = await getDocs(
+    query(
+      blocks,
+      where('productId', '==', productId),
+      where('parentId', '==', parentId),
+    ),
+  )
   return ordenar(snap.docs.map(fromSnap))
 }
 

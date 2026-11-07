@@ -61,12 +61,13 @@ revisão, sem publicação automática.
 
 ### Fase 3 — Pesquisa e navegação (semanas 7–8, sprint 4)
 
-- [ ] Pesquisa textual em título e conteúdo
-- [ ] Filtros por BU, produto, subproduto e categoria
-- [ ] Tela de resultados
-- [ ] Visualização documental
-- [ ] Documentações relacionadas
-- [ ] Navegação por categorias
+- [x] Pesquisa textual em título e conteúdo (já existia; MiniSearch no navegador)
+- [x] Filtros por BU, produto, subproduto e categoria — tela de busca, na URL
+- [x] Tela de resultados — caminho (BU › produto › subproduto), categoria e
+      trecho destacado; só com filtro (sem texto) vira navegação
+- [x] Visualização documental (já existia: página do artigo)
+- [x] Documentações relacionadas — no fim do artigo, do mesmo produto
+- [x] Navegação por categorias — tela "Categorias" (menu do topo)
 
 Conclusão: achar uma documentação publicada sem saber o caminho nem o nome exato.
 

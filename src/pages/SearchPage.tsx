@@ -3,47 +3,122 @@ import { Search } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Highlight } from '../components/Highlight'
 import { PageHeader } from '../components/PageHeader'
+import { useAsync } from '../hooks/useAsync'
 import { useSearchEngine } from '../hooks/useSearchEngine'
+import { listProductTree } from '../services/blocks'
 import { registrarBuscaSemResultado } from '../services/search'
-import type { ArticlePublico } from '../types/content'
+import type { ArticlePublico, CategoriaId } from '../types/content'
+import { comDescendentes } from '../utils/blocos'
+import { CATEGORIAS, nomeDaCategoria } from '../utils/categorias'
 import { gerarTrecho } from '../utils/search'
+import { parteDoBloco } from '../utils/searchIndex'
+import type { SearchFilters } from '../utils/searchEngine'
 
 const campo = 'campo h-10'
+const SEM_UNIDADE = 'sem-unidade'
 
 export function SearchPage() {
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
+  const unidade = params.get('unidade') ?? ''
   const produto = params.get('produto') ?? ''
+  const subproduto = params.get('subproduto') ?? ''
+  const categoria = (params.get('categoria') ?? '') as CategoriaId | ''
   const publico = (params.get('publico') ?? '') as ArticlePublico | ''
   const { dados, erro, carregando } = useSearchEngine()
 
-  const resultados = useMemo(
-    () =>
-      dados?.motor.buscar(q, {
-        productId: produto || undefined,
-        publico: publico || undefined,
-      }) ?? [],
-    [dados, q, produto, publico],
+  // A árvore do produto escolhido dá os subprodutos e o caminho de cada resultado.
+  const { dados: arvore } = useAsync(
+    async () => (produto ? await listProductTree(produto) : []),
+    [produto],
   )
 
-  const semResultado = !!dados && !!q.trim() && resultados.length === 0
+  const produtos = useMemo(() => dados?.produtos ?? [], [dados])
+  const unidades = useMemo(() => dados?.unidades ?? [], [dados])
+  const idsDeUnidades = useMemo(
+    () => new Set(unidades.map((u) => u.id)),
+    [unidades],
+  )
+  const semUnidade = (p: { unidadeId?: string | null }) =>
+    !p.unidadeId || !idsDeUnidades.has(p.unidadeId)
+
+  // Só aparecem as unidades que têm produto visível para quem busca.
+  const unidadesVisiveis = unidades.filter((u) =>
+    produtos.some((p) => p.unidadeId === u.id),
+  )
+  const temSolto = unidadesVisiveis.length > 0 && produtos.some(semUnidade)
+  const produtosDoFiltro = produtos.filter((p) =>
+    !unidade
+      ? true
+      : unidade === SEM_UNIDADE
+        ? semUnidade(p)
+        : p.unidadeId === unidade,
+  )
+  const subprodutos = (arvore ?? [])
+    .filter((b) => b.parentId === produto)
+    .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome, 'pt-BR'))
+
+  const filtros = useMemo<SearchFilters>(() => {
+    const f: SearchFilters = {}
+    if (produto) f.productId = produto
+    else if (unidade) f.productIds = produtosDoFiltro.map((p) => p.id)
+    if (subproduto && arvore) f.blockIds = comDescendentes(arvore, subproduto)
+    if (categoria) f.categoria = categoria
+    if (publico) f.publico = publico
+    return f
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [produto, unidade, subproduto, arvore, categoria, publico, produtos])
+
+  const temFiltro = !!(unidade || produto || subproduto || categoria || publico)
+  const navegando = !q.trim() && temFiltro
+
+  const resultados = useMemo(() => {
+    if (!dados) return []
+    if (q.trim()) {
+      return dados.motor
+        .buscar(q, filtros)
+        .map((h) => ({ item: h.item, termos: h.termos }))
+    }
+    return temFiltro
+      ? dados.motor
+          .listar(filtros)
+          .map((item) => ({ item, termos: [] as string[] }))
+      : []
+  }, [dados, q, filtros, temFiltro])
+
+  const semResultado =
+    !!dados && (!!q.trim() || temFiltro) && resultados.length === 0
   useEffect(() => {
     // Só a busca sem filtros conta como "sem resultado" de verdade.
-    if (semResultado && !produto && !publico) {
+    if (semResultado && q.trim() && !temFiltro)
       void registrarBuscaSemResultado(q)
-    }
-  }, [semResultado, q, produto, publico])
+  }, [semResultado, q, temFiltro])
 
-  function atualizar(chave: string, valor: string) {
+  function atualizar(mudancas: Record<string, string>) {
     const novo = new URLSearchParams(params)
-    if (valor) novo.set(chave, valor)
-    else novo.delete(chave)
+    for (const [chave, valor] of Object.entries(mudancas)) {
+      if (valor) novo.set(chave, valor)
+      else novo.delete(chave)
+    }
     setParams(novo, { replace: true })
   }
 
-  const nomeProduto = new Map(
-    (dados?.produtos ?? []).map((p) => [p.id, p.nome]),
-  )
+  const produtoPorId = new Map(produtos.map((p) => [p.id, p]))
+  const unidadePorId = new Map(unidades.map((u) => [u.id, u]))
+
+  function caminho(item: { productId: string; blockId: string }) {
+    const p = produtoPorId.get(item.productId)
+    const partes: string[] = []
+    const u = p?.unidadeId ? unidadePorId.get(p.unidadeId) : undefined
+    if (u) partes.push(u.nome)
+    partes.push(p?.nome ?? item.productId)
+    if (arvore && item.productId === produto) {
+      const parte = parteDoBloco(arvore, item.blockId)
+      const sub = arvore.find((b) => b.id === parte && b.parentId === produto)
+      if (sub) partes.push(sub.nome)
+    }
+    return partes.join(' › ')
+  }
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -51,39 +126,110 @@ export function SearchPage() {
       <form
         role="search"
         onSubmit={(e) => e.preventDefault()}
-        className="mb-6 flex flex-wrap gap-2"
+        className="mb-6 space-y-2"
       >
         <input
           type="search"
           aria-label="Termo de busca"
           value={q}
-          onChange={(e) => atualizar('q', e.target.value)}
+          onChange={(e) => atualizar({ q: e.target.value })}
           placeholder="Buscar por título ou conteúdo"
-          className={`${campo} min-w-0 flex-1`}
+          className={`${campo} w-full`}
         />
-        <select
-          aria-label="Filtrar por produto"
-          value={produto}
-          onChange={(e) => atualizar('produto', e.target.value)}
-          className={campo}
-        >
-          <option value="">Todos os produtos</option>
-          {(dados?.produtos ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nome}
-            </option>
-          ))}
-        </select>
-        <select
-          aria-label="Filtrar por público"
-          value={publico}
-          onChange={(e) => atualizar('publico', e.target.value)}
-          className={campo}
-        >
-          <option value="">Todos os públicos</option>
-          <option value="usuario">Usuário</option>
-          <option value="tecnico">Técnico</option>
-        </select>
+        <div className="flex flex-wrap gap-2">
+          {unidadesVisiveis.length > 0 && (
+            <select
+              aria-label="Filtrar por unidade de negócio"
+              value={unidade}
+              onChange={(e) =>
+                atualizar({
+                  unidade: e.target.value,
+                  produto: '',
+                  subproduto: '',
+                })
+              }
+              className={campo}
+            >
+              <option value="">Todas as unidades</option>
+              {unidadesVisiveis.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.nome}
+                </option>
+              ))}
+              {temSolto && <option value={SEM_UNIDADE}>Sem unidade</option>}
+            </select>
+          )}
+          <select
+            aria-label="Filtrar por produto"
+            value={produto}
+            onChange={(e) =>
+              atualizar({ produto: e.target.value, subproduto: '' })
+            }
+            className={campo}
+          >
+            <option value="">Todos os produtos</option>
+            {produtosDoFiltro.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}
+              </option>
+            ))}
+          </select>
+          {produto && subprodutos.length > 0 && (
+            <select
+              aria-label="Filtrar por subproduto"
+              value={subproduto}
+              onChange={(e) => atualizar({ subproduto: e.target.value })}
+              className={campo}
+            >
+              <option value="">Todos os subprodutos</option>
+              {subprodutos.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nome}
+                </option>
+              ))}
+            </select>
+          )}
+          <select
+            aria-label="Filtrar por categoria"
+            value={categoria}
+            onChange={(e) => atualizar({ categoria: e.target.value })}
+            className={campo}
+          >
+            <option value="">Todas as categorias</option>
+            {CATEGORIAS.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+          <select
+            aria-label="Filtrar por público"
+            value={publico}
+            onChange={(e) => atualizar({ publico: e.target.value })}
+            className={campo}
+          >
+            <option value="">Todos os públicos</option>
+            <option value="usuario">Usuário</option>
+            <option value="tecnico">Técnico</option>
+          </select>
+          {temFiltro && (
+            <button
+              type="button"
+              className="botao"
+              onClick={() =>
+                atualizar({
+                  unidade: '',
+                  produto: '',
+                  subproduto: '',
+                  categoria: '',
+                  publico: '',
+                })
+              }
+            >
+              Limpar filtros
+            </button>
+          )}
+        </div>
       </form>
 
       {carregando && !dados && <p className="text-suave">Carregando índice…</p>}
@@ -92,19 +238,34 @@ export function SearchPage() {
           {erro}
         </p>
       )}
-      {dados && !q.trim() && (
+      {dados && !q.trim() && !temFiltro && (
         <p className="text-suave ">
-          Digite para buscar em {dados.motor.total} artigos.
+          Digite para buscar em {dados.motor.total} artigos, ou escolha um
+          filtro para navegar.{' '}
+          <Link to="/categorias" className="text-bloco-icone hover:underline">
+            Ver por categoria
+          </Link>
         </p>
       )}
       {semResultado && (
-        <p className="text-suave ">Nenhum resultado para “{q}”.</p>
+        <p className="text-suave ">
+          {q.trim()
+            ? `Nenhum resultado para “${q}”.`
+            : 'Nenhum artigo com esses filtros.'}
+        </p>
       )}
 
       {resultados.length > 0 && (
         <>
           <p className="mb-3 text-sm text-suave" aria-live="polite">
-            {resultados.length} resultado{resultados.length > 1 ? 's' : ''}
+            {resultados.length}{' '}
+            {navegando
+              ? resultados.length > 1
+                ? 'artigos'
+                : 'artigo'
+              : resultados.length > 1
+                ? 'resultados'
+                : 'resultado'}
           </p>
           <ul className="space-y-3">
             {resultados.map(({ item, termos }) => (
@@ -118,13 +279,25 @@ export function SearchPage() {
                 >
                   <Highlight partes={gerarTrecho(item.titulo, termos, 120)} />
                 </Link>
-                <p className="mt-0.5 text-xs text-suave">
-                  {nomeProduto.get(item.productId) ?? item.productId}
-                  {item.publico === 'tecnico' && ' · Técnico'}
+                <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-suave">
+                  <span>{caminho(item)}</span>
+                  {nomeDaCategoria(item.categoria) && (
+                    <span className="selo">
+                      {nomeDaCategoria(item.categoria)}
+                    </span>
+                  )}
+                  {item.publico === 'tecnico' && (
+                    <span className="selo">Técnico</span>
+                  )}
                 </p>
                 <p className="mt-2 text-sm text-texto ">
                   <Highlight
-                    partes={gerarTrecho(item.textoPlano || item.resumo, termos)}
+                    partes={gerarTrecho(
+                      termos.length > 0
+                        ? item.textoPlano || item.resumo
+                        : item.resumo || item.textoPlano,
+                      termos,
+                    )}
                   />
                 </p>
               </li>

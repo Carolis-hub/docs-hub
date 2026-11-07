@@ -1,10 +1,15 @@
 import MiniSearch from 'minisearch'
-import type { ArticlePublico } from '../types/content'
+import type { ArticlePublico, CategoriaId } from '../types/content'
 import type { IndexedItem } from '../types/search'
 import { normalizar } from './search.ts'
 
 export interface SearchFilters {
   productId?: string
+  /** Vários produtos de uma vez (ex.: todos os de uma unidade de negócio). */
+  productIds?: readonly string[]
+  /** Só artigos destes blocos (ex.: um subproduto e tudo dentro dele). */
+  blockIds?: ReadonlySet<string>
+  categoria?: CategoriaId
   publico?: ArticlePublico
   /** Padrão `AND`; `OR` serve para consultas longas (ex.: casar um texto com artigos). */
   combinar?: 'AND' | 'OR'
@@ -20,6 +25,16 @@ export interface SearchHit {
 export interface SearchEngine {
   total: number
   buscar(consulta: string, filtros?: SearchFilters): SearchHit[]
+  /** Navegação sem texto: todos os artigos que passam nos filtros, de A a Z. */
+  listar(filtros?: SearchFilters): IndexedItem[]
+}
+
+function passa(item: IndexedItem, f: SearchFilters): boolean {
+  if (f.productId && item.productId !== f.productId) return false
+  if (f.productIds && !f.productIds.includes(item.productId)) return false
+  if (f.blockIds && !f.blockIds.has(item.blockId)) return false
+  if (f.categoria && item.categoria !== f.categoria) return false
+  return !f.publico || item.publico === f.publico
 }
 
 export function criarMotor(
@@ -44,6 +59,11 @@ export function criarMotor(
 
   return {
     total: visiveis.length,
+    listar(filtros = {}) {
+      return visiveis
+        .filter((i) => passa(i, filtros))
+        .sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'))
+    },
     buscar(consulta, filtros = {}) {
       if (!consulta.trim()) return []
       return mini
@@ -51,11 +71,7 @@ export function criarMotor(
           combineWith: filtros.combinar ?? 'AND',
           filter: (r) => {
             const item = porId.get(r.id as string)
-            if (!item) return false
-            if (filtros.productId && item.productId !== filtros.productId) {
-              return false
-            }
-            return !filtros.publico || item.publico === filtros.publico
+            return !!item && passa(item, filtros)
           },
         })
         .map((r) => ({
