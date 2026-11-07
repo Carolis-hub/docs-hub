@@ -128,9 +128,15 @@ exercitada (depende de chave): fazer o teste de qualidade da Fase 6.
 - [x] Documentos removidos passam por revisão antes de despublicar — seção
       "Arquivo removido na origem" da tela Revisão (feito na Fase 2)
 - [x] Painel de sincronização — tela "Sincronização" (menu admin)
-- [ ] Testar qualidade das respostas da IA
-- [ ] Testar permissões (segurança e isolamento)
-- [ ] Revisar desempenho
+- [x] Testar qualidade das respostas da IA — `npm run assistente-avaliar`
+      (casos com fonte esperada, termos, recusa; relatório; não gasta a cota
+      real). Falta montar o conjunto de perguntas reais e rodar com a chave
+- [x] Testar permissões (segurança e isolamento) — matriz de todas as coleções
+      contra 7 tipos de pessoa (`tests/rules/matriz-permissoes.test.ts`), que
+      falha se uma coleção nova entrar nas regras sem linha na matriz
+- [x] Revisar desempenho — carga inicial 39% menor (carga sob demanda das
+      telas e do editor), índice de busca que não estoura o limite do
+      Firestore e medições em `docs/desempenho.md`
 
 Conclusão: alterações na origem são detectadas e vão para revisão, sem
 publicação indevida. O SmartShare DI é o piloto.

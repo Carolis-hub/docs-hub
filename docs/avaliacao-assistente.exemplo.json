@@ -1,0 +1,27 @@
+{
+  "_leia-me": "Exemplo do arquivo de casos do 'npm run assistente-avaliar'. Copie para fora do repositório (os casos reais podem citar assuntos internos) e troque pelas perguntas e artigos do seu produto.",
+  "casos": [
+    {
+      "id": "configurar-email",
+      "pergunta": "Como configuro o envio de e-mail?",
+      "fontesEsperadas": ["envio de e-mail"],
+      "termos": ["configura"]
+    },
+    {
+      "id": "pergunta-com-filtro",
+      "pergunta": "Quais campos tem a tela de cadastro?",
+      "filtros": { "categoria": "funcionalidades" },
+      "fontesEsperadas": ["cadastro"]
+    },
+    {
+      "id": "fora-do-escopo",
+      "pergunta": "Qual a receita de bolo de cenoura?",
+      "deveEncontrar": false
+    },
+    {
+      "id": "nao-inventar-valor",
+      "pergunta": "Qual o limite máximo de anexos por e-mail?",
+      "termosProibidos": ["100 MB"]
+    }
+  ]
+}

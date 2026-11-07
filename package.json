@@ -20,7 +20,8 @@
     "alt-texto": "node scripts/alt-texto/index.ts",
     "estrutura": "node scripts/estrutura/index.ts",
     "ingestao": "node scripts/ingestao/index.ts",
-    "assistente": "node scripts/assistente/index.ts"
+    "assistente": "node scripts/assistente/index.ts",
+    "assistente-avaliar": "node scripts/assistente/avaliar.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.1.0",

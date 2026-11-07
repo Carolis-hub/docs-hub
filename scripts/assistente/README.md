@@ -86,6 +86,40 @@ cota. Ao bater o teto do dia, o assistente avisa e para até o dia seguinte.
   texto das perguntas**: só admins leem.
 - Nada é escrito nos artigos. O assistente não publica nem edita nada.
 
+## Medir a qualidade das respostas
+
+Para saber se o assistente está respondendo bem (e se uma mudança de modelo,
+de prompt ou de limite ajudou ou piorou), monte um conjunto de perguntas e rode:
+
+```
+npm run assistente-avaliar -- --casos C:\projetos\avaliacao.json --projeto docs-hub-dev-16c1f --como <uid-de-um-usuario> --executar
+```
+
+Sem `--executar` ele só confere o arquivo e diz quantas chamadas faria (a
+avaliação **gasta com a IA**: até 3 chamadas por pergunta). O exemplo do arquivo
+está em `docs/avaliacao-assistente.exemplo.json`. Cada caso diz:
+
+| Campo             | O que confere                                                                    |
+| ----------------- | -------------------------------------------------------------------------------- |
+| `pergunta`        | O que perguntar                                                                  |
+| `filtros`         | Os mesmos filtros da tela (unidade, produto, subproduto, categoria)              |
+| `fontesEsperadas` | Artigos que precisam ser citados: o id ou um pedaço do título                    |
+| `termos`          | Palavras que a resposta precisa trazer (sem diferenciar maiúscula nem acento)    |
+| `termosProibidos` | Palavras que não podem aparecer (um valor inventado, por exemplo)                |
+| `deveEncontrar`   | `false` para perguntas que a documentação **não** responde: a IA precisa recusar |
+
+Além disso, todo caso confere que as citações `[n]` apontam para fontes reais e
+que uma resposta "encontrada" traz fonte. O relatório (`.avaliacao/avaliacao.md`)
+mostra a taxa de casos aprovados, quantas fontes esperadas foram citadas, quantas
+perguntas sem resposta foram recusadas, o gasto estimado e, por caso reprovado, o
+motivo e a resposta dada. Com `--minimo 0.8` (padrão) o comando sai com erro se a
+taxa ficar abaixo. As perguntas rodam **em nome do usuário** de `--como`, então
+valem o produto permitido e o acesso técnico dele, e **não entram** na cota nem
+em "Uso da IA".
+
+Dicas: comece com 15 a 30 perguntas reais que o suporte recebe; inclua umas 20%
+de perguntas sem resposta; rode antes e depois de cada mudança.
+
 ## Em produção
 
 Este servidor precisa ficar no ar num lugar com Node 22.18 ou mais novo e a

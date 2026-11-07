@@ -44,3 +44,4 @@ coverage
 service-account*.json
 *-firebase-adminsdk-*.json
 .ingestao
+.avaliacao
