@@ -126,6 +126,21 @@ necessariamente neste.
       comentário do topo de `.github/workflows/doc-sync.yml`) com `projeto:`
       apontando para o `dev` no começo
 
+### 6. Ingestão de documentos a cada push (Git)
+
+Estes segredos ficam no **repositório que guarda os documentos** (`.md`, `.html`,
+`.txt`), por exemplo o do SmartShare DI. O produto precisa já existir no
+docs-hub.
+
+- [ ] Segredo `FIREBASE_SERVICE_ACCOUNT` (chave da conta `docs-hub-escrita`)
+- [ ] Nesse repositório, um workflow que chame o `ingestao.yml` (exemplo no
+      comentário do topo de `.github/workflows/ingestao.yml`) com `pasta:`,
+      `produto:` e `projeto:` apontando para o `dev` no começo
+- [ ] Se for levar imagens: segredos `CLOUDINARY_CLOUD_NAME` e
+      `CLOUDINARY_UPLOAD_PRESET` e `sem-imagens: false`
+- [ ] Depois de rodar, abra **Sincronização** no docs-hub: a fonte deve aparecer
+      com o commit; o que entrou está na tela **Revisão**
+
 ### Resumo: quem usa o quê
 
 | Workflow                 | Segredos                                                                  | Variáveis                                                                                                     |
@@ -135,6 +150,7 @@ necessariamente neste.
 | `backup.yml`             | `FIREBASE_SERVICE_ACCOUNT`, `BACKUP_PASSPHRASE`                           | `FIREBASE_PROJECT_ID`                                                                                         |
 | `limpeza-cloudinary.yml` | `FIREBASE_SERVICE_ACCOUNT`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | `FIREBASE_PROJECT_ID`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_FOLDER` e `CLOUDINARY_LIMPEZA_APAGAR` (opcionais) |
 | `doc-sync.yml`           | `FIREBASE_SERVICE_ACCOUNT`, `ANTHROPIC_API_KEY`                           | nenhuma (o projeto vai como `projeto:` na chamada)                                                            |
+| `ingestao.yml`           | `FIREBASE_SERVICE_ACCOUNT` (e, com imagens, `CLOUDINARY_*`)               | nenhuma (produto e projeto vão na chamada)                                                                    |
 
 ## Scripts
 

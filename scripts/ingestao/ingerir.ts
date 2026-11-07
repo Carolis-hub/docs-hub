@@ -6,6 +6,7 @@ import {
   type Firestore,
 } from 'firebase-admin/firestore'
 import type { Article, Block, Classificacao } from '../../src/types/content.ts'
+import type { EstadoArquivoIngestao } from '../../src/types/ingestao.ts'
 import { classificarDocumento } from '../../src/utils/classificar.ts'
 import { slugify } from '../../src/utils/slug.ts'
 import type { ResultadoImagem } from '../migrate/images.ts'
@@ -27,15 +28,7 @@ import {
 } from './fonte.ts'
 import { resumirMudancas } from './mudancas.ts'
 
-export type EstadoArquivo =
-  | 'novo'
-  | 'alterado'
-  | 'sem-alteracao'
-  | 'reapareceu'
-  | 'duplicado'
-  | 'removido'
-  | 'erro'
-  | 'ignorado'
+export type EstadoArquivo = EstadoArquivoIngestao
 
 export type Destino =
   'criado' | 'atualizado-na-fila' | 'revisao-pendente' | 'sem-mudanca-real'
@@ -69,6 +62,11 @@ export interface OpcoesIngestao {
   gravar: boolean
   autorId: string
   agora: number
+  /** Como a rodada foi disparada; aparece no painel de sincronização. */
+  modo?: 'manual' | 'observar' | 'git'
+  /** Repositório e commit de onde a pasta veio (quando ela é um checkout do Git). */
+  repo?: string
+  commit?: string
   resolverImagem(src: string, dirDoArtigo: string): Promise<ResultadoImagem>
   verificarLink?(href: string): Promise<string | null>
 }
@@ -128,6 +126,7 @@ export async function ingerir(
   db: Firestore,
   opts: OpcoesIngestao,
 ): Promise<ResultadoIngestao> {
+  const inicioMs = Date.now()
   const produto = await acharProduto(db, opts.produto)
   let destinoId = produto.id
   let produtoDoDestino = produto.id
@@ -317,6 +316,10 @@ export async function ingerir(
   const set = (ref: DocumentReference, dados: Record<string, unknown>) => {
     if (opts.gravar) escritor.set(ref, dados).catch(() => undefined)
   }
+  const comMerge = (ref: DocumentReference, dados: Record<string, unknown>) => {
+    if (opts.gravar)
+      escritor.set(ref, dados, { merge: true }).catch(() => undefined)
+  }
   const atualizar = (
     ref: DocumentReference,
     dados: Record<string, unknown>,
@@ -399,6 +402,8 @@ export async function ingerir(
       arquivo: caminho,
       hash: l.hash,
       classificacao: l.classificacao,
+      ...(opts.repo ? { repo: opts.repo } : {}),
+      ...(opts.commit ? { commit: opts.commit } : {}),
     }
 
     if (estado === 'reapareceu' && atual) {
@@ -485,7 +490,13 @@ export async function ingerir(
           pratsDesatualizados: false,
           automatico: false,
           status: 'pending',
-          origem: { tipo: 'ingestao', arquivo: caminho, hash: l.hash },
+          origem: {
+            tipo: 'ingestao',
+            arquivo: caminho,
+            hash: l.hash,
+            ...(opts.repo ? { repo: opts.repo } : {}),
+            ...(opts.commit ? { commit: opts.commit } : {}),
+          },
           baseVersao: atual.versao,
           baseAtualizadoEm: atual.atualizadoEm,
           modelo: 'ingestão de arquivos (sem IA)',
@@ -505,8 +516,10 @@ export async function ingerir(
   for (const [caminho, r] of registros) {
     if (lidos.has(caminho) || r.status === 'removido') continue
     if (varredura.ignorados.some((i) => i.caminho === caminho)) continue
-    resultados.push({ caminho, estado: 'removido', artigoId: r.artigoId })
+    // Um arquivo que nunca virou artigo (erro, repetido) e sumiu não pede análise:
+    // só deixa de constar como pendente.
     if (r.artigoId) {
+      resultados.push({ caminho, estado: 'removido', artigoId: r.artigoId })
       const ref = db.collection('articles').doc(r.artigoId)
       if ((await ref.get()).exists) {
         atualizar(ref, { flags: FieldValue.arrayUnion('origem_removida') })
@@ -535,6 +548,35 @@ export async function ingerir(
   ) as Record<EstadoArquivo, number>
 
   if (opts.gravar) {
+    // Resumo da rodada para o painel de sincronização (uma leitura por fonte).
+    const mudou =
+      contagem.novo +
+        contagem.alterado +
+        contagem.removido +
+        contagem.reapareceu >
+      0
+    // `merge`: numa rodada sem mudança, `ultimaMudanca` da rodada anterior fica.
+    comMerge(db.collection('sincronizacoes').doc(fonteId), {
+      fonteId,
+      produtoId: produto.id,
+      produtoNome: produto.nome,
+      ultimaExecucao: opts.agora,
+      // Sem mudança, o campo não é escrito e o valor da última rodada com mudança fica.
+      ...(mudou ? { ultimaMudanca: opts.agora } : {}),
+      modo: opts.modo ?? 'manual',
+      repo: opts.repo ?? null,
+      commit: opts.commit ?? null,
+      duracaoMs: Date.now() - inicioMs,
+      resumo: contagem,
+      erros: resultados
+        .filter((r) => r.estado === 'erro')
+        .slice(0, 20)
+        .map((r) => ({ caminho: r.caminho, detalhe: r.detalhe ?? '' })),
+      removidos: resultados
+        .filter((r) => r.estado === 'removido')
+        .slice(0, 20)
+        .map((r) => r.caminho),
+    })
     set(db.collection('auditLog').doc(), {
       usuarioId: opts.autorId,
       acao: 'ingestao.sincronizar',

@@ -40,6 +40,17 @@ período e até 20 termos buscados. No pior caso, com 300 artigos e período de
 só carrega ao abrir ou ao clicar em "Atualizar", e o período de 90 dias deve
 ser usado com parcimônia.
 
+## Vigília da pasta (`--observar`)
+
+A cada volta (2 minutos por padrão) o comando só olha o disco: nome, tamanho e
+data dos arquivos. **O Firebase só é consultado quando a pasta mudou**, então
+deixar a vigília aberta sem editar nada custa 0 leituras. Quando algo muda, a
+rodada lê os registros da fonte, os blocos e os artigos planejados (cerca de
+2 leituras por arquivo da pasta) e grava só o que mudou, mais o resumo da fonte
+(1 gravação). Para uma pasta de 300 arquivos, uma rodada custa ~600 leituras:
+editar muito seguido (salvar o arquivo a cada minuto) pode somar, então evite
+deixar um editor com salvamento automático rodando sobre a pasta vigiada.
+
 ## Assistente de IA
 
 Cada pergunta lê o perfil (1), a lista de produtos (admin) ou só o que está no

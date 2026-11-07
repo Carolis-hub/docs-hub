@@ -548,3 +548,23 @@ describe('firestore.rules — assistente de IA', () => {
     )
   })
 })
+
+describe('firestore.rules — painel de sincronização', () => {
+  it('só admin lê o resumo das fontes, e ninguém escreve pelo navegador', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'sincronizacoes/di-docs'), {
+        fonteId: 'di-docs',
+      })
+    })
+    const admin = testEnv.authenticatedContext('admin').firestore()
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    await assertSucceeds(getDoc(doc(admin, 'sincronizacoes/di-docs')))
+    await assertFails(getDoc(doc(leitor, 'sincronizacoes/di-docs')))
+    await assertFails(
+      setDoc(doc(admin, 'sincronizacoes/novo'), { fonteId: 'x' }),
+    )
+    await assertFails(
+      updateDoc(doc(leitor, 'sincronizacoes/di-docs'), { fonteId: 'y' }),
+    )
+  })
+})

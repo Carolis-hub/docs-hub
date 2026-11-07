@@ -1,0 +1,128 @@
+# Workflow reutilizável: leva os documentos (.md, .html e .txt) de uma pasta de
+# um repositório para a fila de revisão do docs-hub, a cada push.
+#
+# Uso, no repositório que guarda os documentos:
+#
+#   on:
+#     push:
+#       branches: [main]
+#       paths: ['docs/**']
+#     workflow_dispatch:
+#   jobs:
+#     ingestao:
+#       uses: Carolis-hub/docs-hub/.github/workflows/ingestao.yml@main
+#       with:
+#         pasta: docs
+#         produto: 'SmartShare DI'
+#         projeto: docs-hub-prod
+#       secrets:
+#         FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+#
+# Nada é publicado: arquivo novo ou alterado vai para a fila de revisão (ou vira
+# sugestão, se o artigo já está no ar) e arquivo removido só gera um aviso.
+# O resultado aparece na tela "Sincronização" do docs-hub, com o commit.
+name: Ingestão de documentos
+
+on:
+  workflow_call:
+    inputs:
+      pasta:
+        description: 'Pasta com os documentos, dentro do repositório que chama'
+        type: string
+        default: docs
+      produto:
+        description: 'Produto de destino no docs-hub (id, nome ou slug); precisa já existir'
+        type: string
+        required: true
+      projeto:
+        description: 'Id do projeto Firebase (docs-hub-dev ou docs-hub-prod)'
+        type: string
+        required: true
+      fonte:
+        description: 'Nome da fonte (padrão: produto + nome da pasta). Não mude depois de criada'
+        type: string
+        default: ''
+      bloco:
+        description: 'Id do subproduto que recebe os arquivos (padrão: o próprio produto)'
+        type: string
+        default: ''
+      sem-imagens:
+        description: 'Não envia imagens ao Cloudinary (cada uma vira "[Imagem não migrada]")'
+        type: boolean
+        default: true
+      docs-hub-ref:
+        description: 'Branch ou tag do docs-hub com o script de ingestão'
+        type: string
+        default: main
+    secrets:
+      FIREBASE_SERVICE_ACCOUNT:
+        description: 'JSON da service account (papel Cloud Datastore User) do projeto'
+        required: true
+      CLOUDINARY_CLOUD_NAME:
+        required: false
+      CLOUDINARY_UPLOAD_PRESET:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  ingestao:
+    runs-on: ubuntu-latest
+    # Uma rodada por vez por fonte; as seguintes esperam (a ingestão é idempotente).
+    concurrency:
+      group: ingestao-${{ inputs.projeto }}-${{ inputs.fonte || inputs.produto }}
+      cancel-in-progress: false
+    steps:
+      - name: Documentos do repositório de origem
+        uses: actions/checkout@v4
+        with:
+          path: origem
+
+      - name: Script de ingestão
+        uses: actions/checkout@v4
+        with:
+          repository: Carolis-hub/docs-hub
+          ref: ${{ inputs.docs-hub-ref }}
+          path: docs-hub
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: docs-hub/package-lock.json
+
+      - name: Instalar dependências
+        working-directory: docs-hub
+        run: npm ci
+
+      - name: Sincronizar
+        working-directory: origem
+        env:
+          PASTA: ${{ inputs.pasta }}
+          PRODUTO: ${{ inputs.produto }}
+          FONTE: ${{ inputs.fonte }}
+          BLOCO: ${{ inputs.bloco }}
+          SEM_IMAGENS: ${{ inputs.sem-imagens }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_PROJECT_ID: ${{ inputs.projeto }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_UPLOAD_PRESET: ${{ secrets.CLOUDINARY_UPLOAD_PRESET }}
+        run: |
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/sa.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          trap 'rm -f "$RUNNER_TEMP/sa.json"' EXIT
+          args=("$PASTA" --produto "$PRODUTO" --gravar --modo git \
+            --repo "$GITHUB_REPOSITORY" --commit "$GITHUB_SHA" \
+            --saida "$RUNNER_TEMP/ingestao")
+          [ -n "$FONTE" ] && args+=(--fonte "$FONTE")
+          [ -n "$BLOCO" ] && args+=(--bloco "$BLOCO")
+          [ "$SEM_IMAGENS" = "true" ] && args+=(--sem-imagens)
+          node ../docs-hub/scripts/ingestao/index.ts "${args[@]}"
+
+      - name: Relatório
+        if: always()
+        run: |
+          if [ -f "$RUNNER_TEMP/ingestao/relatorio-ingestao.md" ]; then
+            cat "$RUNNER_TEMP/ingestao/relatorio-ingestao.md" >> "$GITHUB_STEP_SUMMARY"
+          fi

@@ -43,6 +43,13 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Resumo da última rodada de cada fonte de documentos (painel de
+    // sincronização). Só o script de ingestão (Admin SDK) escreve.
+    match /sincronizacoes/{fonteId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // Registro dos arquivos de origem da ingestão (hash, estado, erro). Só admin;
     // quem escreve é o script de ingestão (Admin SDK).
     match /fontes/{fonteId} {

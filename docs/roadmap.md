@@ -119,10 +119,15 @@ exercitada (depende de chave): fazer o teste de qualidade da Fase 6.
 
 ### Fase 6 — Sincronização, estabilização e governança (semanas 15–16, sprint 8)
 
-- [ ] Monitorar diretórios e sincronização incremental
-- [ ] Integração com Git (se aplicável)
-- [ ] Documentos removidos passam por revisão antes de despublicar
-- [ ] Painel de sincronização
+- [x] Monitorar diretórios e sincronização incremental — a opção `--observar`
+      da ingestão (com `--gravar`) vigia a pasta e só sincroniza, e só consulta
+      o Firebase, quando algo muda; a ingestão já processa só o que mudou, por hash
+- [x] Integração com Git (se aplicável) — workflow reutilizável `ingestao.yml`,
+      que grava repositório e commit (ainda não exercitado de verdade: depende
+      de segredos e de um repositório de documentos)
+- [x] Documentos removidos passam por revisão antes de despublicar — seção
+      "Arquivo removido na origem" da tela Revisão (feito na Fase 2)
+- [x] Painel de sincronização — tela "Sincronização" (menu admin)
 - [ ] Testar qualidade das respostas da IA
 - [ ] Testar permissões (segurança e isolamento)
 - [ ] Revisar desempenho

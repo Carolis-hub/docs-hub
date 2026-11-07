@@ -100,6 +100,9 @@ export interface ArticleOrigem {
   arquivo?: string
   /** SHA-256 do conteúdo do arquivo na última ingestão. */
   hash?: string
+  /** Quando a pasta é um checkout do Git: repositório e commit da última ingestão. */
+  repo?: string
+  commit?: string
   classificacao?: Classificacao
 }
 
