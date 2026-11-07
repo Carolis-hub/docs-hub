@@ -129,6 +129,22 @@ service cloud.firestore {
         request.resource.data.count == resource.data.count + 1;
     }
 
+    // Assistente de IA: só o servidor do assistente (Admin SDK) escreve os
+    // contadores e o registro das perguntas. Admins leem tudo; o dono da
+    // pergunta só pode marcar a própria resposta como útil ou ruim.
+    match /assistenteUso/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /assistenteLog/{id} {
+      allow read: if isAdmin();
+      allow create, delete: if false;
+      allow update: if hasProfile() &&
+        resource.data.uid == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['feedback']) &&
+        request.resource.data.feedback in ['util', 'ruim'];
+    }
+
     // Auditoria: admins leem e criam; ninguém altera ou exclui.
     match /auditLog/{id} {
       allow read: if isAdmin();

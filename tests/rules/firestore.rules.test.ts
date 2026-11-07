@@ -467,3 +467,84 @@ describe('firestore.rules — governança editorial (Fase 4)', () => {
     }
   })
 })
+
+describe('firestore.rules — assistente de IA', () => {
+  const admin = () => testEnv.authenticatedContext('admin').firestore()
+  const leitor = () => testEnv.authenticatedContext('leitor').firestore()
+
+  beforeAll(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore()
+      await setDoc(doc(d, 'assistenteLog/do-leitor'), {
+        uid: 'leitor',
+        pergunta: 'x',
+        feedback: null,
+      })
+      await setDoc(doc(d, 'assistenteLog/do-tecnico'), {
+        uid: 'tecnico',
+        pergunta: 'y',
+        feedback: null,
+      })
+      await setDoc(doc(d, 'assistenteUso/g_2026-11-01'), {
+        tipo: 'global',
+        perguntas: 1,
+      })
+    })
+  })
+
+  it('contadores de uso: só admin lê, ninguém escreve pelo navegador', async () => {
+    await assertSucceeds(getDoc(doc(admin(), 'assistenteUso/g_2026-11-01')))
+    await assertFails(getDoc(doc(leitor(), 'assistenteUso/g_2026-11-01')))
+    await assertFails(
+      setDoc(doc(admin(), 'assistenteUso/g_2026-11-02'), { perguntas: 0 }),
+    )
+    await assertFails(
+      updateDoc(doc(leitor(), 'assistenteUso/g_2026-11-01'), { perguntas: 0 }),
+    )
+  })
+
+  it('registro de perguntas: só admin lê; ninguém cria nem apaga pelo navegador', async () => {
+    await assertSucceeds(getDoc(doc(admin(), 'assistenteLog/do-leitor')))
+    await assertFails(getDoc(doc(leitor(), 'assistenteLog/do-leitor')))
+    await assertFails(
+      setDoc(doc(leitor(), 'assistenteLog/novo'), { uid: 'leitor' }),
+    )
+    await assertFails(
+      setDoc(doc(admin(), 'assistenteLog/novo'), { uid: 'admin' }),
+    )
+    await assertFails(deleteDoc(doc(leitor(), 'assistenteLog/do-leitor')))
+  })
+
+  it('o dono avalia a própria resposta, só o campo "feedback" e só com valor válido', async () => {
+    await assertSucceeds(
+      updateDoc(doc(leitor(), 'assistenteLog/do-leitor'), { feedback: 'util' }),
+    )
+    await assertSucceeds(
+      updateDoc(doc(leitor(), 'assistenteLog/do-leitor'), { feedback: 'ruim' }),
+    )
+    await assertFails(
+      updateDoc(doc(leitor(), 'assistenteLog/do-leitor'), {
+        feedback: 'otimo',
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(leitor(), 'assistenteLog/do-leitor'), {
+        pergunta: 'mudei',
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(leitor(), 'assistenteLog/do-leitor'), {
+        feedback: 'util',
+        custoUsd: 0,
+      }),
+    )
+  })
+
+  it('não dá para avaliar a resposta de outra pessoa', async () => {
+    await assertFails(
+      updateDoc(doc(leitor(), 'assistenteLog/do-tecnico'), {
+        feedback: 'util',
+      }),
+    )
+  })
+})

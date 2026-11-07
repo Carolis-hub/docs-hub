@@ -93,16 +93,25 @@ um passo futuro (precisa de um novo papel de usuário e de regras novas).
 
 ### Fase 5 — Inteligência artificial e RAG (semanas 11–14, sprints 6–7)
 
-- [ ] Integração segura com a API de IA
-- [ ] Embeddings e banco vetorial (plano original: pgvector)
-- [ ] Serviço de indexação dos documentos publicados
-- [ ] RAG (recuperação de contexto)
-- [ ] Assistente (perguntas e respostas) com referências às fontes
-- [ ] Filtros contextuais por BU, produto e subproduto
-- [ ] Controle de custos
+- [x] Integração segura com a API de IA — a chave fica num servidor
+      (`npm run assistente`); o navegador manda só o login. Falta escolher onde
+      hospedar em produção (precisa do plano Blaze ou de outro serviço)
+- [x] Embeddings e banco vetorial — **trocado por outra técnica**: a Anthropic
+      não tem API de embeddings, e a decisão foi manter o Firebase. A IA
+      reformula a pergunta, o motor de busca acha candidatos e a IA escolhe os
+      artigos. Embeddings ficam possíveis depois (muda só `recuperar.ts`)
+- [x] Serviço de indexação dos documentos publicados — o índice de busca já é
+      atualizado a cada publicação e só tem artigos publicados
+- [x] RAG (recuperação de contexto)
+- [x] Assistente (perguntas e respostas) com referências às fontes — tela
+      "Assistente", citações [n] clicáveis
+- [x] Filtros contextuais por BU, produto e subproduto (e categoria)
+- [x] Controle de custos — cota por pessoa/dia, teto de gasto por dia e tela
+      "Uso da IA" (gasto estimado, perguntas sem resposta, avaliações)
 
 Conclusão: consultas funcionais respondidas com base na documentação publicada
-e com referências verificáveis.
+e com referências verificáveis. A chamada real à API da Anthropic ainda não foi
+exercitada (depende de chave): fazer o teste de qualidade da Fase 6.
 
 ### Fase 6 — Sincronização, estabilização e governança (semanas 15–16, sprint 8)
 
