@@ -13,6 +13,7 @@ import { SuggestionReview } from './pages/admin/SuggestionReview'
 import { SuggestionsPage } from './pages/admin/SuggestionsPage'
 import { MetricsPage } from './pages/admin/MetricsPage'
 import { RevisaoPage } from './pages/admin/RevisaoPage'
+import { SincronizacaoPage } from './pages/admin/SincronizacaoPage'
 import { AssistenteUsoPage } from './pages/admin/AssistenteUsoPage'
 import { AuditoriaPage } from './pages/admin/AuditoriaPage'
 import { UnidadesPage } from './pages/admin/UnidadesPage'
@@ -64,6 +65,14 @@ function App() {
                   element={
                     <RequireAdmin>
                       <RevisaoPage />
+                    </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="/admin/sincronizacao"
+                  element={
+                    <RequireAdmin>
+                      <SincronizacaoPage />
                     </RequireAdmin>
                   }
                 />

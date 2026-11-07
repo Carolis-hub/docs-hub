@@ -26,6 +26,7 @@ Interface e documentação em **português do Brasil**.
 | `npm run lint` / `typecheck` / `format:check` / `build` | Conferências que o CI também roda                                                                  |
 | `npm run migrate -- <pasta> …`                          | Importador (simulação por padrão; `--gravar` grava; entra em revisão, `--publicar` publica direto) |
 | `npm run ingestao -- <pasta> --produto …`               | Leva os `.md`/`.html`/`.txt` de uma pasta para a fila de revisão (simulação por padrão)            |
+| `npm run ingestao -- … --observar --gravar`             | Fica vigiando a pasta e sincroniza quando algo muda (não gasta cota enquanto nada muda)            |
 | `npm run estrutura -- …`                                | Cria uma BU e liga produtos já importados a ela                                                    |
 | `npm run assistente -- --projeto …`                     | Servidor do assistente de IA (precisa de `ANTHROPIC_API_KEY`)                                      |
 | `npm run alt-texto -- …`                                | Sugere textos alternativos de imagens (IA)                                                         |
@@ -121,7 +122,9 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   `.md`/`.html`/`.txt` (sem `.docx`/`.pdf`); busca com filtros, categorias e
   relacionados; governança (ciclo de vida de 6 estados, comentários, alteração
   pendente de artigo publicado, auditoria); assistente de IA com RAG sem
-  embeddings. Próximo: Fase 6 (sincronização contínua e estabilização).
+  embeddings; Fase 6A (sincronização: vigília da pasta, workflow de Git e painel).
+  Próximo: Fase 6B (qualidade das respostas da IA, matriz de permissões e
+  desempenho).
 - O assistente de IA roda só localmente (`npm run assistente`): falta escolher
   a hospedagem de produção.
 - Base do SmartShare 4 importada **só com texto** no Firebase `dev`

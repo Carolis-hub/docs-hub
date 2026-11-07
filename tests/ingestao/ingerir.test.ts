@@ -311,3 +311,108 @@ describe('ingestão de arquivos (Emulator)', () => {
     ).rejects.toThrow('Produto "Inexistente" não encontrado')
   })
 })
+
+describe('painel de sincronização: resumo da rodada (Emulator)', () => {
+  const resumoDaFonte = async () =>
+    (await db().doc('sincronizacoes/di-docs').get()).data()!
+
+  it('grava o resumo da rodada com produto, modo, contagens e duração', async () => {
+    await ingerir(db(), opcoes({ modo: 'observar' }))
+    const r = await resumoDaFonte()
+    expect(r).toMatchObject({
+      fonteId: 'di-docs',
+      produtoId: 'p-di',
+      produtoNome: 'SmartShare DI',
+      ultimaExecucao: AGORA,
+      ultimaMudanca: AGORA,
+      modo: 'observar',
+      repo: null,
+      commit: null,
+      resumo: { novo: 3, duplicado: 1, ignorado: 1, erro: 0 },
+      erros: [],
+      removidos: [],
+    })
+    expect(r.duracaoMs).toBeGreaterThanOrEqual(0)
+  })
+
+  it('o modo padrão é "manual", e a simulação não grava nada', async () => {
+    await ingerir(db(), opcoes({ gravar: false }))
+    expect((await db().doc('sincronizacoes/di-docs').get()).exists).toBe(false)
+    await ingerir(db(), opcoes())
+    expect((await resumoDaFonte()).modo).toBe('manual')
+  })
+
+  it('rodada sem novidade atualiza a hora da conferência e mantém a data da última mudança', async () => {
+    await ingerir(db(), opcoes())
+    await ingerir(db(), opcoes({ agora: AGORA + 60_000 }))
+    const r = await resumoDaFonte()
+    expect(r.ultimaExecucao).toBe(AGORA + 60_000)
+    expect(r.ultimaMudanca).toBe(AGORA)
+    expect(r.resumo).toMatchObject({ novo: 0, 'sem-alteracao': 3 })
+
+    await escrever('visao-geral.md', '# Visão geral\n\nMudou.\n')
+    await ingerir(db(), opcoes({ agora: AGORA + 120_000 }))
+    expect((await resumoDaFonte()).ultimaMudanca).toBe(AGORA + 120_000)
+  })
+
+  it('guarda os erros (com o motivo) e os arquivos removidos', async () => {
+    await escrever('quebra.md', '# Com imagem\n\n![x](imagens/quebra.png)\n')
+    const imagemQuebrada = async (src: string) => {
+      if (src.includes('quebra.png')) throw new Error('falha ao ler a imagem')
+      return { url: src }
+    }
+    await ingerir(db(), opcoes({ resolverImagem: imagemQuebrada }))
+    let r = await resumoDaFonte()
+    expect(r.erros).toEqual([
+      {
+        caminho: 'quebra.md',
+        detalhe: expect.stringContaining('falha ao ler a imagem'),
+      },
+    ])
+    expect(r.resumo.erro).toBe(1)
+
+    await unlink(path.join(pasta, 'quebra.md'))
+    await unlink(path.join(pasta, 'notas.txt'))
+    await ingerir(db(), opcoes({ agora: AGORA + 1000 }))
+    r = await resumoDaFonte()
+    expect(r.removidos).toEqual(['notas.txt'])
+    expect(r.erros).toEqual([])
+  })
+
+  it('registra repositório e commit no resumo, nos artigos e nas sugestões', async () => {
+    await ingerir(
+      db(),
+      opcoes({ modo: 'git', repo: 'org/docs', commit: 'abc1234' }),
+    )
+    const r = await resumoDaFonte()
+    expect(r).toMatchObject({
+      modo: 'git',
+      repo: 'org/docs',
+      commit: 'abc1234',
+    })
+    const a = await porTitulo('Visão geral')
+    expect(a.origem).toMatchObject({ repo: 'org/docs', commit: 'abc1234' })
+
+    await db()
+      .doc(`articles/${a.id}`)
+      .update({ status: 'published', versao: 1, atualizadoPor: 'admin' })
+    await escrever('visao-geral.md', '# Visão geral\n\nNova versão.\n')
+    await ingerir(
+      db(),
+      opcoes({
+        agora: AGORA + 1000,
+        modo: 'git',
+        repo: 'org/docs',
+        commit: 'def5678',
+      }),
+    )
+    const sugestoes = await db()
+      .collection(`articles/${a.id}/suggestions`)
+      .get()
+    expect(sugestoes.docs[0]!.get('origem')).toMatchObject({
+      tipo: 'ingestao',
+      repo: 'org/docs',
+      commit: 'def5678',
+    })
+  })
+})
