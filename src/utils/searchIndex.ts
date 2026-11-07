@@ -56,7 +56,7 @@ export function itemDoArtigo(
   a: Pick<
     Article,
     'titulo' | 'resumo' | 'textoPlano' | 'blockId' | 'publico'
-  > & { id: string },
+  > & { id: string; categoria?: Article['categoria'] },
 ): SearchItem {
   return {
     id: a.id,
@@ -65,6 +65,8 @@ export function itemDoArtigo(
     textoPlano: truncarTexto(a.textoPlano),
     blockId: a.blockId,
     publico: a.publico,
+    // Só grava quando há categoria: o índice é limitado a ~1 MiB por documento.
+    ...(a.categoria ? { categoria: a.categoria } : {}),
   }
 }
 

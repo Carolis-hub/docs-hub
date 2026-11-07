@@ -58,6 +58,12 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   `--project <id>` nos comandos do Firebase CLI.
 - **Node 22 no CI**: `firebase-admin` exige Node ≥ 22; com Node 20 o npm pula
   o pacote opcional e os tipos dos scripts falham.
+- **Consultas de leitor precisam provar o acesso**: a regra de leitura de
+  `blocks` e `articles` depende de campos do documento, então uma consulta só
+  passa se filtrar por eles (`productId` sempre; em artigos, também
+  `status == 'published'` e, sem permissão técnica, `publico == 'usuario'`).
+  Admin passa sem filtros, por isso o erro só aparece para leitor.
+  `tests/rules/consultas-leitor.test.ts` cobre isso; use `getDoc` quando der.
 - **Gravação no Firestore** pode dar `DEADLINE_EXCEEDED` em redes com
   proxy/VPN: o importador tenta de novo e aceita `--rest`. Rodar de novo é
   seguro (idempotente).
@@ -99,7 +105,8 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 
 - Fases 0 a 7, o novo visual e as Fases 1 (BU e categorias), 2A (fila de
   revisão) e 2B (ingestão de `.md`/`.html`/`.txt`, sem `.docx`/`.pdf`) do
-  roadmap do time. Próximo: editor próprio com modelos (fim da Fase 2) e Fase 3.
+  e Fase 3 (busca com filtros, categorias, relacionados) do roadmap do time.
+  Próximo: editor próprio com modelos (fim da Fase 2) e Fase 4 (governança).
 - Base do SmartShare 4 importada **só com texto** no Firebase `dev`
   (10 blocos, 57 artigos); imagens ainda não migradas (211 marcadores
   `[Imagem não migrada: …]`).

@@ -1,4 +1,4 @@
-import type { ArticlePublico } from './content'
+import type { ArticlePublico, CategoriaId } from './content'
 
 /** Item de `searchIndex/{productId}`. */
 export interface SearchItem {
@@ -9,6 +9,8 @@ export interface SearchItem {
   textoPlano: string
   blockId: string
   publico: ArticlePublico
+  /** Ausente nos itens indexados antes das categorias existirem. */
+  categoria?: CategoriaId | ''
 }
 
 /** Item carregado no navegador, com o produto de origem. */

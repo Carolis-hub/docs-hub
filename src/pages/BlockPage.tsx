@@ -38,15 +38,19 @@ const plural = (n: number, um: string, varios: string) =>
 
 export function BlockPage() {
   const { blockId = '' } = useParams()
-  const { user, isAdmin } = useAuth()
+  const { user, profile, isAdmin } = useAuth()
   const uid = user?.uid ?? ''
   const { dados, erro, carregando, recarregar } = useAsync(async () => {
     const bloco = await getBlock(blockId)
     if (!bloco) return null
     const [cadeia, filhos, artigos] = await Promise.all([
       getAncestors(bloco),
-      listChildren(blockId),
-      listArticlesByBlock(blockId, !isAdmin),
+      listChildren(blockId, bloco.productId),
+      listArticlesByBlock(
+        blockId,
+        bloco.productId,
+        isAdmin ? undefined : { verTecnico: !!profile?.verTecnico },
+      ),
     ])
     const unidadeId = cadeia[0]?.unidadeId
     const [unidade, unidades] = await Promise.all([

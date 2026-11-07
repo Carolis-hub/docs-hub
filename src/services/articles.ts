@@ -62,12 +62,25 @@ export async function getArticle(id: string): Promise<Article | null> {
   return snap.exists() ? fromSnap(snap) : null
 }
 
+/**
+ * Artigos de um bloco. Para um leitor (`leitor` informado) a consulta carrega
+ * os filtros que a regra de leitura exige (produto, publicado e, sem
+ * permissão técnica, público "usuário"); sem eles o Firestore nega a consulta.
+ * Admin passa sem `leitor` e vê também os rascunhos.
+ */
 export async function listArticlesByBlock(
   blockId: string,
-  apenasPublicados: boolean,
+  productId: string,
+  leitor?: { verTecnico: boolean },
 ): Promise<Article[]> {
-  const constraints = [where('blockId', '==', blockId)]
-  if (apenasPublicados) constraints.push(where('status', '==', 'published'))
+  const constraints = [
+    where('productId', '==', productId),
+    where('blockId', '==', blockId),
+  ]
+  if (leitor) {
+    constraints.push(where('status', '==', 'published'))
+    if (!leitor.verTecnico) constraints.push(where('publico', '==', 'usuario'))
+  }
   const snap = await getDocs(query(articles, ...constraints))
   return snap.docs
     .map(fromSnap)
