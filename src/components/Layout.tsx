@@ -11,6 +11,7 @@ const LINKS_ADMIN = [
   { para: '/admin/sugestoes', rotulo: 'Sugestões' },
   { para: '/admin/metricas', rotulo: 'Métricas' },
   { para: '/admin/unidades', rotulo: 'Unidades' },
+  { para: '/admin/assistente', rotulo: 'Uso da IA' },
   { para: '/admin/auditoria', rotulo: 'Auditoria' },
   { para: '/admin/usuarios', rotulo: 'Usuários' },
 ]
@@ -40,6 +41,14 @@ export function Layout({ children }: { children: ReactNode }) {
               }
             >
               Categorias
+            </NavLink>
+            <NavLink
+              to="/assistente"
+              className={({ isActive }) =>
+                `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
+              }
+            >
+              Assistente
             </NavLink>
           </nav>
 

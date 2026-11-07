@@ -6,12 +6,14 @@ import { RequireAdmin } from './components/RequireAdmin'
 import { ArticlePage } from './pages/ArticlePage'
 import { BlockPage } from './pages/BlockPage'
 import { Home } from './pages/Home'
+import { AssistentePage } from './pages/AssistentePage'
 import { CategoriasPage } from './pages/CategoriasPage'
 import { SearchPage } from './pages/SearchPage'
 import { SuggestionReview } from './pages/admin/SuggestionReview'
 import { SuggestionsPage } from './pages/admin/SuggestionsPage'
 import { MetricsPage } from './pages/admin/MetricsPage'
 import { RevisaoPage } from './pages/admin/RevisaoPage'
+import { AssistenteUsoPage } from './pages/admin/AssistenteUsoPage'
 import { AuditoriaPage } from './pages/admin/AuditoriaPage'
 import { UnidadesPage } from './pages/admin/UnidadesPage'
 import { UsersPage } from './pages/admin/UsersPage'
@@ -30,6 +32,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/busca" element={<SearchPage />} />
                 <Route path="/categorias" element={<CategoriasPage />} />
+                <Route path="/assistente" element={<AssistentePage />} />
                 <Route path="/b/:blockId" element={<BlockPage />} />
                 <Route path="/a/:articleId" element={<ArticlePage />} />
                 <Route
@@ -61,6 +64,14 @@ function App() {
                   element={
                     <RequireAdmin>
                       <RevisaoPage />
+                    </RequireAdmin>
+                  }
+                />
+                <Route
+                  path="/admin/assistente"
+                  element={
+                    <RequireAdmin>
+                      <AssistenteUsoPage />
                     </RequireAdmin>
                   }
                 />

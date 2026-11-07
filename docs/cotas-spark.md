@@ -40,6 +40,17 @@ período e até 20 termos buscados. No pior caso, com 300 artigos e período de
 só carrega ao abrir ou ao clicar em "Atualizar", e o período de 90 dias deve
 ser usado com parcimônia.
 
+## Assistente de IA
+
+Cada pergunta lê o perfil (1), a lista de produtos (admin) ou só o que está no
+perfil, o índice de busca dos produtos escolhidos (1 + partes por produto) e até
+5 artigos, mais os 2 contadores do dia: cerca de **10 a 40 leituras**. Grava os 2
+contadores (duas vezes: reserva e gasto) e 1 registro da pergunta: **cerca de 5
+gravações**. Com o limite de 30 perguntas por pessoa por dia e 100 pessoas, o
+pior caso é perto de 3 mil perguntas: ~120 mil leituras, acima do limite diário
+do Spark. Na prática o teto de gasto em dólar costuma parar antes, mas se o
+assistente for muito usado, o plano Blaze é o caminho.
+
 ## Governança (admin)
 
 Cada mudança de estado (enviar, aprovar, publicar…) é uma transação: lê o

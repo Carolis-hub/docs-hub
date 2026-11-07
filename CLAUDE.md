@@ -13,7 +13,8 @@ Interface e documentação em **português do Brasil**.
   uma tarefa** (marque o item e faça commit).
 - `README.md`: como rodar, checklist de configuração dos workflows do GitHub.
 - `scripts/<pasta>/README.md`: cada ferramenta (migrate, doc-sync, alt-texto,
-  backup, cloudinary-limpeza, verificar-links, estrutura, ingestao) tem o seu.
+  backup, cloudinary-limpeza, verificar-links, estrutura, ingestao, assistente)
+  tem o seu.
 
 ## Comandos
 
@@ -26,6 +27,7 @@ Interface e documentação em **português do Brasil**.
 | `npm run migrate -- <pasta> …`                          | Importador (simulação por padrão; `--gravar` grava; entra em revisão, `--publicar` publica direto) |
 | `npm run ingestao -- <pasta> --produto …`               | Leva os `.md`/`.html`/`.txt` de uma pasta para a fila de revisão (simulação por padrão)            |
 | `npm run estrutura -- …`                                | Cria uma BU e liga produtos já importados a ela                                                    |
+| `npm run assistente -- --projeto …`                     | Servidor do assistente de IA (precisa de `ANTHROPIC_API_KEY`)                                      |
 | `npm run alt-texto -- …`                                | Sugere textos alternativos de imagens (IA)                                                         |
 | `npm run doc-sync -- …`                                 | Sugere atualizações de artigos a partir de `.md` de regras                                         |
 
@@ -70,6 +72,10 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   `transitar()` (`src/services/governanca.ts`), que valida pelo ciclo de
   `src/utils/ciclo.ts`, atualiza a busca e grava a auditoria. Não escreva
   `status` direto.
+- **O servidor do assistente ignora as regras do Firestore** (Admin SDK):
+  todo conteúdo que ele entrega à IA precisa ser conferido em código (publicado,
+  produto permitido, técnico só para quem pode). Está em `carregarFontes`
+  (`scripts/assistente/recuperar.ts`); não leia artigo por outro caminho.
 - **Gravação no Firestore** pode dar `DEADLINE_EXCEEDED` em redes com
   proxy/VPN: o importador tenta de novo e aceita `--rest`. Rodar de novo é
   seguro (idempotente).
@@ -114,7 +120,9 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   e Fase 3 (busca com filtros, categorias, relacionados) do roadmap do time.
   Fase 4 (governança: ciclo de vida de 6 estados, comentários, alteração
   pendente de artigo publicado, auditoria). Próximo: editor próprio com
-  modelos (fim da Fase 2) e Fase 5 (IA e RAG).
+  modelos (fim da Fase 2) e Fase 6 (sincronização contínua e estabilização).
+  Fase 5 (assistente de IA com RAG sem embeddings) feita, com o servidor
+  rodando só localmente: falta escolher a hospedagem de produção.
 - Base do SmartShare 4 importada **só com texto** no Firebase `dev`
   (10 blocos, 57 artigos); imagens ainda não migradas (211 marcadores
   `[Imagem não migrada: …]`).
