@@ -42,6 +42,8 @@ interface Props {
   rotuloNovo?: string
   /** Subprodutos de cada produto (id do produto → blocos), mostrados no cartão. */
   subprodutos?: Record<string, Block[]>
+  /** Linha de resumo de cada cartão (id → texto), ex.: "2 subprodutos · 8 artigos". */
+  resumos?: Record<string, string>
 }
 
 function Cartao({
@@ -52,7 +54,8 @@ function Cartao({
   onEdit,
   onDelete,
   filhos,
-}: { bloco: Block; filhos?: Block[] } & Pick<
+  resumo,
+}: { bloco: Block; filhos?: Block[]; resumo?: string } & Pick<
   Props,
   'variante' | 'editavel' | 'organizar' | 'onEdit' | 'onDelete'
 >) {
@@ -125,6 +128,9 @@ function Cartao({
           </button>
         </span>
       )}
+      {resumo && (
+        <p className="w-full basis-full pl-12 text-xs text-suave">{resumo}</p>
+      )}
       {filhos && filhos.length > 0 && (
         <ul
           aria-label={`Subprodutos de ${bloco.nome}`}
@@ -157,6 +163,7 @@ export function BlockCards({
   onNovo,
   rotuloNovo = 'Novo subbloco',
   subprodutos,
+  resumos,
 }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -193,6 +200,7 @@ export function BlockCards({
               onEdit={onEdit}
               onDelete={onDelete}
               filhos={subprodutos?.[b.id]}
+              resumo={resumos?.[b.id]}
             />
           ))}
           {onNovo && (

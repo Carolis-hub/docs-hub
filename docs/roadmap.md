@@ -257,6 +257,26 @@ ou mudar de banco antes da Fase 5.
       índice") e um glossário: sem o conteúdo, a IA só pode dizer que não achou
 - [ ] Rodar `assistente-avaliar` com a chave real e perguntas de conceito
 
+### Protótipo "Atlas Docs" (artboards do canvas)
+
+- [x] Visual: paleta verde, grade de fundo, cartões e botões arredondados,
+      cabeçalho (Métricas, Configurações, busca em pílula, nome e perfil),
+      menu lateral "Documentação", botão flutuante do Assistente
+- [x] Manual de produtos (Home): busca em destaque, cartões de BU com contagem
+      de produtos e artigos, faixa de apresentação
+- [x] Página da BU (`/u/:id`): produtos com subprodutos e contagens
+- [ ] Produto e Subproduto com cartões de módulos e contagens
+- [ ] Módulo: lista de artigos com filtro por categoria e ordenação
+- [ ] Artigo: sumário "Neste artigo", relacionados, autor e visualizações
+- [ ] Editor: campos BU/Produto/Subproduto/Módulo, categoria e pré-visualização
+- [ ] Busca: filtros por BU, produto, subproduto, módulo e categoria
+- [ ] Assistente: painel lateral em todas as telas
+- [ ] Métricas: cobertura de módulos, artigos por BU/produto, por mês
+- [ ] Configurações: abas Estrutura, Usuários e Permissões
+- Sem protótipo (feitos no mesmo estilo): Login, Minhas preferências, Revisão,
+  Sincronização, Auditoria, Uso da IA, Unidades, Sugestões, tela de erro e de
+  "sem acesso", tema escuro
+
 ### Backlog (do `PLAN.md`)
 
 - [ ] Versões por versão do produto

@@ -26,9 +26,12 @@ export function Aside() {
   return (
     <aside
       aria-label="Visualizações"
-      className="w-full shrink-0 border-b border-borda bg-fundo p-4 md:w-56 md:border-b-0 md:border-r"
+      className="w-full shrink-0 border-b border-borda bg-cartao/70 p-4 md:w-[248px] md:border-b-0 md:border-r md:pt-6"
     >
-      <ul className="flex gap-2 md:flex-col">
+      <span className="mb-2 hidden px-3 text-[11.5px] font-bold text-suave md:block">
+        Documentação
+      </span>
+      <ul className="flex gap-1 md:flex-col">
         {entradas.map((e) => {
           const { para, rotulo, Icone } = ENTRADAS[e]
           return (
@@ -37,8 +40,10 @@ export function Aside() {
                 to={para}
                 end={para === '/'}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-cartao ${
-                    isActive ? 'bg-cartao font-medium text-texto' : 'text-suave'
+                  `flex min-h-11 items-center gap-2.5 rounded-xl px-3 text-[14.5px] transition hover:bg-bloco/60 ${
+                    isActive
+                      ? 'bg-bloco font-semibold text-destaque'
+                      : 'font-medium text-suave'
                   }`
                 }
               >

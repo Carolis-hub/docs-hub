@@ -4,14 +4,16 @@
 
 /* Cores em "R G B" para o Tailwind aplicar transparência (bg-destaque/50). */
 :root {
-  --fundo: 246 248 247;
+  --fundo: 243 246 244;
   --cartao: 255 255 255;
-  --borda: 219 227 223;
-  --texto: 20 32 27;
-  --suave: 95 113 104;
-  --destaque: 0 117 74;
-  --bloco: 232 241 237;
-  --bloco-icone: 44 122 95;
+  --borda: 220 229 224;
+  --texto: 18 53 43;
+  --suave: 94 115 105;
+  --destaque: 15 122 76;
+  --bloco: 226 243 234;
+  --bloco-icone: 15 122 76;
+  --escuro: 23 60 50;
+  --grade: 18 53 43;
   --ambar: 180 83 9;
   --ambar-fundo: 255 243 230;
   --pasta: 194 65 12;
@@ -29,6 +31,8 @@
   --destaque: 0 117 74;
   --bloco: 28 39 35;
   --bloco-icone: 117 170 151;
+  --escuro: 31 80 66;
+  --grade: 233 239 236;
   --ambar: 227 131 61;
   --ambar-fundo: 43 31 22;
   --pasta: 204 120 61;
@@ -48,6 +52,23 @@
 
   body {
     @apply bg-fundo text-texto antialiased;
+    font-family:
+      Inter,
+      -apple-system,
+      'Segoe UI',
+      Roboto,
+      'Helvetica Neue',
+      sans-serif;
+    /* Grade discreta do protótipo, que some em direção ao fim da página. */
+    background-image:
+      linear-gradient(180deg, rgb(var(--fundo) / 0) 0, rgb(var(--fundo)) 760px),
+      linear-gradient(rgb(var(--grade) / 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(var(--grade) / 0.055) 1px, transparent 1px);
+    background-size:
+      100% 100%,
+      44px 44px,
+      44px 44px;
+    background-repeat: no-repeat, repeat, repeat;
   }
 
   :focus-visible {
@@ -57,14 +78,14 @@
 
 @layer components {
   .cartao {
-    @apply rounded-lg border border-borda bg-cartao;
+    @apply rounded-2xl border border-borda bg-cartao;
   }
 
   .botao {
-    @apply inline-flex items-center justify-center gap-2 rounded-md border border-borda bg-cartao px-3 py-1.5 text-sm font-medium text-texto transition hover:bg-bloco disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-borda bg-cartao px-4 py-1.5 text-sm font-semibold text-texto transition hover:bg-bloco disabled:cursor-not-allowed disabled:opacity-50;
   }
   .botao-primario {
-    @apply border-transparent bg-destaque text-white hover:bg-destaque/90;
+    @apply border-transparent bg-escuro text-white shadow-[0_0_0_4px_rgb(61_220_151_/_0.16),0_10px_26px_rgb(15_122_76_/_0.28)] hover:bg-escuro/90;
   }
   .botao-perigo {
     @apply text-perigo hover:bg-perigo/10;
@@ -74,11 +95,11 @@
   }
 
   .campo {
-    @apply w-full rounded-md border border-borda bg-cartao px-3 py-2 text-sm text-texto placeholder:text-suave;
+    @apply w-full rounded-xl border border-borda bg-cartao px-3 py-2 text-sm text-texto placeholder:text-suave;
   }
 
   .selo {
-    @apply inline-flex items-center gap-1 rounded-md border border-borda bg-bloco px-1.5 py-0.5 text-xs font-medium text-suave;
+    @apply inline-flex items-center gap-1 rounded-full border border-borda bg-bloco px-2 py-0.5 text-xs font-medium text-suave;
   }
   .selo-ambar {
     @apply border-ambar/30 bg-ambar-fundo text-ambar;
@@ -86,7 +107,7 @@
 
   /* Quadradinho com ícone (artigos, produtos, cabeçalho de página). */
   .tile {
-    @apply inline-flex shrink-0 items-center justify-center rounded-md bg-bloco text-bloco-icone;
+    @apply inline-flex shrink-0 items-center justify-center rounded-xl bg-bloco text-bloco-icone;
   }
   .tile-pasta {
     @apply bg-pasta-fundo text-pasta;

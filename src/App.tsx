@@ -63,6 +63,9 @@ const UnidadesPage = lazy(() =>
 const UsersPage = lazy(() =>
   import('./pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })),
 )
+const UnidadePage = lazy(() =>
+  import('./pages/UnidadePage').then((m) => ({ default: m.UnidadePage })),
+)
 const PreferenciasPage = lazy(() =>
   import('./pages/PreferenciasPage').then((m) => ({
     default: m.PreferenciasPage,
@@ -91,6 +94,7 @@ function App() {
               <Suspense fallback={<p className="text-suave">Carregando…</p>}>
                 <Routes>
                   <Route path="/" element={<Home />} />
+                  <Route path="/u/:unidadeId" element={<UnidadePage />} />
                   <Route path="/busca" element={<SearchPage />} />
                   <Route path="/categorias" element={<CategoriasPage />} />
                   <Route path="/assistente" element={<AssistentePage />} />

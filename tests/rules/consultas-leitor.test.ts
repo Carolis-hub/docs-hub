@@ -8,6 +8,7 @@ import {
 import {
   collection,
   doc,
+  getCountFromServer,
   getDocs,
   query,
   setDoc,
@@ -58,6 +59,28 @@ afterAll(() => testEnv.cleanup())
 // filtros, que só traz o que o leitor pode ver.
 describe('firestore.rules — consultas feitas por um leitor', () => {
   const leitor = () => testEnv.authenticatedContext('leitor').firestore()
+
+  it('contagem de artigos publicados do produto (como a Home faz)', async () => {
+    const snap = await assertSucceeds(
+      getCountFromServer(
+        query(
+          collection(leitor(), 'articles'),
+          where('productId', '==', 'p1'),
+          where('status', '==', 'published'),
+          where('publico', '==', 'usuario'),
+        ),
+      ),
+    )
+    if (snap.data().count !== 1) throw new Error('contagem inesperada')
+  })
+
+  it('contagem sem provar o acesso é negada', async () => {
+    await assertFails(
+      getCountFromServer(
+        query(collection(leitor(), 'articles'), where('productId', '==', 'p2')),
+      ),
+    )
+  })
 
   it('árvore do produto (filtra por productId)', async () => {
     await assertSucceeds(

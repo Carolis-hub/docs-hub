@@ -4,22 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Home } from './Home'
 
 const useAuth = vi.fn()
-const listProducts = vi.fn()
-const listUnidades = vi.fn()
-const listChildren = vi.fn()
+const carregarVisaoGeral = vi.fn()
 
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => useAuth() }))
 vi.mock('../services/blocks', () => ({
-  listProducts: (...args: unknown[]) => listProducts(...args),
-  listChildren: (...args: unknown[]) => listChildren(...args),
   createBlock: vi.fn(),
   deleteBlock: vi.fn(),
-  reorderBlocks: vi.fn(),
   updateBlock: vi.fn(),
 }))
-
-vi.mock('../services/unidades', () => ({
-  listUnidades: (...args: unknown[]) => listUnidades(...args),
+vi.mock('../services/visaoGeral', () => ({
+  carregarVisaoGeral: (...args: unknown[]) => carregarVisaoGeral(...args),
 }))
 
 const produto = {
@@ -33,6 +27,14 @@ const produto = {
   productId: 'p1',
 }
 
+const visao = (extra: Record<string, unknown> = {}) => ({
+  produtos: [produto],
+  unidades: [],
+  subprodutos: {},
+  artigos: { p1: 8 },
+  ...extra,
+})
+
 function renderHome() {
   return render(
     <MemoryRouter>
@@ -43,32 +45,33 @@ function renderHome() {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  listUnidades.mockResolvedValue([])
-  listChildren.mockResolvedValue([])
 })
 
 describe('Home', () => {
-  it('mostra os subprodutos dentro do cartão do produto', async () => {
+  it('mostra os subprodutos e a contagem dentro do cartão do produto', async () => {
     useAuth.mockReturnValue({
       isAdmin: false,
       profile: { uid: 'l', produtosPermitidos: ['p1'] },
     })
-    listProducts.mockResolvedValue([produto])
-    listChildren.mockResolvedValue([
-      { ...produto, id: 's1', nome: 'BPM', parentId: 'p1' },
-    ])
+    carregarVisaoGeral.mockResolvedValue(
+      visao({
+        subprodutos: {
+          p1: [{ ...produto, id: 's1', nome: 'BPM', parentId: 'p1' }],
+        },
+      }),
+    )
     renderHome()
     const link = await screen.findByRole('link', { name: 'BPM' })
     expect(link).toHaveAttribute('href', '/b/s1')
-    expect(listChildren).toHaveBeenCalledWith('p1', 'p1')
+    expect(screen.getByText('1 subproduto · 8 artigos')).toBeInTheDocument()
   })
 
   it('admin vê os produtos e o botão de criar', async () => {
     useAuth.mockReturnValue({ isAdmin: true, profile: { uid: 'a' } })
-    listProducts.mockResolvedValue([produto])
+    carregarVisaoGeral.mockResolvedValue(visao())
     renderHome()
     expect(await screen.findByText('Smartshare')).toBeInTheDocument()
-    expect(listProducts).toHaveBeenCalledWith(undefined)
+    expect(carregarVisaoGeral).toHaveBeenCalledWith(undefined, true)
     expect(
       screen.getByRole('button', { name: /novo produto/i }),
     ).toBeInTheDocument()
@@ -79,12 +82,12 @@ describe('Home', () => {
       isAdmin: false,
       profile: { uid: 'l', produtosPermitidos: ['p1'] },
     })
-    listProducts.mockResolvedValue([produto])
+    carregarVisaoGeral.mockResolvedValue(visao())
     renderHome()
     expect(await screen.findByText('Smartshare')).toBeInTheDocument()
-    expect(listProducts).toHaveBeenCalledWith(['p1'])
+    expect(carregarVisaoGeral).toHaveBeenCalledWith(['p1'], false)
     expect(screen.queryByRole('button', { name: /novo produto/i })).toBeNull()
-    expect(screen.queryByRole('button', { name: /mover/i })).toBeNull()
+    expect(screen.queryByRole('link', { name: /nova bu/i })).toBeNull()
   })
 
   it('avisa o leitor sem produtos', async () => {
@@ -92,37 +95,44 @@ describe('Home', () => {
       isAdmin: false,
       profile: { uid: 'l', produtosPermitidos: [] },
     })
-    listProducts.mockResolvedValue([])
+    carregarVisaoGeral.mockResolvedValue(visao({ produtos: [] }))
     renderHome()
     expect(
       await screen.findByText(/não tem acesso a nenhum produto/i),
     ).toBeInTheDocument()
   })
 
-  it('agrupa os produtos por unidade de negócio', async () => {
+  it('mostra as unidades de negócio como cartões e os produtos sem unidade à parte', async () => {
     useAuth.mockReturnValue({ isAdmin: true, profile: { uid: 'a' } })
-    listUnidades.mockResolvedValue([
-      {
-        id: 'u1',
-        nome: 'Process Solution',
-        slug: 'process-solution',
-        descricao: '',
-        icone: '',
-        ordem: 0,
-      },
-    ])
-    listProducts.mockResolvedValue([
-      { ...produto, unidadeId: 'u1' },
-      { ...produto, id: 'p2', productId: 'p2', nome: 'Solto' },
-    ])
+    carregarVisaoGeral.mockResolvedValue(
+      visao({
+        unidades: [
+          {
+            id: 'u1',
+            nome: 'Process Solution',
+            slug: 'process-solution',
+            descricao: 'Gestão de processos',
+            icone: '',
+            ordem: 0,
+          },
+        ],
+        produtos: [
+          { ...produto, unidadeId: 'u1' },
+          { ...produto, id: 'p2', productId: 'p2', nome: 'Solto' },
+        ],
+        artigos: { p1: 8, p2: 1 },
+      }),
+    )
     renderHome()
-    expect(
-      await screen.findByRole('heading', { name: /process solution/i }),
-    ).toBeInTheDocument()
+    const cartao = await screen.findByRole('link', {
+      name: /process solution/i,
+    })
+    expect(cartao).toHaveAttribute('href', '/u/u1')
+    expect(cartao).toHaveTextContent('1 produto')
+    expect(cartao).toHaveTextContent('8 artigos')
     expect(
       screen.getByRole('heading', { name: /sem unidade/i }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Smartshare')).toBeInTheDocument()
     expect(screen.getByText('Solto')).toBeInTheDocument()
   })
 })
