@@ -3,6 +3,7 @@ import type { Article, Block, CategoriaId } from '../../src/types/content.ts'
 import type { FiltrosAssistente } from '../../src/types/assistente.ts'
 import type { IndexedItem, SearchItem } from '../../src/types/search.ts'
 import { comDescendentes } from '../../src/utils/blocos.ts'
+import { consultasLocais } from '../../src/utils/consulta.ts'
 import { criarMotor } from '../../src/utils/searchEngine.ts'
 import { docParaMarkdown } from '../../src/utils/tiptapMarkdown.ts'
 
@@ -119,7 +120,11 @@ export function selecionarCandidatos(
 ): IndexedItem[] {
   const motor = criarMotor(itens, opcoes.verTecnico)
   const pontos = new Map<string, { item: IndexedItem; pontos: number }>()
-  for (const consulta of consultas) {
+  // Consultas locais (sem palavras comuns, com sinônimos) cobrem falhas da IA.
+  const todas = [
+    ...new Set([...consultas, ...consultas.flatMap((c) => consultasLocais(c))]),
+  ]
+  for (const consulta of todas) {
     const hits = motor.buscar(consulta, {
       combinar: 'OR',
       categoria: opcoes.categoria,

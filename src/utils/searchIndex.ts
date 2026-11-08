@@ -3,7 +3,7 @@ import type { SearchItem } from '../types/search'
 
 /** Margem de segurança sobre o limite de 1 MiB de um documento do Firestore. */
 export const INDEX_LIMITE_BYTES = 800_000
-export const TEXTO_INDEX_MAX = 4000
+export const TEXTO_INDEX_MAX = 16_000
 export const PARTE_RAIZ = 'raiz'
 
 export function tamanhoBytes(valor: unknown): number {
