@@ -5,6 +5,7 @@ import type {
   PedidoAssistente,
   RespostaAssistente,
 } from '../types/assistente'
+import { lerChaveIA } from '../utils/chaveIA'
 import { auth, db } from './firebase'
 
 const URL_ASSISTENTE = import.meta.env.VITE_ASSISTENTE_URL?.trim() || ''
@@ -21,8 +22,9 @@ export class ErroDoAssistente extends Error {
 }
 
 /**
- * Envia a pergunta ao servidor do assistente. A chave da IA fica lá: o
- * navegador manda só o login (token do Firebase) e a pergunta.
+ * Envia a pergunta ao servidor do assistente. Por padrão a chave da IA fica
+ * lá; se o usuário guardou a dele em Preferências, ela vai no cabeçalho
+ * `X-Chave-IA`, só para esta chamada.
  */
 export async function perguntar(
   pedido: PedidoAssistente,
@@ -40,6 +42,8 @@ export async function perguntar(
       'Entre no sistema para usar o assistente.',
     )
   }
+  // Chave própria do usuário (guardada só neste navegador), se ele informou.
+  const chave = lerChaveIA(auth.currentUser?.uid)
   let resposta: Response
   try {
     resposta = await fetch(URL_ASSISTENTE, {
@@ -47,6 +51,7 @@ export async function perguntar(
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        ...(chave ? { 'X-Chave-IA': chave } : {}),
       },
       body: JSON.stringify(pedido),
     })

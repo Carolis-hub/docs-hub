@@ -96,7 +96,7 @@ export function criarProvedorAnthropic(opcoes: {
       }
       if (e instanceof Anthropic.AuthenticationError) {
         throw new ErroIA(
-          'A chave da API da Anthropic está inválida no servidor do assistente.',
+          'A chave da API de IA está inválida. Confira a sua em Minhas preferências ou a do servidor.',
         )
       }
       throw e
@@ -143,4 +143,14 @@ export function criarProvedorAnthropic(opcoes: {
       return { resposta: dados, uso }
     },
   }
+}
+
+/** Provedor usado quando o servidor não tem chave: cada usuário precisa levar a sua. */
+export function criarProvedorSemChave(): ProvedorAssistente {
+  const falhar = (): never => {
+    throw new ErroIA(
+      'O assistente não tem chave configurada. Informe a sua em Minhas preferências.',
+    )
+  }
+  return { planejar: falhar, escolher: falhar, responder: falhar }
 }
