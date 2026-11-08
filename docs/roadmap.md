@@ -235,8 +235,10 @@ ou mudar de banco antes da Fase 5.
 - [ ] Documentação de API na aside (falta definir a fonte)
 - [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
       texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"
-- [x] Comando `/iniciar-kb` (`.claude/commands/iniciar-kb.md`) guia a
+- [x] Comando `/extrair-kb` (`.claude/commands/extrair-kb.md`) guia a
       extração e a importação em etapas, só gravando com confirmação
+- [x] Comando `/iniciar-kb` sobe o sistema no localhost (`--assistente` também
+      sobe o assistente de IA)
 - [ ] Importar/escrever os artigos conceituais (ex.: "Gerenciamento de tipo de
       índice") e um glossário: sem o conteúdo, a IA só pode dizer que não achou
 - [ ] Rodar `assistente-avaliar` com a chave real e perguntas de conceito
