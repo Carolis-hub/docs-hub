@@ -36,10 +36,14 @@ export async function listProducts(
 ): Promise<Block[]> {
   if (produtosPermitidos) {
     if (produtosPermitidos.length === 0) return []
+    // Um id que não existe mais (ou que as regras negam) é ignorado em vez de
+    // derrubar a tela inteira com "Missing or insufficient permissions".
     const snaps = await Promise.all(
-      produtosPermitidos.map((id) => getDoc(doc(blocks, id))),
+      produtosPermitidos.map((id) => getDoc(doc(blocks, id)).catch(() => null)),
     )
-    return ordenar(snaps.filter((s) => s.exists()).map(fromSnap))
+    return ordenar(
+      snaps.filter((s) => s !== null && s.exists()).map((s) => fromSnap(s)),
+    )
   }
   const snap = await getDocs(query(blocks, where('parentId', '==', null)))
   return ordenar(snap.docs.map(fromSnap))

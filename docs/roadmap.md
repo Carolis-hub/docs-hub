@@ -243,6 +243,9 @@ ou mudar de banco antes da Fase 5.
 - [x] Chave de IA por usuário em Minhas preferências (só no navegador; só
       Anthropic por enquanto)
 - [ ] Adaptador para outro fornecedor de IA (falta saber qual)
+- [x] Menu de cima enxuto (Métricas e Configurações); Usuários e Uso da IA viraram
+      o módulo Administração em Configurações; a escolha da aside foi para Minhas
+      preferências; Sugestões e Unidades saíram do menu (rotas mantidas)
 - [ ] Documentação de API na aside (falta definir a fonte)
 - [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
       texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"
