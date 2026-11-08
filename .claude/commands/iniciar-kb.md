@@ -1,57 +1,31 @@
 ---
-description: Extrai artigos da base do SmartShare e importa para o docs-hub (simula, mostra o relatório e só grava com a sua confirmação)
-argument-hint: '[ids dos artigos separados por vírgula | --tudo] [--produto smartshare|smartshare-4]'
+description: Sobe o docs-hub no localhost (npm run dev) para conferir os artigos importados
+argument-hint: '[--assistente]'
 ---
 
-Você vai levar artigos da base `docs.selbetti.com.br` para o docs-hub, em etapas,
-conferindo cada uma antes da seguinte. Fale em português do Brasil, em linguagem
-simples, e use comandos copiáveis para o PowerShell quando precisar da ajuda do
-usuário. Argumentos recebidos: `$ARGUMENTS`
+Suba o sistema na máquina do usuário, em português do Brasil e em linguagem
+simples. Argumentos recebidos: `$ARGUMENTS`
 
-## Antes de começar
+1. Em `C:\projetos\docs-hub` (confirme com o usuário se o caminho for outro),
+   confira se `node_modules` existe; se não, rode `npm install` e avise que
+   pode demorar. Se o `git pull` anterior reclamou do `package-lock.json`, o
+   remédio é `git checkout -- package-lock.json`.
+2. Rode `npm run dev` **em segundo plano** e confira a saída até aparecer o
+   endereço. Informe `http://localhost:5173`. Se a porta estiver em uso, diga
+   que o sistema provavelmente já está aberto e use o endereço que o Vite
+   mostrar.
+3. Diga como conferir os artigos importados: entrar como admin, pesquisar um
+   termo (por exemplo "tipo de índice") e abrir o artigo.
+4. Só se `$ARGUMENTS` trouxer `--assistente`: avise que o assistente de IA
+   gasta com a API (cerca de US$ 0,05 a 0,10 por pergunta) e precisa de
+   `ANTHROPIC_API_KEY` já configurada no terminal do usuário. Se ele
+   confirmar que a chave está configurada, rode em segundo plano, com
+   `GOOGLE_APPLICATION_CREDENTIALS=C:\projetos\service-account-dev.json`:
+   `npm run assistente -- --projeto docs-hub-dev-16c1f`.
+   **Nunca** peça, mostre ou repita a chave. Sem `--assistente`, não inicie o
+   assistente.
+5. Lembre que, para parar o sistema, basta fechar o terminal ou pedir para você
+   encerrar o processo.
 
-1. Se esta sessão for na nuvem, ela **não alcança `docs.selbetti.com.br`**: a
-   extração e o download de imagens não funcionam aqui. Diga isso e entregue
-   os comandos para o usuário rodar na máquina dele (o passo a passo está em
-   `scripts/migrate/README.md`). Só continue sozinho se estiver numa máquina
-   com acesso ao site.
-2. Nunca peça nem mostre senhas ou chaves. A chave do Firebase fica fora do
-   repositório (`C:\projetos\service-account-dev.json`).
-3. **Nunca use `--gravar` sem o usuário confirmar**, depois de ver o relatório
-   da simulação. Sem `--publicar`, os artigos entram na fila de Revisão.
-
-## Caminhos padrão (confirme com o usuário se algum não existir)
-
-- Extrator: `C:\Qualidade\smartshare-kb\smartshare-kb` (tem `scripts\extrair_kb.py` e `kb\`)
-- Saída da conversão: `C:\projetos\dados\export-conceitos`
-- Projeto: `C:\projetos\docs-hub`
-- Firebase de teste: `docs-hub-dev-16c1f`
-
-## Etapas
-
-1. **Extrair** (só se a pasta `kb\<produto>` não existir ou o usuário pedir
-   atualização): na pasta do extrator, `python scripts\extrair_kb.py --raiz smartshare`
-   (ou `--raiz smartshare-4`); com `--incremental` quando a pasta já existe.
-   Confira com `dir kb`.
-2. **Escolher os artigos**: se `$ARGUMENTS` trouxe ids, use-os. Se trouxe
-   `--tudo`, converta sem `--apenas`. Se não trouxe nada, procure em `kb\` os
-   artigos de conceito (por exemplo `Get-ChildItem kb -Recurse -Filter *tipo-de-indice*`),
-   liste título e `id:` do front matter e **pergunte** quais importar.
-3. **Converter**, a partir de `C:\projetos\docs-hub`:
-   `node scripts\migrate\adaptadores\smartshare-kb.ts <pasta do extrator> C:\projetos\dados\export-conceitos --apenas <ids>`
-   Confira a mensagem "Exportação neutra: N blocos, M artigos".
-4. **Simular** (não grava nada):
-   `npm run migrate -- C:\projetos\dados\export-conceitos --sem-imagens`
-   Resuma o relatório: blocos, artigos, imagens puladas, links quebrados,
-   erros. Se houver erro, explique a causa em linguagem simples e pare.
-5. **Gravar, só com confirmação explícita**:
-   `$env:GOOGLE_APPLICATION_CREDENTIALS="C:\projetos\service-account-dev.json"`
-   `npm run migrate -- C:\projetos\dados\export-conceitos --sem-imagens --gravar --projeto docs-hub-dev-16c1f`
-   Se der `DEADLINE_EXCEEDED`, rodar de novo é seguro; acrescente `--rest` se persistir.
-6. **Depois**: lembre o usuário de abrir **Revisão** como admin, ler e aprovar
-   os artigos, e de que `--sobrescrever` refaz o conteúdo de artigos já
-   importados (não use sem avisar). Para que a busca com IA use o texto maior,
-   os artigos antigos precisam ser reimportados com `--sobrescrever`.
-
-Ao terminar, diga o que foi feito, o que **não** foi exercitado (por exemplo,
-imagens e respostas reais da IA) e o próximo passo.
+Em sessão na nuvem, o endereço `localhost` não abre no computador do usuário:
+diga isso e entregue o comando `npm run dev` para ele rodar localmente.
