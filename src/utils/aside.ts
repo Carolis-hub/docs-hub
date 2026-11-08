@@ -17,12 +17,9 @@ export function modoAsideValido(v: unknown): ModoAside {
   return typeof v === 'string' && VALIDOS.has(v) ? (v as ModoAside) : 'toda'
 }
 
-/** Quais entradas aparecem. Quem não é admin nunca vê a aside. */
-export function entradasVisiveis(
-  modo: ModoAside,
-  isAdmin: boolean,
-): EntradaAside[] {
-  if (!isAdmin || modo === 'oculta') return []
+/** Quais entradas aparecem, conforme a escolha de cada usuário. */
+export function entradasVisiveis(modo: ModoAside): EntradaAside[] {
+  if (modo === 'oculta') return []
   if (modo === 'manual') return ['manual']
   if (modo === 'busca') return ['busca']
   return ['manual', 'busca']

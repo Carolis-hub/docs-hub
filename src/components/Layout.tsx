@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, PanelLeft } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useModoAside } from '../hooks/useModoAside'
 import { iniciais } from '../utils/iniciais'
 import { Aside } from './Aside'
 import { QuickSearch } from './QuickSearch'
@@ -21,13 +22,14 @@ const LINKS_ADMIN = [
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user, profile, isAdmin, signOut } = useAuth()
+  const { modo, setModo } = useModoAside(user?.uid)
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-borda bg-fundo">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3">
           <Link
-            to={isAdmin ? '/' : '/categorias'}
+            to="/"
             className="flex items-center gap-2 font-semibold text-texto"
           >
             <span className="inline-flex size-8 items-center justify-center rounded-md bg-destaque text-white">
@@ -72,6 +74,17 @@ export function Layout({ children }: { children: ReactNode }) {
           )}
 
           <div className="ml-auto flex items-center gap-2">
+            {modo === 'oculta' && (
+              <button
+                type="button"
+                onClick={() => setModo('toda')}
+                className="botao-icone"
+                title="Mostrar menu lateral"
+                aria-label="Mostrar menu lateral"
+              >
+                <PanelLeft className="size-4" aria-hidden />
+              </button>
+            )}
             <QuickSearch />
             <ThemeToggle />
             {user && (

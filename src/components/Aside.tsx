@@ -1,12 +1,12 @@
-import { BookOpen, Sparkles } from 'lucide-react'
+import { BookOpen, Settings2, Sparkles } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useModoAside } from '../hooks/useModoAside'
-import { entradasVisiveis } from '../utils/aside'
+import { entradasVisiveis, MODOS_ASIDE } from '../utils/aside'
 
 const ENTRADAS = {
   manual: {
-    para: '/categorias',
+    para: '/',
     rotulo: 'Manual de produtos',
     Icone: BookOpen,
   },
@@ -17,11 +17,12 @@ const ENTRADAS = {
   },
 }
 
+/** Aside esquerda: vale para qualquer usuário, que escolhe o que ela mostra. */
 export function Aside() {
-  const { user, isAdmin } = useAuth()
-  const { modo } = useModoAside(user?.uid)
-  const entradas = entradasVisiveis(modo, isAdmin)
-  if (entradas.length === 0) return null
+  const { user } = useAuth()
+  const { modo, setModo } = useModoAside(user?.uid)
+  const entradas = entradasVisiveis(modo)
+  if (modo === 'oculta') return null
   return (
     <aside
       aria-label="Visualizações"
@@ -48,6 +49,26 @@ export function Aside() {
           )
         })}
       </ul>
+      <details className="mt-4 text-sm">
+        <summary className="flex cursor-pointer items-center gap-2 px-3 py-1 text-suave hover:text-texto">
+          <Settings2 className="size-4" aria-hidden />
+          Configurar aside
+        </summary>
+        <div className="mt-2 space-y-2 px-3">
+          {MODOS_ASIDE.map((m) => (
+            <label key={m.valor} className="flex items-start gap-2">
+              <input
+                type="radio"
+                name="modo-aside-lateral"
+                className="mt-0.5"
+                checked={modo === m.valor}
+                onChange={() => setModo(m.valor)}
+              />
+              {m.rotulo}
+            </label>
+          ))}
+        </div>
+      </details>
     </aside>
   )
 }
