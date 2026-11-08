@@ -233,6 +233,8 @@ ou mudar de banco antes da Fase 5.
       com preferência por usuário em Configurações
 - [x] Métricas e Configurações visíveis só para admin; a aba Home foi removida e
       o Manual de produtos da aside abre a Home
+- [x] Revisão, Sincronização e Auditoria agrupadas no módulo Governança, dentro
+      de Configurações (saíram do menu de cima)
 - [ ] Documentação de API na aside (falta definir a fonte)
 - [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
       texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"
