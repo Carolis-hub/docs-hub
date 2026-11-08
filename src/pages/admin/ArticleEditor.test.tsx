@@ -98,7 +98,14 @@ vi.mock('../../services/users', () => ({
 vi.mock('../../services/suggestions', () => ({
   getSuggestion: vi.fn(async () => null),
 }))
-vi.mock('../../services/blocks', () => ({ getBlock: vi.fn() }))
+vi.mock('../../services/blocks', () => ({
+  getBlock: vi.fn(),
+  listProducts: vi.fn(async () => []),
+  listProductTree: vi.fn(async () => []),
+}))
+vi.mock('../../services/unidades', () => ({
+  listUnidades: vi.fn(async () => []),
+}))
 
 const doc = (t: string) => ({
   type: 'doc',

@@ -270,10 +270,15 @@ ou mudar de banco antes da Fase 5.
       ordenação (mais recentes, mais acessados, título)
 - [x] Artigo: sumário "Neste artigo", relacionados, categoria e visualizações
       (sem autor, "Arquivar" e "Resumir com IA": não existem no sistema)
-- [ ] Editor: campos BU/Produto/Subproduto/Módulo, categoria e pré-visualização
-- [ ] Busca: filtros por BU, produto, subproduto, módulo e categoria
+- [x] Editor: "← Voltar", seletor de local em cascata (BU, Produto, Subproduto,
+      Módulo) para artigo novo, botões no novo estilo (sem tags nem
+      pré-visualização lado a lado: o editor já é visual)
+- [x] Busca: filtro de módulo, caminho completo do resultado e contagem "para
+      “termo”, ordenados por relevância"
 - [ ] Assistente: painel lateral em todas as telas
-- [ ] Métricas: cobertura de módulos, artigos por BU/produto, por mês
+- [x] Métricas: filtro por BU, cartões (BUs, produtos, módulos documentados e
+      cobertura, artigos, visualizações, desatualizados), artigos por BU, por
+      produto e por mês
 - [ ] Configurações: abas Estrutura, Usuários e Permissões
 - Sem protótipo (feitos no mesmo estilo): Login, Minhas preferências, Revisão,
   Sincronização, Auditoria, Uso da IA, Unidades, Sugestões, tela de erro e de

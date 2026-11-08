@@ -2,8 +2,11 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ViewsChart } from '../../components/ViewsChart'
 import { useAsync } from '../../hooks/useAsync'
+import { listAllBlocks } from '../../services/blocks'
 import { carregarMetricas } from '../../services/metrics'
+import { listUnidades } from '../../services/unidades'
 import type { Article } from '../../types/content'
+import { metricasDaEstrutura, type Barra } from '../../utils/metricasEstrutura'
 import {
   maisAcessados,
   semAcesso,
@@ -13,7 +16,7 @@ import {
   viewsPorArtigo,
 } from '../../utils/metrics'
 
-const campo = 'rounded-md border border-borda bg-cartao px-2 py-1 text-sm  '
+const campo = 'rounded-xl border border-borda bg-cartao px-2 py-1 text-sm'
 
 function Painel({
   titulo,
@@ -27,7 +30,7 @@ function Painel({
   children: React.ReactNode
 }) {
   return (
-    <section className="rounded-lg border border-borda bg-cartao p-4 ">
+    <section className="cartao p-4">
       <h2 className="mb-3 font-semibold">{titulo}</h2>
       {total === 0 ? <p className="text-sm text-suave">{vazio}</p> : children}
     </section>
@@ -63,12 +66,58 @@ function ListaArtigos({
   )
 }
 
+function Barras({ itens, vazio }: { itens: Barra[]; vazio: string }) {
+  const maior = Math.max(1, ...itens.map((i) => i.total))
+  if (itens.length === 0) return <p className="text-sm text-suave">{vazio}</p>
+  return (
+    <ul className="space-y-3">
+      {itens.map((i) => (
+        <li key={i.id} className="text-sm">
+          <div className="mb-1 flex justify-between gap-3">
+            <span className="truncate font-medium">{i.nome}</span>
+            <span className="shrink-0 tabular-nums text-suave">{i.total}</span>
+          </div>
+          <div className="h-2 rounded-full bg-bloco" aria-hidden>
+            <div
+              className="h-2 rounded-full bg-destaque"
+              style={{ width: `${(i.total / maior) * 100}%` }}
+            />
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export function MetricsPage() {
+  const [unidadeId, setUnidadeId] = useState('')
   const [dias, setDias] = useState(30)
   const [meses, setMeses] = useState(6)
   const { dados, erro, carregando, recarregar } = useAsync(
     () => carregarMetricas(dias),
     [dias],
+  )
+
+  const { dados: estrutura } = useAsync(async () => {
+    const [blocos, unidades] = await Promise.all([
+      listAllBlocks(),
+      listUnidades(),
+    ])
+    return { blocos, unidades }
+  }, [])
+
+  const porEstrutura = useMemo(
+    () =>
+      dados && estrutura
+        ? metricasDaEstrutura(
+            estrutura.blocos,
+            estrutura.unidades,
+            dados.artigos,
+            unidadeId,
+            new Date(),
+          )
+        : null,
+    [dados, estrutura, unidadeId],
   )
 
   const resumo = useMemo(() => {
@@ -86,10 +135,34 @@ export function MetricsPage() {
   }, [dados, dias, meses])
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">Métricas</h1>
+        <div>
+          <h1 className="text-[28px] font-extrabold tracking-tight">
+            Métricas da documentação
+          </h1>
+          <p className="mt-1 text-sm text-suave">
+            Acompanhe cobertura, atualização e uso dos artigos.
+          </p>
+        </div>
         <div className="flex items-center gap-2 text-sm">
+          {estrutura && estrutura.unidades.length > 0 && (
+            <label>
+              Unidade de negócio{' '}
+              <select
+                className={campo}
+                value={unidadeId}
+                onChange={(e) => setUnidadeId(e.target.value)}
+              >
+                <option value="">Todas as BUs</option>
+                {estrutura.unidades.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
             Período{' '}
             <select
@@ -127,16 +200,107 @@ export function MetricsPage() {
 
       {resumo && dados && (
         <div className="space-y-6">
+          {porEstrutura && (
+            <>
+              <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  ['BUs', porEstrutura.unidades, ''],
+                  [
+                    'Produtos',
+                    porEstrutura.produtos,
+                    `${porEstrutura.subprodutos} subprodutos`,
+                  ],
+                  [
+                    'Módulos documentados',
+                    `${porEstrutura.modulosDocumentados}/${porEstrutura.modulos}`,
+                    porEstrutura.cobertura === null
+                      ? 'sem módulos'
+                      : `${porEstrutura.cobertura}% de cobertura`,
+                  ],
+                  [
+                    'Artigos',
+                    porEstrutura.artigos,
+                    `${porEstrutura.publicados} publicados, ${porEstrutura.rascunhos} ${porEstrutura.rascunhos === 1 ? 'rascunho' : 'rascunhos'}`,
+                  ],
+                  [
+                    'Visualizações',
+                    porEstrutura.visualizacoes.toLocaleString('pt-BR'),
+                    'no total',
+                  ],
+                  [
+                    'Desatualizados',
+                    porEstrutura.desatualizados,
+                    'há mais de 180 dias',
+                  ],
+                ].map(([rotulo, valor, nota]) => (
+                  <div key={rotulo} className="cartao p-4">
+                    <dt className="text-sm text-suave">{rotulo}</dt>
+                    <dd className="mt-1 text-3xl font-bold tabular-nums">
+                      {valor}
+                    </dd>
+                    {nota && <p className="mt-1 text-xs text-suave">{nota}</p>}
+                  </div>
+                ))}
+              </dl>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                <section className="cartao p-4">
+                  <h2 className="mb-3 font-semibold">
+                    Artigos publicados por BU
+                  </h2>
+                  <Barras
+                    itens={porEstrutura.porUnidade}
+                    vazio="Nenhuma BU cadastrada."
+                  />
+                </section>
+                <section className="cartao p-4">
+                  <h2 className="mb-3 font-semibold">Artigos por produto</h2>
+                  <Barras
+                    itens={porEstrutura.porProduto}
+                    vazio="Nenhum produto."
+                  />
+                </section>
+              </div>
+
+              <section className="cartao p-4">
+                <h2 className="font-semibold">Artigos atualizados por mês</h2>
+                <p className="mb-3 text-xs text-suave">Últimos 12 meses</p>
+                <ol className="flex h-40 items-end gap-2">
+                  {porEstrutura.porMes.map((m) => {
+                    const maior = Math.max(
+                      1,
+                      ...porEstrutura.porMes.map((x) => x.total),
+                    )
+                    return (
+                      <li
+                        key={m.chave}
+                        className="flex h-full flex-1 flex-col items-center justify-end gap-1 text-xs text-suave"
+                      >
+                        <span className="tabular-nums">{m.total || ''}</span>
+                        <span
+                          className="w-full rounded-t-md bg-destaque"
+                          style={{
+                            height: `${(m.total / maior) * 100}%`,
+                            minHeight: m.total ? 4 : 0,
+                          }}
+                          aria-hidden
+                        />
+                        <span>{m.rotulo}</span>
+                      </li>
+                    )
+                  })}
+                </ol>
+              </section>
+            </>
+          )}
+
           <dl className="grid gap-4 sm:grid-cols-3">
             {[
               ['Acessos no período', resumo.totalPeriodo],
               ['Artigos publicados', resumo.publicados],
               ['Nunca acessados', resumo.nuncaAcessados.length],
             ].map(([rotulo, valor]) => (
-              <div
-                key={rotulo}
-                className="rounded-lg border border-borda bg-cartao p-4 "
-              >
+              <div key={rotulo} className="cartao p-4">
                 <dt className="text-sm text-suave">{rotulo}</dt>
                 <dd className="mt-1 text-3xl font-semibold tabular-nums">
                   {valor}
@@ -145,7 +309,7 @@ export function MetricsPage() {
             ))}
           </dl>
 
-          <section className="rounded-lg border border-borda bg-cartao p-4 ">
+          <section className="cartao p-4">
             <h2 className="mb-3 font-semibold">Evolução por período</h2>
             <ViewsChart pontos={resumo.serie} />
           </section>
@@ -204,7 +368,7 @@ export function MetricsPage() {
               </ul>
             </Painel>
 
-            <section className="rounded-lg border border-borda bg-cartao p-4 ">
+            <section className="cartao p-4">
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="font-semibold">Sem revisão há mais de</h2>
                 <select
