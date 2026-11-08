@@ -1,21 +1,19 @@
 import type { ReactNode } from 'react'
 import { BookOpen, PanelLeft } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useModoAside } from '../hooks/useModoAside'
+import { estaEmConfiguracoes } from '../utils/governanca'
 import { iniciais } from '../utils/iniciais'
 import { Aside } from './Aside'
 import { QuickSearch } from './QuickSearch'
 import { ThemeToggle } from './ThemeToggle'
 
 const LINKS_ADMIN = [
-  { para: '/admin/revisao', rotulo: 'Revisão' },
   { para: '/admin/sugestoes', rotulo: 'Sugestões' },
   { para: '/admin/metricas', rotulo: 'Métricas' },
   { para: '/admin/unidades', rotulo: 'Unidades' },
-  { para: '/admin/sincronizacao', rotulo: 'Sincronização' },
   { para: '/admin/assistente', rotulo: 'Uso da IA' },
-  { para: '/admin/auditoria', rotulo: 'Auditoria' },
   { para: '/admin/usuarios', rotulo: 'Usuários' },
   { para: '/admin/configuracoes', rotulo: 'Configurações' },
 ]
@@ -23,6 +21,7 @@ const LINKS_ADMIN = [
 export function Layout({ children }: { children: ReactNode }) {
   const { user, profile, isAdmin, signOut } = useAuth()
   const { modo, setModo } = useModoAside(user?.uid)
+  const { pathname } = useLocation()
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -44,9 +43,13 @@ export function Layout({ children }: { children: ReactNode }) {
                 <NavLink
                   key={l.para}
                   to={l.para}
-                  className={({ isActive }) =>
-                    `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
-                  }
+                  className={({ isActive }) => {
+                    const ativo =
+                      l.para === '/admin/configuracoes'
+                        ? estaEmConfiguracoes(pathname)
+                        : isActive
+                    return `transition hover:text-texto ${ativo ? 'font-medium text-texto' : 'text-suave'}`
+                  }}
                 >
                   {l.rotulo}
                 </NavLink>

@@ -235,6 +235,8 @@ ou mudar de banco antes da Fase 5.
       o Manual de produtos da aside abre a Home
 - [x] Aside disponível para qualquer usuário, que escolhe o que ela mostra
       ("Configurar aside" dentro dela; botão no topo para reabrir quando oculta)
+- [x] Revisão, Sincronização e Auditoria agrupadas no módulo Governança, dentro
+      de Configurações (saíram do menu de cima)
 - [ ] Documentação de API na aside (falta definir a fonte)
 - [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
       texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"
