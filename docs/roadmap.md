@@ -265,9 +265,11 @@ ou mudar de banco antes da Fase 5.
 - [x] Manual de produtos (Home): busca em destaque, cartões de BU com contagem
       de produtos e artigos, faixa de apresentação
 - [x] Página da BU (`/u/:id`): produtos com subprodutos e contagens
-- [ ] Produto e Subproduto com cartões de módulos e contagens
-- [ ] Módulo: lista de artigos com filtro por categoria e ordenação
-- [ ] Artigo: sumário "Neste artigo", relacionados, autor e visualizações
+- [x] Produto, Subproduto e Módulo (`/b/:id`): rótulo do nível, cartões com
+      itens do nível seguinte e contagens, filtro por categoria em botões e
+      ordenação (mais recentes, mais acessados, título)
+- [x] Artigo: sumário "Neste artigo", relacionados, categoria e visualizações
+      (sem autor, "Arquivar" e "Resumir com IA": não existem no sistema)
 - [ ] Editor: campos BU/Produto/Subproduto/Módulo, categoria e pré-visualização
 - [ ] Busca: filtros por BU, produto, subproduto, módulo e categoria
 - [ ] Assistente: painel lateral em todas as telas

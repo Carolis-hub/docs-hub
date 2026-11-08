@@ -63,3 +63,33 @@ export async function carregarVisaoGeral(
   })
   return { produtos, unidades, subprodutos, artigos }
 }
+
+/**
+ * Artigos publicados dentro de um conjunto de blocos (um bloco e tudo o que há
+ * nele). O Firestore aceita até 30 valores em `in`, então a lista é dividida.
+ */
+export async function contarArtigosPorBlocos(
+  productId: string,
+  blockIds: string[],
+  verTecnico: boolean,
+): Promise<number> {
+  let total = 0
+  for (let i = 0; i < blockIds.length; i += 30) {
+    const parte = blockIds.slice(i, i + 30)
+    const filtros = [
+      where('productId', '==', productId),
+      where('blockId', 'in', parte),
+      where('status', '==', 'published'),
+      ...(verTecnico ? [] : [where('publico', '==', 'usuario')]),
+    ]
+    try {
+      const snap = await getCountFromServer(
+        query(collection(db, 'articles'), ...filtros),
+      )
+      total += snap.data().count
+    } catch {
+      // Sem permissão ou sem índice: a contagem é só um resumo, não bloqueia a tela.
+    }
+  }
+  return total
+}

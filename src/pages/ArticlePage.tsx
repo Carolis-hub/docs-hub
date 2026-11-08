@@ -1,9 +1,8 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Pencil } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ArticleContent } from '../components/ArticleContent'
 import { Breadcrumb } from '../components/Breadcrumb'
-import { PageHeader } from '../components/PageHeader'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
 import { useSearchEngine } from '../hooks/useSearchEngine'
@@ -13,8 +12,8 @@ import { registrarVisualizacao } from '../services/metrics'
 import { getUnidade } from '../services/unidades'
 import { nomeDaCategoria } from '../utils/categorias'
 import { relacionados } from '../utils/relacionados'
+import { extrairTopicos } from '../utils/topicos'
 import { rotuloDoStatus } from '../utils/revisao'
-import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 
 export function ArticlePage() {
   const { articleId = '' } = useParams()
@@ -39,11 +38,25 @@ export function ArticlePage() {
   }, [artigoId, uid, isAdmin, publicado])
 
   const motor = useSearchEngine().dados?.motor
+  const conteudoRef = useRef<HTMLDivElement>(null)
   const atual = dados?.artigo
   const similares = useMemo(
     () => (motor && atual ? relacionados(motor, atual) : []),
     [motor, atual],
   )
+  const topicos = useMemo(() => extrairTopicos(atual?.conteudo), [atual])
+
+  function irParaTopico(texto: string) {
+    const titulos =
+      conteudoRef.current?.querySelectorAll<HTMLElement>('h1, h2, h3') ?? []
+    for (const h of titulos) {
+      if (h.textContent?.trim() === texto) {
+        h.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        return
+      }
+    }
+  }
+
   if (carregando) return <p className="text-suave">Carregando…</p>
   if (erro)
     return (
@@ -54,9 +67,10 @@ export function ArticlePage() {
   if (!dados) return <p>Artigo não encontrado.</p>
 
   const { artigo, cadeia, unidade } = dados
+  const categoria = nomeDaCategoria(artigo.categoria)
   const meta = [
     `Atualizado em ${new Date(artigo.atualizadoEm).toLocaleDateString('pt-BR')}`,
-    nomeDaCategoria(artigo.categoria),
+    `${(artigo.views ?? 0).toLocaleString('pt-BR')} ${artigo.views === 1 ? 'visualização' : 'visualizações'}`,
     artigo.versaoProduto && `Versão do produto ${artigo.versaoProduto}`,
     artigo.publico === 'tecnico' && 'Técnico',
     isAdmin && artigo.status !== 'published' && rotuloDoStatus(artigo.status),
@@ -66,30 +80,65 @@ export function ArticlePage() {
   ].filter(Boolean)
 
   return (
-    <article className="mx-auto max-w-4xl">
+    <div>
       <Breadcrumb cadeia={cadeia} unidade={unidade} artigo={artigo} />
-      <PageHeader
-        icone={iconeDoArtigo(artigo.titulo)}
-        titulo={artigo.titulo}
-        subtitulo={meta.join(' · ')}
-        acoes={
-          isAdmin && (
-            <Link to={`/admin/artigos/${artigo.id}/editar`} className="botao">
-              <Pencil className="size-4" aria-hidden />
-              Editar
-            </Link>
-          )
-        }
-      />
-      <div className="cartao p-6 sm:p-8">
-        <ArticleContent conteudo={artigo.conteudo} />
-      </div>
-      {(similares.length > 0 || nomeDaCategoria(artigo.categoria)) && (
-        <aside aria-label="Documentações relacionadas" className="mt-8">
+      <div className="flex flex-wrap items-start gap-8 lg:flex-nowrap">
+        <article className="min-w-0 flex-1 basis-[560px]">
+          <header className="mb-6 border-b border-borda pb-5">
+            {categoria && (
+              <span className="selo mb-3 border-transparent bg-bloco text-destaque">
+                {categoria}
+              </span>
+            )}
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <h1 className="text-[32px] font-extrabold leading-tight tracking-tight">
+                {artigo.titulo}
+              </h1>
+              {isAdmin && (
+                <Link
+                  to={`/admin/artigos/${artigo.id}/editar`}
+                  className="botao"
+                >
+                  <Pencil className="size-4" aria-hidden />
+                  Editar
+                </Link>
+              )}
+            </div>
+            <p className="mt-2 text-sm text-suave">{meta.join(' · ')}</p>
+          </header>
+          <div ref={conteudoRef} className="cartao p-6 sm:p-8">
+            <ArticleContent conteudo={artigo.conteudo} />
+          </div>
+        </article>
+
+        <aside
+          aria-label="Sobre este artigo"
+          className="w-full shrink-0 space-y-8 lg:sticky lg:top-6 lg:w-[280px]"
+        >
+          {topicos.length > 0 && (
+            <nav aria-label="Neste artigo">
+              <h2 className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-suave">
+                Neste artigo
+              </h2>
+              <ul className="space-y-1 border-l border-borda">
+                {topicos.map((t, i) => (
+                  <li key={`${t.texto}-${i}`}>
+                    <button
+                      type="button"
+                      onClick={() => irParaTopico(t.texto)}
+                      className={`block w-full py-1 pr-2 text-left text-sm text-suave hover:text-texto ${t.nivel >= 3 ? 'pl-7' : 'pl-4'}`}
+                    >
+                      {t.texto}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          )}
           {similares.length > 0 && (
-            <>
-              <h2 className="mb-3 text-lg font-semibold">
-                Documentações relacionadas
+            <section aria-label="Artigos relacionados">
+              <h2 className="mb-2 text-[11.5px] font-bold uppercase tracking-wide text-suave">
+                Artigos relacionados
               </h2>
               <ul className="space-y-2">
                 {similares.map((s) => (
@@ -98,9 +147,9 @@ export function ArticlePage() {
                       to={`/a/${s.id}`}
                       className="cartao block p-3 transition hover:border-destaque/50"
                     >
-                      <span className="font-medium">{s.titulo}</span>
+                      <span className="text-sm font-semibold">{s.titulo}</span>
                       {nomeDaCategoria(s.categoria) && (
-                        <span className="selo ml-2">
+                        <span className="mt-0.5 block text-xs text-suave">
                           {nomeDaCategoria(s.categoria)}
                         </span>
                       )}
@@ -108,22 +157,22 @@ export function ArticlePage() {
                   </li>
                 ))}
               </ul>
-            </>
+            </section>
           )}
-          {nomeDaCategoria(artigo.categoria) && (
-            <p className="mt-4 text-sm text-suave">
+          {categoria && (
+            <p className="text-sm text-suave">
               Mais artigos de{' '}
               <Link
                 to={`/busca?categoria=${artigo.categoria}`}
-                className="text-bloco-icone hover:underline"
+                className="text-destaque hover:underline"
               >
-                {nomeDaCategoria(artigo.categoria)}
+                {categoria}
               </Link>
               .
             </p>
           )}
         </aside>
-      )}
-    </article>
+      </div>
+    </div>
   )
 }

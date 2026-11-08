@@ -74,6 +74,21 @@ describe('firestore.rules — consultas feitas por um leitor', () => {
     if (snap.data().count !== 1) throw new Error('contagem inesperada')
   })
 
+  it('contagem por vários blocos (in) com produto, publicado e público', async () => {
+    const snap = await assertSucceeds(
+      getCountFromServer(
+        query(
+          collection(leitor(), 'articles'),
+          where('productId', '==', 'p1'),
+          where('blockId', 'in', ['s1', 'p1']),
+          where('status', '==', 'published'),
+          where('publico', '==', 'usuario'),
+        ),
+      ),
+    )
+    if (snap.data().count !== 1) throw new Error('contagem inesperada')
+  })
+
   it('contagem sem provar o acesso é negada', async () => {
     await assertFails(
       getCountFromServer(
