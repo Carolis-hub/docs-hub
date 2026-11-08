@@ -63,6 +63,11 @@ const UnidadesPage = lazy(() =>
 const UsersPage = lazy(() =>
   import('./pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })),
 )
+const ConfiguracoesPage = lazy(() =>
+  import('./pages/admin/ConfiguracoesPage').then((m) => ({
+    default: m.ConfiguracoesPage,
+  })),
+)
 const ArticleEditor = lazy(() =>
   import('./pages/admin/ArticleEditor').then((m) => ({
     default: m.ArticleEditor,
@@ -147,6 +152,14 @@ function App() {
                     element={
                       <RequireAdmin>
                         <UnidadesPage />
+                      </RequireAdmin>
+                    }
+                  />
+                  <Route
+                    path="/admin/configuracoes"
+                    element={
+                      <RequireAdmin>
+                        <ConfiguracoesPage />
                       </RequireAdmin>
                     }
                   />

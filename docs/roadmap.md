@@ -227,6 +227,14 @@ ou mudar de banco antes da Fase 5.
       `fase-1` a `fase-4` têm commits próprios: **conferir antes**)
 - [ ] Decidir se a branch padrão passa a se chamar `principal`
 
+### Aside e menus de administrador
+
+- [x] Aside esquerda (Manual de produtos, Busca/consulta com IA), só para admin,
+      com preferência por usuário em Configurações
+- [x] Home, Métricas e Configurações visíveis só para admin
+- [ ] Documentação de API na aside (falta definir a fonte)
+- [ ] Melhorar a busca com IA para explicar conceitos (glossário, sinônimos)
+
 ### Backlog (do `PLAN.md`)
 
 - [ ] Versões por versão do produto
