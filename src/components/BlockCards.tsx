@@ -40,6 +40,8 @@ interface Props {
   /** Quando informado, o último cartão é o "+ Novo …" tracejado. */
   onNovo?: () => void
   rotuloNovo?: string
+  /** Subprodutos de cada produto (id do produto → blocos), mostrados no cartão. */
+  subprodutos?: Record<string, Block[]>
 }
 
 function Cartao({
@@ -49,7 +51,8 @@ function Cartao({
   organizar,
   onEdit,
   onDelete,
-}: { bloco: Block } & Pick<
+  filhos,
+}: { bloco: Block; filhos?: Block[] } & Pick<
   Props,
   'variante' | 'editavel' | 'organizar' | 'onEdit' | 'onDelete'
 >) {
@@ -68,7 +71,7 @@ function Cartao({
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`cartao flex items-center gap-2 p-3 ${isDragging ? 'z-10 shadow-xl' : ''}`}
+      className={`cartao flex flex-wrap items-center gap-2 p-3 ${isDragging ? 'z-10 shadow-xl' : ''}`}
     >
       {organizar && (
         <button
@@ -122,6 +125,23 @@ function Cartao({
           </button>
         </span>
       )}
+      {filhos && filhos.length > 0 && (
+        <ul
+          aria-label={`Subprodutos de ${bloco.nome}`}
+          className="flex w-full basis-full flex-wrap gap-1.5 border-t border-borda pt-2"
+        >
+          {filhos.map((f) => (
+            <li key={f.id}>
+              <Link
+                to={`/b/${f.id}`}
+                className="selo transition hover:text-texto"
+              >
+                {f.nome}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
     </li>
   )
 }
@@ -136,6 +156,7 @@ export function BlockCards({
   onDelete,
   onNovo,
   rotuloNovo = 'Novo subbloco',
+  subprodutos,
 }: Props) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -171,6 +192,7 @@ export function BlockCards({
               organizar={organizar}
               onEdit={onEdit}
               onDelete={onDelete}
+              filhos={subprodutos?.[b.id]}
             />
           ))}
           {onNovo && (

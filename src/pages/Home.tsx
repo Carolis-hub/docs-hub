@@ -10,6 +10,7 @@ import { useAuth } from '../hooks/useAuth'
 import {
   createBlock,
   deleteBlock,
+  listChildren,
   listProducts,
   reorderBlocks,
   updateBlock,
@@ -26,7 +27,15 @@ export function Home() {
       listProducts(isAdmin ? undefined : (profile?.produtosPermitidos ?? [])),
       listUnidades(),
     ])
-    return { produtos, unidades }
+    // Subprodutos de cada produto (a consulta leva o productId por causa das regras).
+    const filhos = await Promise.all(
+      produtos.map((p) => listChildren(p.id, p.id)),
+    )
+    const subprodutos: Record<string, Block[]> = {}
+    produtos.forEach((p, i) => {
+      subprodutos[p.id] = filhos[i] ?? []
+    })
+    return { produtos, unidades, subprodutos }
   }, [isAdmin, profile?.uid])
   const [criando, setCriando] = useState(false)
   const [organizar, setOrganizar] = useState(false)
@@ -35,6 +44,7 @@ export function Home() {
 
   const produtos = dados?.produtos ?? []
   const unidades = dados?.unidades ?? []
+  const subprodutos = dados?.subprodutos ?? {}
   const grupos = agruparPorUnidade(produtos, unidades, isAdmin)
 
   async function reordenar(ordenados: Block[]) {
@@ -57,7 +67,7 @@ export function Home() {
     <div>
       <PageHeader
         icone={Layers}
-        titulo="Produtos"
+        titulo="Manual de produtos"
         subtitulo={
           produtos.length > 0
             ? `${produtos.length} ${produtos.length === 1 ? 'produto' : 'produtos'} de documentação`
@@ -140,6 +150,7 @@ export function Home() {
         <BlockCards
           blocos={produtos}
           variante="produto"
+          subprodutos={subprodutos}
           editavel={isAdmin}
           organizar={isAdmin && organizar}
           onReorder={isAdmin ? (o) => void reordenar(o) : undefined}
@@ -173,6 +184,7 @@ export function Home() {
               <BlockCards
                 blocos={g.produtos}
                 variante="produto"
+                subprodutos={subprodutos}
                 editavel={isAdmin}
                 organizar={isAdmin && organizar}
                 onReorder={isAdmin ? (o) => void reordenar(o) : undefined}
