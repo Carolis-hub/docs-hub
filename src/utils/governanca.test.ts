@@ -7,6 +7,8 @@ describe('estaEmConfiguracoes', () => {
     expect(estaEmConfiguracoes('/admin/revisao')).toBe(true)
     expect(estaEmConfiguracoes('/admin/revisao/abc')).toBe(true)
     expect(estaEmConfiguracoes('/admin/auditoria')).toBe(true)
+    expect(estaEmConfiguracoes('/admin/usuarios')).toBe(true)
+    expect(estaEmConfiguracoes('/admin/assistente')).toBe(true)
   })
   it('não confunde com outras telas', () => {
     expect(estaEmConfiguracoes('/admin/metricas')).toBe(false)

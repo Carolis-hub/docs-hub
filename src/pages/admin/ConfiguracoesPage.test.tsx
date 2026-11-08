@@ -25,5 +25,13 @@ describe('ConfiguracoesPage', () => {
       'href',
       '/admin/auditoria',
     )
+    expect(screen.getByRole('link', { name: /usuários/i })).toHaveAttribute(
+      'href',
+      '/admin/usuarios',
+    )
+    expect(screen.getByRole('link', { name: /uso da ia/i })).toHaveAttribute(
+      'href',
+      '/admin/assistente',
+    )
   })
 })
