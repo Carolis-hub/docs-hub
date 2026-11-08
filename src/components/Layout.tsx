@@ -73,12 +73,14 @@ export function Layout({ children }: { children: ReactNode }) {
             <ThemeToggle />
             {user && (
               <div className="flex items-center gap-2 rounded-lg border border-borda bg-cartao py-1 pl-1.5 pr-2">
-                <span
-                  aria-hidden
+                <Link
+                  to="/preferencias"
+                  title="Minhas preferências"
+                  aria-label="Minhas preferências"
                   className="inline-flex size-7 items-center justify-center rounded-full bg-bloco text-[11px] font-semibold text-bloco-icone"
                 >
                   {iniciais(profile?.nome, user.email)}
-                </span>
+                </Link>
                 {isAdmin && (
                   <span className="rounded border border-ambar/40 bg-ambar-fundo px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-ambar">
                     ADMIN

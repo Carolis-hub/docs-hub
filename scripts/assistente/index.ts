@@ -5,7 +5,7 @@ import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
 import { configDoAmbiente } from './config.ts'
 import { tratarRequisicao } from './http.ts'
-import { criarProvedorAnthropic } from './ia.ts'
+import { criarProvedorAnthropic, criarProvedorSemChave } from './ia.ts'
 
 const AJUDA = `Uso: node scripts/assistente/index.ts --projeto <id> [opções]
 
@@ -19,7 +19,8 @@ chama a IA e controla o gasto.
   --origem <url>    Endereço do sistema autorizado a chamar (padrão http://localhost:5173);
                     repita a opção para liberar mais de um
 
-Variáveis: ANTHROPIC_API_KEY (obrigatória), GOOGLE_APPLICATION_CREDENTIALS (ou o
+Variáveis: ANTHROPIC_API_KEY (opcional: sem ela, cada usuário informa a sua em
+Minhas preferências), GOOGLE_APPLICATION_CREDENTIALS (ou o
 Emulator: FIRESTORE_EMULATOR_HOST e FIREBASE_AUTH_EMULATOR_HOST).
 Limites e modelos: ASSISTENTE_MODELO, ASSISTENTE_MODELO_BUSCA,
 ASSISTENTE_PERGUNTAS_POR_DIA, ASSISTENTE_ORCAMENTO_DIARIO_USD,
@@ -61,9 +62,11 @@ async function main(): Promise<number> {
     console.error('Informe o projeto com --projeto <id>.')
     return 2
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error('Defina ANTHROPIC_API_KEY.')
-    return 2
+  const chaveDoServidor = Boolean(process.env.ANTHROPIC_API_KEY)
+  if (!chaveDoServidor) {
+    console.warn(
+      'ANTHROPIC_API_KEY não definida: cada usuário precisará informar a sua chave em Minhas preferências.',
+    )
   }
   const porta = Number(values.porta ?? process.env.PORT ?? 8787)
   const origens = new Set(
@@ -75,10 +78,18 @@ async function main(): Promise<number> {
   const deps = {
     db: getFirestore(app),
     config,
-    ia: criarProvedorAnthropic({
-      modelo: config.modelo,
-      modeloBusca: config.modeloBusca,
-    }),
+    ia: chaveDoServidor
+      ? criarProvedorAnthropic({
+          modelo: config.modelo,
+          modeloBusca: config.modeloBusca,
+        })
+      : criarProvedorSemChave(),
+    criarProvedor: (apiKey: string) =>
+      criarProvedorAnthropic({
+        modelo: config.modelo,
+        modeloBusca: config.modeloBusca,
+        apiKey,
+      }),
     verificarToken: async (t: string) =>
       (await getAuth(app).verifyIdToken(t)).uid,
   }
@@ -91,7 +102,8 @@ async function main(): Promise<number> {
     }
     if (origem && origens.has(origem)) {
       cabecalhos['Access-Control-Allow-Origin'] = origem
-      cabecalhos['Access-Control-Allow-Headers'] = 'authorization, content-type'
+      cabecalhos['Access-Control-Allow-Headers'] =
+        'authorization, content-type, x-chave-ia'
       cabecalhos['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
     }
     if (req.method === 'OPTIONS') {
@@ -104,6 +116,7 @@ async function main(): Promise<number> {
         const r = await tratarRequisicao(deps, {
           metodo: req.method ?? 'GET',
           authorization: req.headers.authorization,
+          chaveIA: req.headers['x-chave-ia']?.toString(),
           corpo,
         })
         res.writeHead(r.status, cabecalhos).end(JSON.stringify(r.corpo))

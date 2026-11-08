@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { PedidoAssistente } from '../../src/types/assistente.ts'
+import type { ProvedorAssistente } from './ia.ts'
 import { ErroAssistente, responder, type DepsAssistente } from './responder.ts'
 
 const CATEGORIAS = [
@@ -33,6 +34,8 @@ const PedidoSchema = z.object({
 export interface Requisicao {
   metodo: string
   authorization?: string
+  /** Chave de IA do próprio usuário (cabeçalho `X-Chave-IA`); nunca é registrada. */
+  chaveIA?: string
   corpo: unknown
 }
 
@@ -44,6 +47,8 @@ export interface Resposta {
 export interface DepsHttp extends DepsAssistente {
   /** Valida o ID token do Firebase e devolve o uid. Lança se for inválido. */
   verificarToken(idToken: string): Promise<string>
+  /** Monta o provedor de IA com a chave de um usuário. */
+  criarProvedor?(apiKey: string): ProvedorAssistente
 }
 
 const erro = (status: number, codigo: string, mensagem: string): Resposta => ({
@@ -82,8 +87,21 @@ export async function tratarRequisicao(
       'Escreva uma pergunta com 3 a 1000 caracteres.',
     )
   }
+  const chave = req.chaveIA?.trim()
+  if (chave && (!/^[^\s]{20,300}$/.test(chave) || !deps.criarProvedor)) {
+    return erro(
+      400,
+      'chave-invalida',
+      'A chave de IA informada em Preferências é inválida.',
+    )
+  }
   try {
-    const resposta = await responder(deps, uid, parsed.data as PedidoAssistente)
+    const ia = chave && deps.criarProvedor ? deps.criarProvedor(chave) : deps.ia
+    const resposta = await responder(
+      { ...deps, ia },
+      uid,
+      parsed.data as PedidoAssistente,
+    )
     return { status: 200, corpo: resposta }
   } catch (e) {
     if (e instanceof ErroAssistente) return erro(e.status, e.codigo, e.message)

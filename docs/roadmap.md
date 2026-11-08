@@ -229,16 +229,20 @@ ou mudar de banco antes da Fase 5.
 
 ### Aside e menus de administrador
 
-- [x] Aside esquerda (Manual de produtos, Busca/consulta com IA), só para admin,
-      com preferência por usuário em Configurações
+- [x] Aside esquerda (Manual de produtos, Busca/consulta com IA), disponível
+      para qualquer usuário, que escolhe o que ela mostra ("Configurar aside"
+      dentro dela; botão no topo para reabrir quando oculta)
 - [x] Métricas e Configurações visíveis só para admin; a aba Home foi removida e
       o Manual de produtos da aside abre a Home
-- [x] Aside disponível para qualquer usuário, que escolhe o que ela mostra
-      ("Configurar aside" dentro dela; botão no topo para reabrir quando oculta)
+- [x] Categorias e Assistente saíram do menu de cima (continuam na aside e pelas
+      rotas)
 - [x] Revisão, Sincronização e Auditoria agrupadas no módulo Governança, dentro
       de Configurações (saíram do menu de cima)
 - [x] Manual de produtos mostra BU → produtos → subprodutos (subprodutos como
       links dentro do cartão do produto)
+- [x] Chave de IA por usuário em Minhas preferências (só no navegador; só
+      Anthropic por enquanto)
+- [ ] Adaptador para outro fornecedor de IA (falta saber qual)
 - [ ] Documentação de API na aside (falta definir a fonte)
 - [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
       texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"

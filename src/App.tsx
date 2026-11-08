@@ -63,6 +63,11 @@ const UnidadesPage = lazy(() =>
 const UsersPage = lazy(() =>
   import('./pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })),
 )
+const PreferenciasPage = lazy(() =>
+  import('./pages/PreferenciasPage').then((m) => ({
+    default: m.PreferenciasPage,
+  })),
+)
 const ConfiguracoesPage = lazy(() =>
   import('./pages/admin/ConfiguracoesPage').then((m) => ({
     default: m.ConfiguracoesPage,
@@ -89,6 +94,7 @@ function App() {
                   <Route path="/busca" element={<SearchPage />} />
                   <Route path="/categorias" element={<CategoriasPage />} />
                   <Route path="/assistente" element={<AssistentePage />} />
+                  <Route path="/preferencias" element={<PreferenciasPage />} />
                   <Route path="/b/:blockId" element={<BlockPage />} />
                   <Route path="/a/:articleId" element={<ArticlePage />} />
                   <Route
