@@ -3,10 +3,12 @@ import { BookOpen } from 'lucide-react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { iniciais } from '../utils/iniciais'
+import { Aside } from './Aside'
 import { QuickSearch } from './QuickSearch'
 import { ThemeToggle } from './ThemeToggle'
 
 const LINKS_ADMIN = [
+  { para: '/', rotulo: 'Home' },
   { para: '/admin/revisao', rotulo: 'Revisão' },
   { para: '/admin/sugestoes', rotulo: 'Sugestões' },
   { para: '/admin/metricas', rotulo: 'Métricas' },
@@ -15,6 +17,7 @@ const LINKS_ADMIN = [
   { para: '/admin/assistente', rotulo: 'Uso da IA' },
   { para: '/admin/auditoria', rotulo: 'Auditoria' },
   { para: '/admin/usuarios', rotulo: 'Usuários' },
+  { para: '/admin/configuracoes', rotulo: 'Configurações' },
 ]
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -25,7 +28,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <header className="border-b border-borda bg-fundo">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3">
           <Link
-            to="/"
+            to={isAdmin ? '/' : '/categorias'}
             className="flex items-center gap-2 font-semibold text-texto"
           >
             <span className="inline-flex size-8 items-center justify-center rounded-md bg-destaque text-white">
@@ -59,6 +62,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 <NavLink
                   key={l.para}
                   to={l.para}
+                  end={l.para === '/'}
                   className={({ isActive }) =>
                     `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
                   }
@@ -97,9 +101,12 @@ export function Layout({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
-        {children}
-      </main>
+      <div className="flex flex-1 flex-col md:flex-row">
+        <Aside />
+        <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">
+          {children}
+        </main>
+      </div>
     </div>
   )
 }
