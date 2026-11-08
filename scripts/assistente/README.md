@@ -139,3 +139,12 @@ precisa de `VITE_ASSISTENTE_URL` apontando para o endereço público e de
   produto; para milhares, vale trocar por embeddings.
 - A conversa fica só na tela (não é guardada); as últimas 6 mensagens vão junto
   de cada pergunta.
+
+## Chave de IA por usuário
+
+Cada usuário pode guardar a própria chave em **Minhas preferências** (ícone do
+perfil, no topo). Ela fica só no navegador (localStorage) e vai ao servidor no
+cabeçalho `X-Chave-IA` a cada pergunta; o servidor a usa só naquela chamada e
+não a grava nem a registra. Sem `ANTHROPIC_API_KEY` no servidor, quem não tiver
+chave própria recebe um aviso para informar a sua. A cota por usuário e o teto
+diário continuam valendo. Hoje só há adaptador para a Anthropic.

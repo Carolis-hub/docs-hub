@@ -1,33 +1,34 @@
 import type { ReactNode } from 'react'
-import { BookOpen } from 'lucide-react'
-import { Link, NavLink } from 'react-router-dom'
+import { BookOpen, PanelLeft } from 'lucide-react'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { useModoAside } from '../hooks/useModoAside'
+import { estaEmConfiguracoes } from '../utils/governanca'
 import { iniciais } from '../utils/iniciais'
 import { Aside } from './Aside'
 import { QuickSearch } from './QuickSearch'
 import { ThemeToggle } from './ThemeToggle'
 
 const LINKS_ADMIN = [
-  { para: '/admin/revisao', rotulo: 'Revisão' },
   { para: '/admin/sugestoes', rotulo: 'Sugestões' },
   { para: '/admin/metricas', rotulo: 'Métricas' },
   { para: '/admin/unidades', rotulo: 'Unidades' },
-  { para: '/admin/sincronizacao', rotulo: 'Sincronização' },
   { para: '/admin/assistente', rotulo: 'Uso da IA' },
-  { para: '/admin/auditoria', rotulo: 'Auditoria' },
   { para: '/admin/usuarios', rotulo: 'Usuários' },
   { para: '/admin/configuracoes', rotulo: 'Configurações' },
 ]
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user, profile, isAdmin, signOut } = useAuth()
+  const { modo, setModo } = useModoAside(user?.uid)
+  const { pathname } = useLocation()
 
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b border-borda bg-fundo">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-3 px-6 py-3">
           <Link
-            to={isAdmin ? '/' : '/categorias'}
+            to="/"
             className="flex items-center gap-2 font-semibold text-texto"
           >
             <span className="inline-flex size-8 items-center justify-center rounded-md bg-destaque text-white">
@@ -36,34 +37,19 @@ export function Layout({ children }: { children: ReactNode }) {
             docs-hub
           </Link>
 
-          <nav aria-label="Navegação" className="flex gap-5 text-sm">
-            <NavLink
-              to="/categorias"
-              className={({ isActive }) =>
-                `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
-              }
-            >
-              Categorias
-            </NavLink>
-            <NavLink
-              to="/assistente"
-              className={({ isActive }) =>
-                `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
-              }
-            >
-              Assistente
-            </NavLink>
-          </nav>
-
           {isAdmin && (
             <nav aria-label="Administração" className="flex gap-5 text-sm">
               {LINKS_ADMIN.map((l) => (
                 <NavLink
                   key={l.para}
                   to={l.para}
-                  className={({ isActive }) =>
-                    `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
-                  }
+                  className={({ isActive }) => {
+                    const ativo =
+                      l.para === '/admin/configuracoes'
+                        ? estaEmConfiguracoes(pathname)
+                        : isActive
+                    return `transition hover:text-texto ${ativo ? 'font-medium text-texto' : 'text-suave'}`
+                  }}
                 >
                   {l.rotulo}
                 </NavLink>
@@ -72,16 +58,29 @@ export function Layout({ children }: { children: ReactNode }) {
           )}
 
           <div className="ml-auto flex items-center gap-2">
+            {modo === 'oculta' && (
+              <button
+                type="button"
+                onClick={() => setModo('toda')}
+                className="botao-icone"
+                title="Mostrar menu lateral"
+                aria-label="Mostrar menu lateral"
+              >
+                <PanelLeft className="size-4" aria-hidden />
+              </button>
+            )}
             <QuickSearch />
             <ThemeToggle />
             {user && (
               <div className="flex items-center gap-2 rounded-lg border border-borda bg-cartao py-1 pl-1.5 pr-2">
-                <span
-                  aria-hidden
+                <Link
+                  to="/preferencias"
+                  title="Minhas preferências"
+                  aria-label="Minhas preferências"
                   className="inline-flex size-7 items-center justify-center rounded-full bg-bloco text-[11px] font-semibold text-bloco-icone"
                 >
                   {iniciais(profile?.nome, user.email)}
-                </span>
+                </Link>
                 {isAdmin && (
                   <span className="rounded border border-ambar/40 bg-ambar-fundo px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-ambar">
                     ADMIN

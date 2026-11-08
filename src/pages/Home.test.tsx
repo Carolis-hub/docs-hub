@@ -6,10 +6,12 @@ import { Home } from './Home'
 const useAuth = vi.fn()
 const listProducts = vi.fn()
 const listUnidades = vi.fn()
+const listChildren = vi.fn()
 
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => useAuth() }))
 vi.mock('../services/blocks', () => ({
   listProducts: (...args: unknown[]) => listProducts(...args),
+  listChildren: (...args: unknown[]) => listChildren(...args),
   createBlock: vi.fn(),
   deleteBlock: vi.fn(),
   reorderBlocks: vi.fn(),
@@ -42,9 +44,25 @@ function renderHome() {
 beforeEach(() => {
   vi.clearAllMocks()
   listUnidades.mockResolvedValue([])
+  listChildren.mockResolvedValue([])
 })
 
 describe('Home', () => {
+  it('mostra os subprodutos dentro do cartão do produto', async () => {
+    useAuth.mockReturnValue({
+      isAdmin: false,
+      profile: { uid: 'l', produtosPermitidos: ['p1'] },
+    })
+    listProducts.mockResolvedValue([produto])
+    listChildren.mockResolvedValue([
+      { ...produto, id: 's1', nome: 'BPM', parentId: 'p1' },
+    ])
+    renderHome()
+    const link = await screen.findByRole('link', { name: 'BPM' })
+    expect(link).toHaveAttribute('href', '/b/s1')
+    expect(listChildren).toHaveBeenCalledWith('p1', 'p1')
+  })
+
   it('admin vê os produtos e o botão de criar', async () => {
     useAuth.mockReturnValue({ isAdmin: true, profile: { uid: 'a' } })
     listProducts.mockResolvedValue([produto])

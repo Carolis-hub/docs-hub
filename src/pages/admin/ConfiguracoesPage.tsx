@@ -1,6 +1,9 @@
+import { ChevronRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useModoAside } from '../../hooks/useModoAside'
 import { MODOS_ASIDE } from '../../utils/aside'
+import { MODULO_GOVERNANCA } from '../../utils/governanca'
 
 export function ConfiguracoesPage() {
   const { user } = useAuth()
@@ -29,6 +32,32 @@ export function ConfiguracoesPage() {
           ))}
         </div>
       </fieldset>
+
+      <section aria-labelledby="governanca" className="cartao mt-6 p-5">
+        <h2 id="governanca" className="text-sm font-medium text-texto">
+          Governança
+        </h2>
+        <ul className="mt-3 divide-y divide-borda">
+          {MODULO_GOVERNANCA.map((m) => (
+            <li key={m.para}>
+              <Link
+                to={m.para}
+                className="flex items-center justify-between gap-3 py-3 transition hover:text-destaque"
+              >
+                <span>
+                  <span className="block text-sm font-semibold">
+                    {m.rotulo}
+                  </span>
+                  <span className="block text-sm text-suave">
+                    {m.descricao}
+                  </span>
+                </span>
+                <ChevronRight className="size-4 shrink-0" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
     </div>
   )
 }
