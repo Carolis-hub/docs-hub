@@ -38,25 +38,6 @@ export function Layout({ children }: { children: ReactNode }) {
             docs-hub
           </Link>
 
-          <nav aria-label="Navegação" className="flex gap-5 text-sm">
-            <NavLink
-              to="/categorias"
-              className={({ isActive }) =>
-                `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
-              }
-            >
-              Categorias
-            </NavLink>
-            <NavLink
-              to="/assistente"
-              className={({ isActive }) =>
-                `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
-              }
-            >
-              Assistente
-            </NavLink>
-          </nav>
-
           {isAdmin && (
             <nav aria-label="Administração" className="flex gap-5 text-sm">
               {LINKS_ADMIN.map((l) => (
