@@ -53,5 +53,15 @@ usuário. Argumentos recebidos: `$ARGUMENTS`
    importados (não use sem avisar). Para que a busca com IA use o texto maior,
    os artigos antigos precisam ser reimportados com `--sobrescrever`.
 
+7. **Abrir o sistema** (a menos que `$ARGUMENTS` traga `--sem-app`): em
+   `C:\projetos\docs-hub`, rode `npm run dev` em segundo plano e avise que o
+   sistema está em `http://localhost:5173`. Se a porta já estiver em uso, diga
+   que o sistema provavelmente já está aberto. Sugira pesquisar um termo dos
+   artigos importados (por exemplo "tipo de índice") para conferir a busca.
+   **Não** inicie o assistente de IA (`npm run assistente`) por conta própria:
+   ele gasta com a API e precisa de `ANTHROPIC_API_KEY`. Só ofereça, e só se
+   o usuário disser que a chave já está configurada no terminal dele. Nunca
+   peça nem repita a chave.
+
 Ao terminar, diga o que foi feito, o que **não** foi exercitado (por exemplo,
 imagens e respostas reais da IA) e o próximo passo.
