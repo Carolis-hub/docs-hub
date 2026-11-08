@@ -176,6 +176,38 @@ describe('SearchPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('filtra por módulo (nível abaixo do subproduto) e mostra o caminho completo', async () => {
+    const comModulo = [
+      ...itens,
+      item('m1', 'Enviar anexo grande', { blockId: 'upload' }),
+    ]
+    useSearchEngine.mockReturnValue({
+      dados: {
+        produtos,
+        unidades: [unidade('u1', 'Process Solution')],
+        motor: criarMotor(comModulo, true),
+      },
+      erro: null,
+      carregando: false,
+    })
+    listProductTree.mockResolvedValue([
+      ...arvoreP1,
+      bloco('upload', 'Upload', 'anexos', 'p1'),
+    ])
+    abrir('/busca?produto=p1&subproduto=anexos')
+    const mod = await screen.findByLabelText('Filtrar por módulo')
+    expect(
+      within(mod)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['Todos os módulos', 'Upload'])
+    fireEvent.change(mod, { target: { value: 'upload' } })
+    await waitFor(() => expect(titulos()).toEqual(['Enviar anexo grande']))
+    expect(
+      screen.getByText('Process Solution › SmartShare 4 › Anexos › Upload'),
+    ).toBeInTheDocument()
+  })
+
   it('trocar de unidade zera produto e subproduto, e "Limpar filtros" volta ao início', async () => {
     abrir('/busca?produto=p1&subproduto=dash')
     await screen.findByLabelText('Filtrar por subproduto')

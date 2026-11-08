@@ -1,55 +1,92 @@
-import { useState } from 'react'
-import { Building2, Layers, Plus } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Building2, Plus, Search } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
-import { Interruptor, TituloDeSecao } from '../components/ListToolbar'
-import { PageHeader } from '../components/PageHeader'
+import { TituloDeSecao } from '../components/ListToolbar'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
-import {
-  createBlock,
-  deleteBlock,
-  listChildren,
-  listProducts,
-  reorderBlocks,
-  updateBlock,
-} from '../services/blocks'
-import { listUnidades } from '../services/unidades'
-import type { Block } from '../types/content'
+import { createBlock, deleteBlock, updateBlock } from '../services/blocks'
+import { carregarVisaoGeral } from '../services/visaoGeral'
+import type { Block, Unidade } from '../types/content'
+import { pluralizar, resumirUnidade } from '../utils/resumoUnidade'
 import { agruparPorUnidade } from '../utils/unidades'
+
+function CartaoUnidade({
+  unidade,
+  produtos,
+  artigos,
+}: {
+  unidade: Unidade
+  produtos: Block[]
+  artigos: Record<string, number>
+}) {
+  const resumo = resumirUnidade(produtos, artigos)
+  return (
+    <Link
+      to={`/u/${unidade.id}`}
+      className="cartao flex min-h-[210px] flex-col gap-3.5 p-5 transition hover:border-destaque/50"
+    >
+      <span className="tile size-11 text-xl" aria-hidden>
+        {unidade.icone ? unidade.icone : <Building2 className="size-5" />}
+      </span>
+      <span className="flex flex-col gap-1">
+        <span className="text-[17px] font-bold">{unidade.nome}</span>
+        {unidade.descricao && (
+          <span className="text-sm leading-relaxed text-suave">
+            {unidade.descricao}
+          </span>
+        )}
+      </span>
+      <span className="mt-auto flex gap-5 border-t border-borda pt-3.5 text-[13px] text-suave">
+        <span>
+          <strong className="text-[15px] text-texto">{resumo.produtos}</strong>{' '}
+          {resumo.produtos === 1 ? 'produto' : 'produtos'}
+        </span>
+        <span>
+          <strong className="text-[15px] text-texto">{resumo.artigos}</strong>{' '}
+          {resumo.artigos === 1 ? 'artigo' : 'artigos'}
+        </span>
+      </span>
+    </Link>
+  )
+}
 
 export function Home() {
   const { user, profile, isAdmin } = useAuth()
+  const navigate = useNavigate()
   const uid = user?.uid ?? ''
-  const { dados, erro, carregando, recarregar } = useAsync(async () => {
-    const [produtos, unidades] = await Promise.all([
-      listProducts(isAdmin ? undefined : (profile?.produtosPermitidos ?? [])),
-      listUnidades(),
-    ])
-    // Subprodutos de cada produto (a consulta leva o productId por causa das regras).
-    const filhos = await Promise.all(
-      produtos.map((p) => listChildren(p.id, p.id)),
-    )
-    const subprodutos: Record<string, Block[]> = {}
-    produtos.forEach((p, i) => {
-      subprodutos[p.id] = filhos[i] ?? []
-    })
-    return { produtos, unidades, subprodutos }
-  }, [isAdmin, profile?.uid])
+  const { dados, erro, carregando, recarregar } = useAsync(
+    () =>
+      carregarVisaoGeral(
+        isAdmin ? undefined : (profile?.produtosPermitidos ?? []),
+        isAdmin || profile?.verTecnico === true,
+      ),
+    [isAdmin, profile?.uid],
+  )
+  const [texto, setTexto] = useState('')
   const [criando, setCriando] = useState(false)
-  const [organizar, setOrganizar] = useState(false)
   const [editando, setEditando] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
 
   const produtos = dados?.produtos ?? []
   const unidades = dados?.unidades ?? []
   const subprodutos = dados?.subprodutos ?? {}
+  const artigos = dados?.artigos ?? {}
   const grupos = agruparPorUnidade(produtos, unidades, isAdmin)
+  const unidadesComProdutos = grupos.filter((g) => g.unidade)
+  const soltos = grupos.find((g) => !g.unidade)?.produtos ?? []
+  const resumos: Record<string, string> = {}
+  for (const p of produtos) {
+    resumos[p.id] =
+      `${pluralizar(subprodutos[p.id]?.length ?? 0, 'subproduto', 'subprodutos')} · ${pluralizar(artigos[p.id] ?? 0, 'artigo', 'artigos')}`
+  }
 
-  async function reordenar(ordenados: Block[]) {
-    await reorderBlocks(ordenados.map((b) => b.id))
-    recarregar()
+  function buscar(e: FormEvent) {
+    e.preventDefault()
+    navigate(
+      texto.trim() ? `/busca?q=${encodeURIComponent(texto.trim())}` : '/busca',
+    )
   }
 
   async function excluir(b: Block) {
@@ -64,43 +101,37 @@ export function Home() {
   }
 
   return (
-    <div>
-      <PageHeader
-        icone={Layers}
-        titulo="Manual de produtos"
-        subtitulo={
-          produtos.length > 0
-            ? `${produtos.length} ${produtos.length === 1 ? 'produto' : 'produtos'} de documentação`
-            : undefined
-        }
-        acoes={
-          isAdmin && (
-            <>
-              {produtos.length > 1 && (
-                <Interruptor
-                  ligado={organizar}
-                  aoMudar={setOrganizar}
-                  rotulo="Organizar"
-                />
-              )}
-              <Link to="/admin/unidades" className="botao">
-                <Building2 className="size-4" aria-hidden />
-                Unidades de negócio
-              </Link>
-              {!criando && (
-                <button
-                  type="button"
-                  onClick={() => setCriando(true)}
-                  className="botao botao-primario"
-                >
-                  <Plus className="size-4" aria-hidden />
-                  Novo produto
-                </button>
-              )}
-            </>
-          )
-        }
-      />
+    <div className="space-y-12">
+      <section className="pt-4 text-center">
+        <h1 className="text-4xl font-extrabold leading-tight tracking-tight sm:text-5xl">
+          Encontre a{' '}
+          <span className="bg-gradient-to-r from-destaque to-[#1FAE6E] bg-clip-text text-transparent">
+            documentação
+          </span>{' '}
+          de que você precisa
+        </h1>
+        <form
+          role="search"
+          onSubmit={buscar}
+          className="mx-auto mt-8 flex max-w-3xl items-center gap-2.5 rounded-full border border-borda bg-cartao py-1.5 pl-5 pr-1.5 shadow-[0_10px_30px_rgb(18_53_43_/_0.07)]"
+        >
+          <Search className="size-5 shrink-0 text-suave" aria-hidden />
+          <label htmlFor="home-q" className="sr-only">
+            Pesquisar artigos
+          </label>
+          <input
+            id="home-q"
+            type="search"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Pesquise por funcionalidade, erro ou palavra-chave"
+            className="h-11 min-w-0 flex-1 bg-transparent text-base text-texto outline-none placeholder:text-suave"
+          />
+          <button type="submit" className="botao botao-primario h-11 px-6">
+            Buscar
+          </button>
+        </form>
+      </section>
 
       {criando && (
         <BlockForm
@@ -128,11 +159,10 @@ export function Home() {
         />
       )}
       {aviso && (
-        <p role="alert" className="mb-4 text-sm text-perigo">
+        <p role="alert" className="text-sm text-perigo">
           {aviso}
         </p>
       )}
-
       {carregando && <p className="text-suave">Carregando…</p>}
       {erro && (
         <p role="alert" className="text-perigo">
@@ -146,54 +176,85 @@ export function Home() {
             : 'Você ainda não tem acesso a nenhum produto. Fale com um administrador.'}
         </p>
       )}
-      {unidades.length === 0 && produtos.length > 0 && (
-        <BlockCards
-          blocos={produtos}
-          variante="produto"
-          subprodutos={subprodutos}
-          editavel={isAdmin}
-          organizar={isAdmin && organizar}
-          onReorder={isAdmin ? (o) => void reordenar(o) : undefined}
-          onEdit={setEditando}
-          onDelete={(b) => void excluir(b)}
-        />
-      )}
-      {unidades.length > 0 &&
-        grupos.map((g) => (
-          <section
-            key={g.chave}
-            id={g.unidade ? `unidade-${g.unidade.id}` : undefined}
-            aria-label={g.unidade?.nome ?? 'Sem unidade'}
-            className="mb-10 scroll-mt-4"
-          >
-            <div className="mb-4">
-              <TituloDeSecao
-                titulo={g.unidade?.nome ?? 'Sem unidade'}
-                total={g.produtos.length}
-              />
-              {g.unidade?.descricao && (
-                <p className="mt-1 text-sm text-suave">{g.unidade.descricao}</p>
-              )}
-            </div>
-            {g.produtos.length === 0 ? (
-              <p className="text-sm text-suave">
-                Nenhum produto nesta unidade ainda. Edite um produto e escolha
-                esta unidade.
-              </p>
-            ) : (
-              <BlockCards
-                blocos={g.produtos}
-                variante="produto"
-                subprodutos={subprodutos}
-                editavel={isAdmin}
-                organizar={isAdmin && organizar}
-                onReorder={isAdmin ? (o) => void reordenar(o) : undefined}
-                onEdit={setEditando}
-                onDelete={(b) => void excluir(b)}
-              />
+
+      {(unidades.length > 0 || isAdmin) && (
+        <section aria-label="Unidades de negócio" className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <TituloDeSecao
+              titulo="Unidades de negócio"
+              total={unidadesComProdutos.length}
+            />
+            {isAdmin && (
+              <div className="flex flex-wrap gap-2">
+                <Link to="/admin/unidades" className="botao">
+                  <Plus className="size-4" aria-hidden />
+                  Nova BU
+                </Link>
+                {!criando && (
+                  <button
+                    type="button"
+                    onClick={() => setCriando(true)}
+                    className="botao botao-primario"
+                  >
+                    <Plus className="size-4" aria-hidden />
+                    Novo produto
+                  </button>
+                )}
+              </div>
             )}
-          </section>
-        ))}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {unidadesComProdutos.map((g) => (
+              <CartaoUnidade
+                key={g.chave}
+                unidade={g.unidade as Unidade}
+                produtos={g.produtos}
+                artigos={artigos}
+              />
+            ))}
+            {isAdmin && (
+              <Link
+                to="/admin/unidades"
+                className="flex min-h-[210px] flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-borda text-sm font-semibold text-suave transition hover:border-destaque/60 hover:text-texto"
+              >
+                <Plus className="size-5" aria-hidden />
+                Criar unidade de negócio
+              </Link>
+            )}
+          </div>
+        </section>
+      )}
+
+      {(unidades.length === 0 || soltos.length > 0) && produtos.length > 0 && (
+        <section aria-label="Produtos" className="space-y-4">
+          {unidades.length > 0 && (
+            <TituloDeSecao titulo="Sem unidade" total={soltos.length} />
+          )}
+          <BlockCards
+            blocos={unidades.length === 0 ? produtos : soltos}
+            variante="produto"
+            editavel={isAdmin}
+            subprodutos={subprodutos}
+            resumos={resumos}
+            onEdit={setEditando}
+            onDelete={(b) => void excluir(b)}
+          />
+        </section>
+      )}
+
+      <section className="flex flex-wrap items-center gap-x-10 gap-y-4 rounded-3xl bg-gradient-to-r from-[#0B5E3B] via-[#0F7A4C] to-[#0C6A43] px-10 py-8 text-white">
+        <h2 className="min-w-[280px] flex-1 text-[28px] font-extrabold leading-tight tracking-tight">
+          Toda a documentação em um só lugar.
+          <span className="block text-[#F7A25E]">
+            Atualizada por quem conhece o produto.
+          </span>
+        </h2>
+        <p className="min-w-[280px] flex-1 text-[15.5px] leading-relaxed text-white/90">
+          Busque por palavra-chave, navegue pela estrutura de BUs, produtos e
+          módulos, e conte com o assistente de IA para encontrar respostas com
+          as fontes indicadas.
+        </p>
+      </section>
     </div>
   )
 }

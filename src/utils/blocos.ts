@@ -17,3 +17,26 @@ export function comDescendentes(blocos: Block[], id: string): Set<string> {
   }
   return ids
 }
+
+export const TIPOS_DE_BLOCO = ['Produto', 'Subproduto', 'Módulo'] as const
+
+/** Nome do nível de um bloco pela profundidade (0 = produto); fundo demais vira "Seção". */
+export function tipoDoNivel(profundidade: number): string {
+  return TIPOS_DE_BLOCO[profundidade] ?? 'Seção'
+}
+
+export function tipoDosFilhos(profundidade: number): {
+  singular: string
+  plural: string
+  artigoNovo: string
+} {
+  const singular = tipoDoNivel(profundidade + 1)
+  if (singular === 'Seção') {
+    return { singular, plural: 'Seções', artigoNovo: 'Nova seção' }
+  }
+  return {
+    singular,
+    plural: singular === 'Módulo' ? 'Módulos' : 'Subprodutos',
+    artigoNovo: `Novo ${singular.toLowerCase()}`,
+  }
+}

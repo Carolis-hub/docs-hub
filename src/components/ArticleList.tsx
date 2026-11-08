@@ -62,6 +62,12 @@ export function ArticleList({ artigos, visao, admin }: Props) {
                     {resumo}
                   </span>
                 )}
+                {a.atualizadoEm > 0 && (
+                  <span className="mt-1 block text-xs text-suave">
+                    Atualizado em{' '}
+                    {new Date(a.atualizadoEm).toLocaleDateString('pt-BR')}
+                  </span>
+                )}
               </span>
             </Link>
           </li>

@@ -15,6 +15,7 @@ export default {
         texto: cor('texto'),
         suave: cor('suave'),
         destaque: cor('destaque'),
+        escuro: cor('escuro'),
         bloco: cor('bloco'),
         'bloco-icone': cor('bloco-icone'),
         ambar: cor('ambar'),

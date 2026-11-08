@@ -38,14 +38,14 @@ export function QuickSearch() {
   return (
     <form role="search" onSubmit={irParaBusca} className="relative">
       <Search
-        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-suave"
+        className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-suave"
         aria-hidden
       />
       <input
         ref={inputRef}
         type="search"
         aria-label="Busca rápida"
-        placeholder="Buscar na documentação…"
+        placeholder="Buscar artigos por título ou conteúdo"
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value)
@@ -59,7 +59,7 @@ export function QuickSearch() {
             inputRef.current?.blur()
           }
         }}
-        className="h-9 w-44 rounded-lg border border-borda bg-cartao pl-9 pr-14 text-sm text-texto placeholder:text-suave sm:w-72 [&::-webkit-search-cancel-button]:appearance-none"
+        className="h-10 w-44 rounded-full bg-bloco/60 pl-10 pr-14 text-sm text-texto placeholder:text-suave sm:w-80 lg:w-[420px] [&::-webkit-search-cancel-button]:appearance-none"
       />
       <kbd
         aria-hidden

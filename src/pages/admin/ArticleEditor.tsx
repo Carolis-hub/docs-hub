@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { JSONContent } from '@tiptap/react'
 import { RichEditor } from '../../components/editor/RichEditor'
+import { SeletorDeLocal } from '../../components/SeletorDeLocal'
 import { useAsync } from '../../hooks/useAsync'
 import { useAuth } from '../../hooks/useAuth'
 import { listarAuditoriaDoArtigo } from '../../services/audit'
@@ -52,12 +53,9 @@ import {
 } from '../../utils/modelos'
 import { rotuloDoStatus } from '../../utils/revisao'
 
-const campo =
-  'mt-1 w-full rounded-md border border-borda bg-cartao px-3 py-2 text-sm  '
-const botaoSec =
-  'rounded-md border border-borda px-3 py-1.5 text-sm disabled:opacity-50 '
-const botaoPrimario =
-  'rounded-md bg-destaque px-3 py-1.5 text-sm font-medium text-white hover:bg-destaque/90 disabled:opacity-50'
+const campo = 'campo mt-1'
+const botaoSec = 'botao'
+const botaoPrimario = 'botao botao-primario'
 
 const ACOES_DO_ARTIGO: AcaoCiclo[] = ['despublicar', 'arquivar', 'restaurar']
 
@@ -128,6 +126,12 @@ export function ArticleEditor() {
       : null,
   )
   const [comentario, setComentario] = useState('')
+  // Artigo novo sem ?blockId: o destino vem do seletor de local.
+  const [destinoId, setDestinoId] = useState<string | null>(null)
+  const escolherDestino = useCallback(
+    (id: string | null) => setDestinoId(id),
+    [],
+  )
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [falha, setFalha] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
@@ -268,7 +272,8 @@ export function ArticleEditor() {
           ? 'Alteração salva. A versão publicada continua no ar até esta ser aprovada e publicada.'
           : 'Alterações salvas.'
       }
-      const blockId = params.get('blockId')
+      const blockId = params.get('blockId') ?? destinoId
+      if (!blockId) throw new Error('Escolha onde o artigo ficará.')
       const bloco = blockId ? await getBlock(blockId) : null
       if (!bloco) throw new Error('Bloco de destino não encontrado.')
       const id = await createArticle(draft(), bloco.id, bloco.productId, uid)
@@ -363,9 +368,15 @@ export function ArticleEditor() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <h1 className="mb-4 text-2xl font-semibold">
-        {artigo ? 'Editar artigo' : 'Novo artigo'}
+    <div className="mx-auto max-w-5xl">
+      <Link
+        to={artigo ? `/a/${artigo.id}` : '/'}
+        className="mb-3 inline-block text-sm text-suave hover:text-texto"
+      >
+        ← Voltar
+      </Link>
+      <h1 className="mb-4 text-[28px] font-extrabold tracking-tight">
+        {artigo ? 'Editando artigo' : 'Novo artigo'}
         {artigo && (
           <span className="ml-3 rounded bg-bloco px-2 py-0.5 text-xs font-normal ">
             {publicado
@@ -459,6 +470,9 @@ export function ArticleEditor() {
       )}
 
       <div className="space-y-4">
+        {!artigo && !params.get('blockId') && (
+          <SeletorDeLocal onChange={escolherDestino} />
+        )}
         <label className="block text-sm">
           Título
           <input

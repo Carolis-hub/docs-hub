@@ -11,7 +11,6 @@ import type { ArticlePublico, CategoriaId } from '../types/content'
 import { comDescendentes } from '../utils/blocos'
 import { CATEGORIAS, nomeDaCategoria } from '../utils/categorias'
 import { gerarTrecho } from '../utils/search'
-import { parteDoBloco } from '../utils/searchIndex'
 import type { SearchFilters } from '../utils/searchEngine'
 
 const campo = 'campo h-10'
@@ -23,6 +22,7 @@ export function SearchPage() {
   const unidade = params.get('unidade') ?? ''
   const produto = params.get('produto') ?? ''
   const subproduto = params.get('subproduto') ?? ''
+  const modulo = params.get('modulo') ?? ''
   const categoria = (params.get('categoria') ?? '') as CategoriaId | ''
   const publico = (params.get('publico') ?? '') as ArticlePublico | ''
   const { dados, erro, carregando } = useSearchEngine()
@@ -58,18 +58,40 @@ export function SearchPage() {
     .filter((b) => b.parentId === produto)
     .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome, 'pt-BR'))
 
+  const modulos = (arvore ?? [])
+    .filter((b) => b.parentId === subproduto && subproduto !== '')
+    .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome, 'pt-BR'))
+
   const filtros = useMemo<SearchFilters>(() => {
     const f: SearchFilters = {}
     if (produto) f.productId = produto
     else if (unidade) f.productIds = produtosDoFiltro.map((p) => p.id)
-    if (subproduto && arvore) f.blockIds = comDescendentes(arvore, subproduto)
+    if (modulo && arvore) f.blockIds = comDescendentes(arvore, modulo)
+    else if (subproduto && arvore)
+      f.blockIds = comDescendentes(arvore, subproduto)
     if (categoria) f.categoria = categoria
     if (publico) f.publico = publico
     return f
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [produto, unidade, subproduto, arvore, categoria, publico, produtos])
+  }, [
+    produto,
+    unidade,
+    subproduto,
+    modulo,
+    arvore,
+    categoria,
+    publico,
+    produtos,
+  ])
 
-  const temFiltro = !!(unidade || produto || subproduto || categoria || publico)
+  const temFiltro = !!(
+    unidade ||
+    produto ||
+    subproduto ||
+    modulo ||
+    categoria ||
+    publico
+  )
   const navegando = !q.trim() && temFiltro
 
   const resultados = useMemo(() => {
@@ -113,16 +135,22 @@ export function SearchPage() {
     if (u) partes.push(u.nome)
     partes.push(p?.nome ?? item.productId)
     if (arvore && item.productId === produto) {
-      const parte = parteDoBloco(arvore, item.blockId)
-      const sub = arvore.find((b) => b.id === parte && b.parentId === produto)
-      if (sub) partes.push(sub.nome)
+      // Do subproduto até o bloco do artigo (ex.: Subproduto › Módulo).
+      const porId = new Map(arvore.map((b) => [b.id, b]))
+      const cadeia: string[] = []
+      let atual = porId.get(item.blockId)
+      while (atual && atual.parentId !== null) {
+        cadeia.unshift(atual.nome)
+        atual = porId.get(atual.parentId)
+      }
+      partes.push(...cadeia)
     }
     return partes.join(' › ')
   }
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <PageHeader icone={Search} titulo="Busca" />
+    <div>
+      <PageHeader icone={Search} titulo="Buscar artigos" />
       <form
         role="search"
         onSubmit={(e) => e.preventDefault()}
@@ -146,6 +174,7 @@ export function SearchPage() {
                   unidade: e.target.value,
                   produto: '',
                   subproduto: '',
+                  modulo: '',
                 })
               }
               className={campo}
@@ -163,7 +192,7 @@ export function SearchPage() {
             aria-label="Filtrar por produto"
             value={produto}
             onChange={(e) =>
-              atualizar({ produto: e.target.value, subproduto: '' })
+              atualizar({ produto: e.target.value, subproduto: '', modulo: '' })
             }
             className={campo}
           >
@@ -178,13 +207,30 @@ export function SearchPage() {
             <select
               aria-label="Filtrar por subproduto"
               value={subproduto}
-              onChange={(e) => atualizar({ subproduto: e.target.value })}
+              onChange={(e) =>
+                atualizar({ subproduto: e.target.value, modulo: '' })
+              }
               className={campo}
             >
               <option value="">Todos os subprodutos</option>
               {subprodutos.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nome}
+                </option>
+              ))}
+            </select>
+          )}
+          {subproduto && modulos.length > 0 && (
+            <select
+              aria-label="Filtrar por módulo"
+              value={modulo}
+              onChange={(e) => atualizar({ modulo: e.target.value })}
+              className={campo}
+            >
+              <option value="">Todos os módulos</option>
+              {modulos.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.nome}
                 </option>
               ))}
             </select>
@@ -221,6 +267,7 @@ export function SearchPage() {
                   unidade: '',
                   produto: '',
                   subproduto: '',
+                  modulo: '',
                   categoria: '',
                   publico: '',
                 })
@@ -266,21 +313,19 @@ export function SearchPage() {
               : resultados.length > 1
                 ? 'resultados'
                 : 'resultado'}
+            {q.trim() ? ` para “${q.trim()}”, ordenados por relevância` : ''}
           </p>
           <ul className="space-y-3">
             {resultados.map(({ item, termos }) => (
-              <li
-                key={item.id}
-                className="rounded-lg border border-borda bg-cartao p-4 "
-              >
+              <li key={item.id} className="cartao p-5">
                 <Link
                   to={`/a/${item.id}`}
-                  className="font-medium text-bloco-icone hover:underline "
+                  className="text-[17px] font-bold text-destaque hover:underline"
                 >
                   <Highlight partes={gerarTrecho(item.titulo, termos, 120)} />
                 </Link>
                 <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-suave">
-                  <span>{caminho(item)}</span>
+                  <span className="font-medium">{caminho(item)}</span>
                   {nomeDaCategoria(item.categoria) && (
                     <span className="selo">
                       {nomeDaCategoria(item.categoria)}

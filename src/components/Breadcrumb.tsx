@@ -15,14 +15,14 @@ export function Breadcrumb({ cadeia, unidade, artigo }: Props) {
       <ol className="flex flex-wrap items-center gap-1.5 text-suave">
         <li>
           <Link to="/" className="hover:text-texto hover:underline">
-            Início
+            Manual de produtos
           </Link>
         </li>
         {unidade && (
           <li className="flex items-center gap-1.5">
             <ChevronRight className="size-3.5" aria-hidden />
             <Link
-              to={`/#unidade-${unidade.id}`}
+              to={`/u/${unidade.id}`}
               className="hover:text-texto hover:underline"
             >
               {unidade.nome}

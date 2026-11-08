@@ -32,3 +32,19 @@ describe('comDescendentes', () => {
     expect([...comDescendentes(laco, 'x')].sort()).toEqual(['x', 'y'])
   })
 })
+
+describe('tipos de nível', () => {
+  it('nomeia os níveis pela profundidade', async () => {
+    const { tipoDoNivel, tipoDosFilhos } = await import('./blocos')
+    expect(tipoDoNivel(0)).toBe('Produto')
+    expect(tipoDoNivel(2)).toBe('Módulo')
+    expect(tipoDoNivel(5)).toBe('Seção')
+    expect(tipoDosFilhos(0)).toEqual({
+      singular: 'Subproduto',
+      plural: 'Subprodutos',
+      artigoNovo: 'Novo subproduto',
+    })
+    expect(tipoDosFilhos(1).plural).toBe('Módulos')
+    expect(tipoDosFilhos(2).plural).toBe('Seções')
+  })
+})

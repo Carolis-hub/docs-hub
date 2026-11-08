@@ -8,12 +8,15 @@ const getBlock = vi.fn()
 const listChildren = vi.fn()
 const getAncestors = vi.fn()
 const listArticlesByBlock = vi.fn()
+const listProductTree = vi.fn()
+const contarArtigosPorBlocos = vi.fn()
 
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => useAuth() }))
 vi.mock('../services/blocks', () => ({
   getBlock: (...a: unknown[]) => getBlock(...a),
   listChildren: (...a: unknown[]) => listChildren(...a),
   getAncestors: (...a: unknown[]) => getAncestors(...a),
+  listProductTree: (...a: unknown[]) => listProductTree(...a),
   createBlock: vi.fn(),
   updateBlock: vi.fn(),
   deleteBlock: vi.fn(),
@@ -22,6 +25,9 @@ vi.mock('../services/blocks', () => ({
 vi.mock('../services/unidades', () => ({
   getUnidade: vi.fn(async () => null),
   listUnidades: vi.fn(async () => []),
+}))
+vi.mock('../services/visaoGeral', () => ({
+  contarArtigosPorBlocos: (...a: unknown[]) => contarArtigosPorBlocos(...a),
 }))
 vi.mock('../services/articles', () => ({
   listArticlesByBlock: (...a: unknown[]) => listArticlesByBlock(...a),
@@ -49,6 +55,8 @@ const artigo = (
     titulo,
     resumo,
     textoPlano: resumo,
+    views: id === '3' ? 50 : Number(id),
+    atualizadoEm: 0,
     status: 'published',
     publico: 'usuario',
   }) as Article
@@ -86,6 +94,14 @@ beforeEach(() => {
         ]
       : [],
   )
+  listProductTree.mockResolvedValue([
+    produto,
+    anexos,
+    bloco('dash', 'Dashboard', 'p'),
+    bloco('acesso', 'Acesso', 'p'),
+    bloco('upload', 'Upload', 'anexos'),
+  ])
+  contarArtigosPorBlocos.mockResolvedValue(2)
   listArticlesByBlock.mockResolvedValue([
     artigo('1', 'Como excluir anexos?', 'Apague o arquivo.'),
     artigo('2', 'Como adicionar anexos?', 'Envie o arquivo.'),
@@ -97,8 +113,15 @@ describe('BlockPage', () => {
   it('produto: mostra o subtítulo com a contagem e os cartões das seções', async () => {
     await abrir('p')
     expect(
-      await screen.findByText('Produto · 3 subprodutos e seções'),
+      await screen.findByText('Produto · 3 subprodutos · 6 artigos publicados'),
     ).toBeInTheDocument()
+    // chip do módulo dentro do cartão do subproduto e o resumo do cartão
+    expect(screen.getByRole('link', { name: 'Upload' })).toHaveAttribute(
+      'href',
+      '/b/upload',
+    )
+    expect(screen.getAllByText('2 artigos').length).toBeGreaterThan(0)
+    expect(screen.getByText('1 módulo · 2 artigos')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Anexos' })).toHaveAttribute(
       'href',
       '/b/anexos',
@@ -108,14 +131,14 @@ describe('BlockPage', () => {
     ).toBeInTheDocument()
     // um botão no cabeçalho e o cartão tracejado no fim da grade
     expect(
-      screen.getAllByRole('button', { name: /novo subbloco/i }),
+      screen.getAllByRole('button', { name: /novo subproduto/i }),
     ).toHaveLength(2)
   })
 
   it('filtra as seções sem acento nem caixa', async () => {
     await abrir('p')
     await screen.findByText('Dashboard')
-    fireEvent.change(screen.getByLabelText('Filtrar seções'), {
+    fireEvent.change(screen.getByLabelText('Filtrar subprodutos'), {
       target: { value: 'ACESSO' },
     })
     expect(screen.queryByText('Dashboard')).toBeNull()
@@ -133,21 +156,26 @@ describe('BlockPage', () => {
   it('bloco sem subblocos não mostra a seção vazia', async () => {
     await abrir('anexos')
     await screen.findByText('Como excluir anexos?')
-    expect(screen.queryByText('Subprodutos e seções')).toBeNull()
+    expect(screen.queryByText('Seções')).toBeNull()
   })
 
-  it('artigos: ordena de A a Z, inverte e filtra', async () => {
+  it('artigos: ordena por título e por visualizações e filtra', async () => {
     await abrir('anexos')
     await screen.findByText('Como excluir anexos?')
     const titulos = () =>
       within(screen.getByRole('region', { name: 'Artigos' }))
         .getAllByRole('link')
         .map((l) => l.textContent ?? '')
+    fireEvent.change(screen.getByLabelText('Ordenar'), {
+      target: { value: 'titulo' },
+    })
     expect(titulos()[0]).toContain('Como adicionar anexos?')
     expect(titulos()[1]).toContain('Como compartilhar?')
     expect(titulos()[2]).toContain('Como excluir anexos?')
-    fireEvent.click(screen.getByRole('button', { name: /A–Z/ }))
-    expect(titulos()[0]).toContain('Como excluir')
+    fireEvent.change(screen.getByLabelText('Ordenar'), {
+      target: { value: 'acessados' },
+    })
+    expect(titulos()[0]).toContain('Como compartilhar?')
     fireEvent.change(screen.getByLabelText('Filtrar neste bloco'), {
       target: { value: 'compartilhar' },
     })
@@ -168,9 +196,7 @@ describe('BlockPage', () => {
     ])
     await abrir('anexos')
     await screen.findByText('Como excluir anexos?')
-    fireEvent.change(screen.getByLabelText('Filtrar por categoria'), {
-      target: { value: 'processos' },
-    })
+    fireEvent.click(screen.getByRole('button', { name: /^Processos/ }))
     const regiao = within(screen.getByRole('region', { name: 'Artigos' }))
     expect(regiao.getAllByRole('link')).toHaveLength(1)
     expect(regiao.getByText('Como excluir anexos?')).toBeInTheDocument()
@@ -192,6 +218,6 @@ describe('BlockPage', () => {
     await screen.findByText('Dashboard')
     expect(screen.queryByRole('button', { name: /editar/i })).toBeNull()
     expect(screen.queryByRole('switch')).toBeNull()
-    expect(screen.queryByText(/novo subbloco/i)).toBeNull()
+    expect(screen.queryByText(/novo subproduto/i)).toBeNull()
   })
 })

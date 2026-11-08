@@ -7,7 +7,6 @@ import { BlockForm } from '../components/BlockForm'
 import { Breadcrumb } from '../components/Breadcrumb'
 import {
   AlternarVisao,
-  BotaoOrdenar,
   FiltroDaLista,
   Interruptor,
   TituloDeSecao,
@@ -23,12 +22,15 @@ import {
   getAncestors,
   getBlock,
   listChildren,
+  listProductTree,
   reorderBlocks,
   updateBlock,
 } from '../services/blocks'
 import { listArticlesByBlock } from '../services/articles'
 import { getUnidade, listUnidades } from '../services/unidades'
+import { contarArtigosPorBlocos } from '../services/visaoGeral'
 import type { Block } from '../types/content'
+import { comDescendentes, tipoDoNivel, tipoDosFilhos } from '../utils/blocos'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
 import { normalizar } from '../utils/search'
@@ -52,13 +54,37 @@ export function BlockPage() {
         isAdmin ? undefined : { verTecnico: !!profile?.verTecnico },
       ),
     ])
+    // Subitens de cada filho (chips do cartão) e artigos publicados dentro de cada um.
+    const arvore =
+      filhos.length > 0 ? await listProductTree(bloco.productId) : []
+    const netos: Record<string, Block[]> = {}
+    const contagens: Record<string, number> = {}
+    await Promise.all(
+      filhos.map(async (f) => {
+        netos[f.id] = arvore.filter((b) => b.parentId === f.id)
+        contagens[f.id] = await contarArtigosPorBlocos(
+          bloco.productId,
+          [...comDescendentes(arvore, f.id)],
+          isAdmin || !!profile?.verTecnico,
+        )
+      }),
+    )
     const unidadeId = cadeia[0]?.unidadeId
     const [unidade, unidades] = await Promise.all([
       unidadeId ? getUnidade(unidadeId) : null,
       // O seletor de unidade só aparece para o admin, ao editar um produto.
       isAdmin && bloco.parentId === null ? listUnidades() : [],
     ])
-    return { bloco, cadeia, unidade, unidades, filhos, artigos }
+    return {
+      bloco,
+      cadeia,
+      unidade,
+      unidades,
+      filhos,
+      artigos,
+      netos,
+      contagens,
+    }
   }, [blockId, isAdmin])
 
   const [modo, setModo] = useState<'novo' | 'editar' | null>(null)
@@ -68,7 +94,9 @@ export function BlockPage() {
   const [filtroSecoes, setFiltroSecoes] = useState('')
   const [filtroArtigos, setFiltroArtigos] = useState('')
   const [filtroCategoria, setFiltroCategoria] = useState('')
-  const [crescente, setCrescente] = useState(true)
+  const [ordem, setOrdem] = useState<'recentes' | 'acessados' | 'titulo'>(
+    'recentes',
+  )
   const [visao, setVisao] = usePreferencia<Visao>(
     'docs-hub:visao-artigos',
     'lista',
@@ -89,11 +117,12 @@ export function BlockPage() {
         (!q || normalizar(`${a.titulo} ${a.resumo}`).includes(q)) &&
         (!filtroCategoria || a.categoria === filtroCategoria),
     )
-    const ordenada = [...lista].sort((a, b) =>
-      a.titulo.localeCompare(b.titulo, 'pt-BR'),
-    )
-    return crescente ? ordenada : ordenada.reverse()
-  }, [dados, filtroArtigos, filtroCategoria, crescente])
+    return [...lista].sort((a, b) => {
+      if (ordem === 'recentes') return b.atualizadoEm - a.atualizadoEm
+      if (ordem === 'acessados') return (b.views ?? 0) - (a.views ?? 0)
+      return a.titulo.localeCompare(b.titulo, 'pt-BR')
+    })
+  }, [dados, filtroArtigos, filtroCategoria, ordem])
 
   if (carregando && !dados) return <p className="text-suave">Carregando…</p>
   if (erro)
@@ -111,8 +140,34 @@ export function BlockPage() {
     unidades,
     filhos,
     artigos: todosArtigos,
+    netos,
+    contagens,
   } = dados
   const ehProduto = bloco.parentId === null
+  const profundidade = cadeia.length - 1
+  const tipo = tipoDoNivel(profundidade)
+  const tipoFilho = tipoDosFilhos(profundidade)
+  const resumos: Record<string, string> = {}
+  for (const f of filhos) {
+    const sub = netos[f.id]?.length ?? 0
+    const n = contagens[f.id] ?? 0
+    const partes = [
+      sub > 0
+        ? plural(
+            sub,
+            tipoDosFilhos(profundidade + 1).singular.toLowerCase(),
+            tipoDosFilhos(profundidade + 1).plural.toLowerCase(),
+          )
+        : null,
+      plural(n, 'artigo', 'artigos'),
+    ].filter(Boolean)
+    resumos[f.id] = partes.join(' · ')
+  }
+  const totalArtigos = Object.values(contagens).reduce((a, b) => a + b, 0)
+  const categoriasPresentes = CATEGORIAS.map((c) => ({
+    ...c,
+    total: todosArtigos.filter((a) => a.categoria === c.id).length,
+  })).filter((c) => c.total > 0)
 
   async function excluirFilho(b: Block) {
     if (!window.confirm(`Excluir "${b.nome}"?`)) return
@@ -125,9 +180,10 @@ export function BlockPage() {
     }
   }
 
-  const subtitulo = ehProduto
-    ? `Produto · ${plural(filhos.length, 'subproduto ou seção', 'subprodutos e seções')}`
-    : bloco.descricao || undefined
+  const subtitulo =
+    filhos.length > 0
+      ? `${tipo} · ${plural(filhos.length, tipoFilho.singular.toLowerCase(), tipoFilho.plural.toLowerCase())} · ${plural(totalArtigos, 'artigo publicado', 'artigos publicados')}`
+      : `${tipo} · ${plural(todosArtigos.length, 'artigo publicado', 'artigos publicados')}`
 
   return (
     <div>
@@ -146,7 +202,7 @@ export function BlockPage() {
                 className="botao"
               >
                 <Pencil className="size-4" aria-hidden />
-                Editar bloco
+                Editar {tipo.toLowerCase()}
               </button>
               <button
                 type="button"
@@ -154,7 +210,7 @@ export function BlockPage() {
                 className="botao"
               >
                 <FolderPlus className="size-4" aria-hidden />
-                Novo subbloco
+                {tipoFilho.artigoNovo}
               </button>
               <Link
                 to={`/admin/artigos/novo?blockId=${bloco.id}`}
@@ -170,7 +226,7 @@ export function BlockPage() {
 
       {modo === 'novo' && (
         <BlockForm
-          titulo="Novo subbloco"
+          titulo={tipoFilho.artigoNovo}
           onCancel={() => setModo(null)}
           onSubmit={async (input) => {
             await createBlock(input, bloco, filhos.length, uid)
@@ -181,7 +237,7 @@ export function BlockPage() {
       )}
       {modo === 'editar' && (
         <BlockForm
-          titulo="Editar bloco"
+          titulo={`Editar ${tipo.toLowerCase()}`}
           inicial={bloco}
           unidades={ehProduto ? unidades : undefined}
           onCancel={() => setModo(null)}
@@ -194,7 +250,7 @@ export function BlockPage() {
       )}
       {editandoFilho && (
         <BlockForm
-          titulo="Editar subbloco"
+          titulo={`Editar ${tipoFilho.singular.toLowerCase()}`}
           inicial={editandoFilho}
           onCancel={() => setEditandoFilho(null)}
           onSubmit={async (input) => {
@@ -211,17 +267,14 @@ export function BlockPage() {
       )}
 
       {filhos.length > 0 && (
-        <section className="mb-10" aria-label="Subprodutos e seções">
+        <section className="mb-10" aria-label={tipoFilho.plural}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <TituloDeSecao
-              titulo="Subprodutos e seções"
-              total={filhos.length}
-            />
+            <TituloDeSecao titulo={tipoFilho.plural} total={filhos.length} />
             <div className="flex flex-wrap items-center gap-2">
               <FiltroDaLista
                 valor={filtroSecoes}
                 aoMudar={setFiltroSecoes}
-                placeholder="Filtrar seções…"
+                placeholder={`Filtrar ${tipoFilho.plural.toLowerCase()}…`}
               />
               {isAdmin && filhos.length > 1 && (
                 <Interruptor
@@ -234,6 +287,8 @@ export function BlockPage() {
           </div>
           <BlockCards
             blocos={secoes}
+            subprodutos={netos}
+            resumos={resumos}
             editavel={isAdmin}
             organizar={isAdmin && organizar && filtroSecoes.trim() === ''}
             onReorder={(o) =>
@@ -242,6 +297,7 @@ export function BlockPage() {
             onEdit={setEditandoFilho}
             onDelete={(b) => void excluirFilho(b)}
             onNovo={isAdmin ? () => setModo('novo') : undefined}
+            rotuloNovo={tipoFilho.artigoNovo}
           />
           {organizar && filtroSecoes.trim() !== '' && (
             <p className="mt-2 text-xs text-suave">
@@ -261,26 +317,52 @@ export function BlockPage() {
                 aoMudar={setFiltroArtigos}
                 placeholder="Filtrar neste bloco…"
               />
-              <select
-                aria-label="Filtrar por categoria"
-                className="campo w-auto"
-                value={filtroCategoria}
-                onChange={(e) => setFiltroCategoria(e.target.value)}
-              >
-                <option value="">Todas as categorias</option>
-                {CATEGORIAS.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-              <BotaoOrdenar
-                crescente={crescente}
-                aoAlternar={() => setCrescente((c) => !c)}
-              />
+              <label className="flex items-center gap-2 text-sm text-suave">
+                Ordenar
+                <select
+                  className="campo w-auto"
+                  value={ordem}
+                  onChange={(e) =>
+                    setOrdem(
+                      e.target.value as 'recentes' | 'acessados' | 'titulo',
+                    )
+                  }
+                >
+                  <option value="recentes">Mais recentes</option>
+                  <option value="acessados">Mais acessados</option>
+                  <option value="titulo">Título (A a Z)</option>
+                </select>
+              </label>
               <AlternarVisao visao={visao} aoMudar={setVisao} />
             </div>
           </div>
+          {categoriasPresentes.length > 0 && (
+            <div
+              role="group"
+              aria-label="Filtrar por categoria"
+              className="mb-4 flex flex-wrap gap-2"
+            >
+              <button
+                type="button"
+                aria-pressed={filtroCategoria === ''}
+                onClick={() => setFiltroCategoria('')}
+                className={`rounded-full border px-3 py-1 text-sm font-medium ${filtroCategoria === '' ? 'border-escuro bg-escuro text-white' : 'border-borda bg-cartao text-suave hover:text-texto'}`}
+              >
+                Todos ({todosArtigos.length})
+              </button>
+              {categoriasPresentes.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  aria-pressed={filtroCategoria === c.id}
+                  onClick={() => setFiltroCategoria(c.id)}
+                  className={`rounded-full border px-3 py-1 text-sm font-medium ${filtroCategoria === c.id ? 'border-escuro bg-escuro text-white' : 'border-borda bg-cartao text-suave hover:text-texto'}`}
+                >
+                  {c.nome} ({c.total})
+                </button>
+              ))}
+            </div>
+          )}
           {todosArtigos.length === 0 ? (
             <p className="text-suave">Nenhum artigo neste bloco.</p>
           ) : artigos.length === 0 ? (
