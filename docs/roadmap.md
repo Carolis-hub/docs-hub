@@ -275,7 +275,10 @@ ou mudar de banco antes da Fase 5.
       pré-visualização lado a lado: o editor já é visual)
 - [x] Busca: filtro de módulo, caminho completo do resultado e contagem "para
       “termo”, ordenados por relevância"
-- [ ] Assistente: painel lateral em todas as telas
+- [x] Assistente: painel lateral em todas as telas (botão flutuante; a conversa
+      continua ao fechar; "Abrir em tela cheia"). As 4 funções do protótipo
+      (resumir, revisar rascunhos, apontar lacunas) ainda não existem: só
+      responder dúvidas
 - [x] Métricas: filtro por BU, cartões (BUs, produtos, módulos documentados e
       cobertura, artigos, visualizações, desatualizados), artigos por BU, por
       produto e por mês
