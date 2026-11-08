@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Block } from '../types/content'
 import type { SearchItem } from '../types/search'
+import { TEXTO_INDEX_MAX } from '../utils/searchIndex'
 
 vi.mock('./firebase', () => ({ db: {} }))
 vi.mock('firebase/firestore', () => ({
@@ -156,10 +157,10 @@ describe('itemDoArtigo', () => {
       id: 'a',
       titulo: 't',
       resumo: 'r',
-      textoPlano: 'x'.repeat(10000),
+      textoPlano: 'x'.repeat(TEXTO_INDEX_MAX + 5000),
       blockId: 'b',
       publico: 'usuario',
     })
-    expect(r.textoPlano).toHaveLength(4000)
+    expect(r.textoPlano).toHaveLength(TEXTO_INDEX_MAX)
   })
 })

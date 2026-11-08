@@ -233,7 +233,11 @@ ou mudar de banco antes da Fase 5.
       com preferência por usuário em Configurações
 - [x] Home, Métricas e Configurações visíveis só para admin
 - [ ] Documentação de API na aside (falta definir a fonte)
-- [ ] Melhorar a busca com IA para explicar conceitos (glossário, sinônimos)
+- [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
+      texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"
+- [ ] Importar/escrever os artigos conceituais (ex.: "Gerenciamento de tipo de
+      índice") e um glossário: sem o conteúdo, a IA só pode dizer que não achou
+- [ ] Rodar `assistente-avaliar` com a chave real e perguntas de conceito
 
 ### Backlog (do `PLAN.md`)
 

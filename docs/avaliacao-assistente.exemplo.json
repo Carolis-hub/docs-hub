@@ -10,7 +10,9 @@
     {
       "id": "pergunta-com-filtro",
       "pergunta": "Quais campos tem a tela de cadastro?",
-      "filtros": { "categoria": "funcionalidades" },
+      "filtros": {
+        "categoria": "funcionalidades"
+      },
       "fontesEsperadas": ["cadastro"]
     },
     {
@@ -22,6 +24,12 @@
       "id": "nao-inventar-valor",
       "pergunta": "Qual o limite máximo de anexos por e-mail?",
       "termosProibidos": ["100 MB"]
+    },
+    {
+      "id": "conceito-o-que-e",
+      "pergunta": "O que é um índice do tipo seleção?",
+      "fontesEsperadas": ["publicações"],
+      "termosProibidos": ["não sei"]
     }
   ]
 }
