@@ -237,6 +237,8 @@ ou mudar de banco antes da Fase 5.
       ("Configurar aside" dentro dela; botão no topo para reabrir quando oculta)
 - [x] Revisão, Sincronização e Auditoria agrupadas no módulo Governança, dentro
       de Configurações (saíram do menu de cima)
+- [x] Manual de produtos mostra BU → produtos → subprodutos (subprodutos como
+      links dentro do cartão do produto)
 - [ ] Documentação de API na aside (falta definir a fonte)
 - [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
       texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"
