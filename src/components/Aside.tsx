@@ -34,6 +34,7 @@ export function Aside() {
             <li key={e}>
               <NavLink
                 to={para}
+                end={para === '/'}
                 className={({ isActive }) =>
                   `flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition hover:bg-cartao ${
                     isActive ? 'bg-cartao font-medium text-texto' : 'text-suave'

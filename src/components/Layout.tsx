@@ -8,7 +8,6 @@ import { QuickSearch } from './QuickSearch'
 import { ThemeToggle } from './ThemeToggle'
 
 const LINKS_ADMIN = [
-  { para: '/', rotulo: 'Home' },
   { para: '/admin/revisao', rotulo: 'Revisão' },
   { para: '/admin/sugestoes', rotulo: 'Sugestões' },
   { para: '/admin/metricas', rotulo: 'Métricas' },
@@ -62,7 +61,6 @@ export function Layout({ children }: { children: ReactNode }) {
                 <NavLink
                   key={l.para}
                   to={l.para}
-                  end={l.para === '/'}
                   className={({ isActive }) =>
                     `transition hover:text-texto ${isActive ? 'font-medium text-texto' : 'text-suave'}`
                   }
