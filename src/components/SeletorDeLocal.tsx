@@ -6,6 +6,8 @@ import { listUnidades } from '../services/unidades'
 interface Props {
   /** Bloco de destino escolhido (o mais fundo selecionado) ou `null`. */
   onChange: (blockId: string | null) => void
+  /** Começa já posicionado num bloco existente (para mover um artigo). */
+  inicial?: { productId: string; blockId: string }
 }
 
 const rotulo = 'block text-sm'
@@ -14,7 +16,7 @@ const rotulo = 'block text-sm'
  * Escolha em cascata de onde o artigo fica: BU, produto, subproduto e módulo.
  * O destino é o nível mais fundo escolhido.
  */
-export function SeletorDeLocal({ onChange }: Props) {
+export function SeletorDeLocal({ onChange, inicial }: Props) {
   const { dados } = useAsync(async () => {
     const [unidades, produtos] = await Promise.all([
       listUnidades(),
@@ -23,9 +25,12 @@ export function SeletorDeLocal({ onChange }: Props) {
     return { unidades, produtos }
   }, [])
   const [unidadeId, setUnidadeId] = useState('')
-  const [produtoId, setProdutoId] = useState('')
+  const [produtoId, setProdutoId] = useState(inicial?.productId ?? '')
   const [subId, setSubId] = useState('')
   const [moduloId, setModuloId] = useState('')
+  // Enquanto a pessoa não mexe, vale o bloco inicial (pode ser mais fundo que o módulo).
+  const [tocou, setTocou] = useState(false)
+  const [posicionado, setPosicionado] = useState(!inicial)
   const { dados: arvore } = useAsync(
     async () => (produtoId ? await listProductTree(produtoId) : []),
     [produtoId],
@@ -43,9 +48,33 @@ export function SeletorDeLocal({ onChange }: Props) {
     (b) => subId !== '' && b.parentId === subId,
   )
 
+  // Posiciona BU, subproduto e módulo a partir do bloco inicial, uma vez só.
   useEffect(() => {
+    if (!inicial || posicionado || !dados || !arvore || arvore.length === 0)
+      return
+    const porId = new Map(arvore.map((b) => [b.id, b]))
+    const cadeia: string[] = []
+    let atual = porId.get(inicial.blockId)
+    while (atual && atual.parentId !== null) {
+      cadeia.unshift(atual.id)
+      atual = porId.get(atual.parentId)
+    }
+    setUnidadeId(
+      dados.produtos.find((p) => p.id === produtoId)?.unidadeId ?? '',
+    )
+    setSubId(cadeia[0] ?? '')
+    setModuloId(cadeia[1] ?? '')
+    setPosicionado(true)
+  }, [inicial, posicionado, dados, arvore, produtoId])
+
+  useEffect(() => {
+    if (!posicionado) return
+    if (inicial && !tocou) {
+      onChange(inicial.blockId)
+      return
+    }
     onChange(moduloId || subId || produtoId || null)
-  }, [moduloId, subId, produtoId, onChange])
+  }, [moduloId, subId, produtoId, onChange, inicial, tocou, posicionado])
 
   return (
     <fieldset className="cartao grid gap-4 p-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -57,6 +86,7 @@ export function SeletorDeLocal({ onChange }: Props) {
             className="campo mt-1"
             value={unidadeId}
             onChange={(e) => {
+              setTocou(true)
               setUnidadeId(e.target.value)
               setProdutoId('')
               setSubId('')
@@ -78,6 +108,7 @@ export function SeletorDeLocal({ onChange }: Props) {
           className="campo mt-1"
           value={produtoId}
           onChange={(e) => {
+            setTocou(true)
             setProdutoId(e.target.value)
             setSubId('')
             setModuloId('')
@@ -98,6 +129,7 @@ export function SeletorDeLocal({ onChange }: Props) {
             className="campo mt-1"
             value={subId}
             onChange={(e) => {
+              setTocou(true)
               setSubId(e.target.value)
               setModuloId('')
             }}
@@ -117,7 +149,10 @@ export function SeletorDeLocal({ onChange }: Props) {
           <select
             className="campo mt-1"
             value={moduloId}
-            onChange={(e) => setModuloId(e.target.value)}
+            onChange={(e) => {
+              setTocou(true)
+              setModuloId(e.target.value)
+            }}
           >
             <option value="">No próprio subproduto</option>
             {modulos.map((b) => (

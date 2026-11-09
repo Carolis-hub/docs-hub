@@ -17,6 +17,7 @@ const clearFlag = vi.fn()
 const listAllBlocks = vi.fn()
 const aprovarEPublicar = vi.fn()
 const transitar = vi.fn()
+const moverArtigo = vi.fn()
 
 vi.mock('../../hooks/useAuth', () => ({
   useAuth: () => ({
@@ -35,9 +36,57 @@ vi.mock('../../services/articles', () => ({
 vi.mock('../../services/governanca', () => ({
   aprovarEPublicar: (...a: unknown[]) => aprovarEPublicar(...a),
   transitar: (...a: unknown[]) => transitar(...a),
+  moverArtigo: (...a: unknown[]) => moverArtigo(...a),
 }))
 vi.mock('../../services/blocks', () => ({
   listAllBlocks: (...a: unknown[]) => listAllBlocks(...a),
+  listProducts: async () => [
+    {
+      id: 'p',
+      nome: 'SmartShare 4',
+      slug: 'p',
+      descricao: '',
+      icone: '',
+      ordem: 0,
+      parentId: null,
+      productId: 'p',
+    },
+  ],
+  listProductTree: async () => [
+    {
+      id: 'p',
+      nome: 'SmartShare 4',
+      slug: 'p',
+      descricao: '',
+      icone: '',
+      ordem: 0,
+      parentId: null,
+      productId: 'p',
+    },
+    {
+      id: 'anexos',
+      nome: 'Anexos',
+      slug: 'anexos',
+      descricao: '',
+      icone: '',
+      ordem: 0,
+      parentId: 'p',
+      productId: 'p',
+    },
+    {
+      id: 'dash',
+      nome: 'Dashboard',
+      slug: 'dash',
+      descricao: '',
+      icone: '',
+      ordem: 1,
+      parentId: 'p',
+      productId: 'p',
+    },
+  ],
+}))
+vi.mock('../../services/unidades', () => ({
+  listUnidades: async () => [],
 }))
 
 const bloco = (id: string, nome: string, parentId: string | null): Block => ({
@@ -93,6 +142,7 @@ beforeEach(() => {
   listArticlesByFlag.mockResolvedValue([])
   aprovarEPublicar.mockResolvedValue({ versao: 1 })
   transitar.mockResolvedValue({ versao: 1 })
+  moverArtigo.mockResolvedValue({ productId: 'p', blockId: 'dash' })
   clearFlag.mockResolvedValue(undefined)
 })
 
@@ -105,6 +155,23 @@ describe('RevisaoPage', () => {
     expect(screen.getAllByText('SmartShare 4 › Anexos')).toHaveLength(2)
     expect(screen.getAllByText('Importado')).toHaveLength(1)
     expect(screen.getByText(/2 itens aguardando revisão/)).toBeInTheDocument()
+  })
+
+  it('"Mover" escolhe o subproduto de destino e move o artigo', async () => {
+    abrir()
+    await screen.findByText('Como excluir anexos?')
+    fireEvent.click(screen.getAllByRole('button', { name: 'Mover' })[0]!)
+    const sub = await screen.findByLabelText('Subproduto')
+    await waitFor(() => expect((sub as HTMLSelectElement).value).toBe('anexos'))
+    expect(screen.getByRole('button', { name: 'Mover para cá' })).toBeDisabled()
+    fireEvent.change(sub, { target: { value: 'dash' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Mover para cá' }))
+    await waitFor(() =>
+      expect(moverArtigo).toHaveBeenCalledWith('1', 'dash', 'admin'),
+    )
+    expect(
+      await screen.findByText(/"Como excluir anexos\?" foi movido/),
+    ).toBeInTheDocument()
   })
 
   it('avisa quando a fila está vazia', async () => {

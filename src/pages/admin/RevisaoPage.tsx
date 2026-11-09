@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ClipboardCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { MoverArtigo } from '../../components/MoverArtigo'
 import { PageHeader } from '../../components/PageHeader'
 import { useAsync } from '../../hooks/useAsync'
 import { useAuth } from '../../hooks/useAuth'
@@ -59,6 +60,7 @@ export function RevisaoPage() {
   const [ocupado, setOcupado] = useState(false)
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [falhas, setFalhas] = useState<string[]>([])
+  const [movendo, setMovendo] = useState<string | null>(null)
 
   const blocos = useMemo(() => dados?.blocos ?? [], [dados])
   const produtos = blocos
@@ -194,6 +196,31 @@ export function RevisaoPage() {
       }
       recarregar()
     })
+
+  const painelDeMover = (a: Article) =>
+    movendo === a.id && (
+      <div className="mt-3">
+        <MoverArtigo
+          artigo={a}
+          aoCancelar={() => setMovendo(null)}
+          aoMover={() => {
+            setMovendo(null)
+            setMensagem(`"${a.titulo}" foi movido.`)
+            recarregar()
+          }}
+        />
+      </div>
+    )
+  const botaoMover = (a: Article) => (
+    <button
+      type="button"
+      className="botao"
+      disabled={ocupado}
+      onClick={() => setMovendo(movendo === a.id ? null : a.id)}
+    >
+      Mover
+    </button>
+  )
 
   const selecionados = artigos.filter((a) => marcados.has(a.id))
   const totalFila = (dados?.fila.length ?? 0) + (dados?.aprovados.length ?? 0)
@@ -383,6 +410,7 @@ export function RevisaoPage() {
                         {resumo}
                       </p>
                     )}
+                    {painelDeMover(a)}
                   </div>
                   <div className="flex shrink-0 flex-wrap items-start gap-2">
                     <Link
@@ -391,6 +419,7 @@ export function RevisaoPage() {
                     >
                       Revisar
                     </Link>
+                    {botaoMover(a)}
                     <button
                       type="button"
                       className="botao"
@@ -448,11 +477,13 @@ export function RevisaoPage() {
                   <p className="text-xs text-suave">
                     {caminhoDoBloco(blocos, a.blockId)}
                   </p>
+                  {painelDeMover(a)}
                 </div>
                 <div className="flex shrink-0 flex-wrap items-start gap-2">
                   <Link to={`/admin/artigos/${a.id}/editar`} className="botao">
                     Revisar
                   </Link>
+                  {botaoMover(a)}
                   <button
                     type="button"
                     className="botao botao-primario"

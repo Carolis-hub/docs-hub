@@ -8,6 +8,7 @@ const ROTULOS: Record<string, string> = {
   'unidade.excluir': 'Excluiu uma unidade de negócio',
   'artigo.criar': 'Criou o artigo',
   'artigo.editar': 'Editou o artigo',
+  'artigo.mover': 'Moveu o artigo de lugar',
   'artigo.enviar-revisao': 'Enviou para revisão',
   'artigo.aprovar': 'Aprovou',
   'artigo.reprovar': 'Reprovou (pediu ajustes)',
