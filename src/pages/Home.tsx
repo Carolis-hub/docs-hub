@@ -11,6 +11,7 @@ import { carregarVisaoGeral } from '../services/visaoGeral'
 import type { Block, Unidade } from '../types/content'
 import { pluralizar, resumirUnidade } from '../utils/resumoUnidade'
 import { agruparPorUnidade } from '../utils/unidades'
+import { Carregando } from '../components/Carregando'
 
 function CartaoUnidade({
   unidade,
@@ -163,7 +164,7 @@ export function Home() {
           {aviso}
         </p>
       )}
-      {carregando && <p className="text-suave">Carregando…</p>}
+      {carregando && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo">
           {erro}

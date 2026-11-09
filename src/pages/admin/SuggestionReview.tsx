@@ -10,6 +10,7 @@ import {
   getSuggestion,
   sugestaoDefasada,
 } from '../../services/suggestions'
+import { Carregando } from '../../components/Carregando'
 
 const botao = 'rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-50'
 
@@ -28,7 +29,7 @@ export function SuggestionReview() {
   const [ocupado, setOcupado] = useState(false)
   const [falha, setFalha] = useState<string | null>(null)
 
-  if (carregando && !dados) return <p className="text-suave">Carregando…</p>
+  if (carregando && !dados) return <Carregando />
   if (erro)
     return (
       <p role="alert" className="text-perigo ">

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAsync } from '../../hooks/useAsync'
 import { getArticle } from '../../services/articles'
 import { listPendingSuggestions } from '../../services/suggestions'
+import { Carregando } from '../../components/Carregando'
 
 export function SuggestionsPage() {
   const { dados, erro, carregando } = useAsync(async () => {
@@ -23,7 +24,7 @@ export function SuggestionsPage() {
         sem a sua aprovação.
       </p>
 
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo ">
           {erro}

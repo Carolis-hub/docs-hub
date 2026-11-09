@@ -17,6 +17,7 @@ import type { Article } from '../../types/content'
 import { nomeDaCategoria } from '../../utils/categorias'
 import { limparMarcadores, temImagemNaoMigrada } from '../../utils/content'
 import { caminhoDoBloco, rotuloDoStatus } from '../../utils/revisao'
+import { Carregando } from '../../components/Carregando'
 
 const plural = (n: number, um: string, varios: string) =>
   `${n} ${n === 1 ? um : varios}`
@@ -237,7 +238,7 @@ export function RevisaoPage() {
         }
       />
 
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo">
           {erro}

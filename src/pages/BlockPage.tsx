@@ -39,6 +39,7 @@ import { comDescendentes, tipoDoNivel, tipoDosFilhos } from '../utils/blocos'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
 import { normalizar } from '../utils/search'
+import { Carregando } from '../components/Carregando'
 
 const plural = (n: number, um: string, varios: string) =>
   `${n} ${n === 1 ? um : varios}`
@@ -130,7 +131,7 @@ export function BlockPage() {
     })
   }, [dados, filtroArtigos, filtroCategoria, ordem])
 
-  if (carregando && !dados) return <p className="text-suave">Carregando…</p>
+  if (carregando && !dados) return <Carregando />
   if (erro)
     return (
       <p role="alert" className="text-perigo">

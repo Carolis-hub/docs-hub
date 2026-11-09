@@ -19,6 +19,7 @@ import {
   updateUnidade,
 } from '../../services/unidades'
 import type { Unidade } from '../../types/content'
+import { Carregando } from '../../components/Carregando'
 
 export function UnidadesPage() {
   const { user } = useAuth()
@@ -100,7 +101,7 @@ export function UnidadesPage() {
         </p>
       )}
 
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo">
           {erro}

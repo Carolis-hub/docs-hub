@@ -12,6 +12,7 @@ import {
   situacaoDaFonte,
   type SituacaoFonte,
 } from '../../utils/sincronizacao'
+import { Carregando } from '../../components/Carregando'
 
 const MODO = { manual: 'Manual', observar: 'Vigiando a pasta', git: 'Git' }
 
@@ -43,7 +44,7 @@ export function SincronizacaoPage() {
         }
       />
 
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo">
           {erro}

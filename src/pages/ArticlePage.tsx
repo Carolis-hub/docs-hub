@@ -14,6 +14,7 @@ import { nomeDaCategoria } from '../utils/categorias'
 import { relacionados } from '../utils/relacionados'
 import { extrairTopicos } from '../utils/topicos'
 import { rotuloDoStatus } from '../utils/revisao'
+import { Carregando } from '../components/Carregando'
 
 export function ArticlePage() {
   const { articleId = '' } = useParams()
@@ -57,7 +58,7 @@ export function ArticlePage() {
     }
   }
 
-  if (carregando) return <p className="text-suave">Carregando…</p>
+  if (carregando) return <Carregando />
   if (erro)
     return (
       <p role="alert" className="text-perigo ">

@@ -53,6 +53,7 @@ import {
   trechosParaPreencher,
 } from '../../utils/modelos'
 import { rotuloDoStatus } from '../../utils/revisao'
+import { Carregando } from '../../components/Carregando'
 
 const campo = 'campo mt-1'
 const botaoSec = 'botao'
@@ -188,7 +189,7 @@ export function ArticleEditor() {
   )
   const nomeDe = (id?: string) => (id ? (nomes.get(id) ?? id.slice(0, 6)) : '—')
 
-  if (carregando && !dados) return <p className="text-suave">Carregando…</p>
+  if (carregando && !dados) return <Carregando />
   if (erro)
     return (
       <p role="alert" className="text-perigo ">
