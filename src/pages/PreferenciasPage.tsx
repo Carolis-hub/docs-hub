@@ -2,8 +2,7 @@ import { useState } from 'react'
 import { KeyRound } from 'lucide-react'
 import { PageHeader } from '../components/PageHeader'
 import { useAuth } from '../hooks/useAuth'
-import { useModoAside } from '../hooks/useModoAside'
-import { MODOS_ASIDE } from '../utils/aside'
+import { ConfiguracoesDoUsuario } from '../components/ConfiguracoesDoUsuario'
 import {
   chaveIAValida,
   gravarChaveIA,
@@ -14,7 +13,6 @@ import {
 export function PreferenciasPage() {
   const { user } = useAuth()
   const uid = user?.uid ?? ''
-  const { modo, setModo } = useModoAside(user?.uid)
   const [guardada, setGuardada] = useState(() => lerChaveIA(uid))
   const [campo, setCampo] = useState('')
   const [aviso, setAviso] = useState<string | null>(null)
@@ -39,27 +37,9 @@ export function PreferenciasPage() {
   return (
     <div className="max-w-xl">
       <PageHeader icone={KeyRound} titulo="Minhas preferências" />
-      <fieldset className="cartao mb-6 p-5">
-        <legend className="px-1 text-sm font-medium text-texto">
-          Aside lateral
-        </legend>
-        <p className="mb-3 text-sm text-suave">
-          Vale só para você, neste navegador.
-        </p>
-        <div className="space-y-2">
-          {MODOS_ASIDE.map((m) => (
-            <label key={m.valor} className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="modo-aside-preferencias"
-                checked={modo === m.valor}
-                onChange={() => setModo(m.valor)}
-              />
-              {m.rotulo}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <div className="mb-6">
+        <ConfiguracoesDoUsuario />
+      </div>
 
       <section aria-labelledby="chave-ia" className="cartao p-5">
         <h2 id="chave-ia" className="text-sm font-medium text-texto">

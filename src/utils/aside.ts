@@ -1,28 +1,7 @@
-/** Entradas da aside esquerda (visível só para administradores). */
+/** Entradas da aside esquerda. */
 export type EntradaAside = 'manual' | 'busca'
 
-/** Modo escolhido por cada administrador em Configurações. */
-export type ModoAside = 'toda' | 'manual' | 'busca' | 'oculta'
+/** Modo da aside que cada pessoa guardava neste navegador (antes de ir para a conta). */
+export type ModoAsideLegado = 'toda' | 'manual' | 'busca' | 'oculta'
 
-export const MODOS_ASIDE: { valor: ModoAside; rotulo: string }[] = [
-  { valor: 'toda', rotulo: 'Visualizar toda a aside' },
-  { valor: 'manual', rotulo: 'Apenas manual de produtos' },
-  { valor: 'busca', rotulo: 'Apenas busca/consulta com IA' },
-  { valor: 'oculta', rotulo: 'Ocultar a aside' },
-]
-
-const VALIDOS = new Set<string>(MODOS_ASIDE.map((m) => m.valor))
-
-export function modoAsideValido(v: unknown): ModoAside {
-  return typeof v === 'string' && VALIDOS.has(v) ? (v as ModoAside) : 'toda'
-}
-
-/** Quais entradas aparecem, conforme a escolha de cada usuário. */
-export function entradasVisiveis(modo: ModoAside): EntradaAside[] {
-  if (modo === 'oculta') return []
-  if (modo === 'manual') return ['manual']
-  if (modo === 'busca') return ['busca']
-  return ['manual', 'busca']
-}
-
-export const chaveModoAside = (uid: string) => `docshub.aside.${uid}`
+export const chaveModoLegado = (uid: string) => `docshub.aside.${uid}`
