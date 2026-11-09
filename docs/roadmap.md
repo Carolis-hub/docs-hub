@@ -284,6 +284,35 @@ ou mudar de banco antes da Fase 5.
   Sincronização, Auditoria, Uso da IA, Unidades, Sugestões, tela de erro e de
   "sem acesso", tema escuro
 
+### Futuro: sincronização de pastas pela tela (agente local)
+
+Objetivo: subir e acompanhar documentações de uma pasta **sem depender do
+Claude nem do terminal**. Um site não lê o disco do computador, então a tela
+fala com um agente que roda na máquina de quem tem a pasta (mesmo modelo do
+servidor do assistente: só aceita o endereço do sistema, no próprio computador,
+e confere o login de admin).
+
+- [ ] Agente local (`npm run ingestao -- --servidor`): lê as pastas
+      configuradas e responde à tela; reaproveita a ingestão existente
+      (simulação, gravação e vigília)
+- [ ] Botão **"Verificar pendências"** em Sincronização/Revisão: compara a pasta
+      com o docs-hub, sem gravar, e lista novos, alterados, removidos e com erro
+- [ ] Botão **"Enviar para revisão"**, por arquivo ou todos de uma vez; nada é
+      publicado sozinho
+- [ ] Estado de cada arquivo ao lado do nome: novo (ainda não subiu), pendente
+      (em revisão ou sugestão pendente), publicado, reprovado, removido da pasta
+- [ ] Botão para ligar e desligar a vigília da pasta (conferência a cada 2 min)
+- [ ] Lista de fontes (pasta, produto, última conferência, contagens); decidir se
+      fica num arquivo local ou cadastrada na tela
+- [ ] Iniciar o agente junto com o Windows (atalho ou tarefa agendada)
+- Link simbólico não é necessário: o agente lê o caminho configurado; uma junção
+  (`mklink /J`) também funciona
+- Limites: o agente precisa estar ligado e só roda na máquina que tem a pasta;
+  não dá para testar a leitura de pasta real fora dessa máquina
+- Alternativas descartadas por ora: escolher a pasta direto no navegador (só
+  Chrome/Edge, reler a pasta de tempos em tempos, exige mudar as regras do
+  Firestore) e só o workflow de Git (`ingestao.yml`, ainda não exercitado)
+
 ### Backlog (do `PLAN.md`)
 
 - [ ] Versões por versão do produto
