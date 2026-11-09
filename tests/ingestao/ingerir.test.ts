@@ -77,6 +77,45 @@ beforeEach(async () => {
   await escrever('manual.pdf', 'pdf')
 })
 
+describe('destino por subproduto (--bloco)', () => {
+  const criarSub = async (id: string, nome: string) =>
+    db().doc(`blocks/${id}`).set({
+      nome,
+      slug: nome.toLowerCase(),
+      parentId: 'p-di',
+      productId: 'p-di',
+    })
+
+  it('aceita o nome do subproduto e grava os artigos dentro dele', async () => {
+    await criarSub('sub1', 'Documentação')
+    await ingerir(db(), opcoes({ bloco: 'documentação' }))
+    const config = await porTitulo('Configurar o e-mail')
+    const bloco = await db().doc(`blocks/${config.blockId}`).get()
+    expect(bloco.get('parentId')).toBe('sub1')
+  })
+
+  it('aceita o id do subproduto', async () => {
+    await criarSub('sub1', 'Documentação')
+    const r = await ingerir(db(), opcoes({ bloco: 'sub1', gravar: false }))
+    expect(r.contagem.novo).toBe(3)
+  })
+
+  it('nome inexistente: o erro lista os subprodutos com os ids', async () => {
+    await criarSub('sub1', 'Documentação')
+    await expect(
+      ingerir(db(), opcoes({ bloco: 'nao-existe', gravar: false })),
+    ).rejects.toThrow(/Documentação \(id: sub1\)/)
+  })
+
+  it('dois subprodutos com o mesmo nome: pede o id', async () => {
+    await criarSub('sub1', 'Docs')
+    await criarSub('sub2', 'Docs')
+    await expect(
+      ingerir(db(), opcoes({ bloco: 'docs', gravar: false })),
+    ).rejects.toThrow(/Use o id/)
+  })
+})
+
 describe('ingestão de arquivos (Emulator)', () => {
   it('simulação não grava nada, mas relata o que faria', async () => {
     const r = await ingerir(db(), opcoes({ gravar: false }))
