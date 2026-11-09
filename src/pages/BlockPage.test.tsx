@@ -168,12 +168,18 @@ describe('BlockPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('produto sem informações: o admin vê o convite e o leitor não vê nada', async () => {
+  it('produto sem ficha salva: o admin já vê as 5 opções da estrutura padrão', async () => {
     await abrir('p')
+    const opcoes = await screen.findAllByRole('tab')
+    expect(opcoes.map((o) => o.textContent)).toEqual([
+      'Compatibilidade DI',
+      'Compatibilidade SmartShare',
+      'Instaladores e Aplicativos',
+      'Release Notes',
+      'Contato',
+    ])
     expect(
-      await screen.findByRole('button', {
-        name: /Adicionar informações do produto/,
-      }),
+      screen.getByText(/Estrutura padrão, ainda não salva/),
     ).toBeInTheDocument()
   })
 

@@ -55,10 +55,43 @@ describe('FichaDoProduto', () => {
     expect(screen.getByRole('link', { name: /^Portal/ })).toBeInTheDocument()
   })
 
+  it('as opções ficam na lateral (lista vertical) e a descrição vai no topo da esquerda', () => {
+    render(
+      <FichaDoProduto
+        ficha={ficha}
+        topo={<p>Descrição do produto</p>}
+        acoes={<button type="button">Editar informações</button>}
+      />,
+    )
+    const lista = screen.getByRole('tablist')
+    expect(lista).toHaveAttribute('aria-orientation', 'vertical')
+    const lateral = screen.getByRole('complementary', {
+      name: 'Opções do produto',
+    })
+    expect(lateral).toContainElement(lista)
+    expect(
+      within(lateral).getByRole('button', { name: 'Editar informações' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Descrição do produto')).toBeInTheDocument()
+    expect(lateral).not.toContainElement(
+      screen.getByText('Descrição do produto'),
+    )
+  })
+
+  it('aba sem conteúdo avisa o admin e o leitor de formas diferentes', () => {
+    const vazia: Ficha = {
+      secoes: [{ id: 'v', tipo: 'texto', titulo: 'Release Notes', texto: '' }],
+    }
+    const { rerender } = render(<FichaDoProduto ficha={vazia} admin />)
+    expect(screen.getByText(/Use "Editar informações"/)).toBeInTheDocument()
+    rerender(<FichaDoProduto ficha={vazia} />)
+    expect(screen.getByText('Sem conteúdo por enquanto.')).toBeInTheDocument()
+  })
+
   it('as setas do teclado trocam de aba', () => {
     render(<FichaDoProduto ficha={ficha} />)
     const lista = screen.getByRole('tablist')
-    fireEvent.keyDown(lista, { key: 'ArrowRight' })
+    fireEvent.keyDown(lista, { key: 'ArrowDown' })
     expect(screen.getAllByRole('tab')[1]).toHaveAttribute(
       'aria-selected',
       'true',

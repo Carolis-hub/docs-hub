@@ -6,6 +6,7 @@ import {
   moverSecao,
   normalizarFicha,
   secaoVazia,
+  temConteudo,
   tabelaParaTexto,
   textoParaLinks,
   textoParaTabela,
@@ -122,5 +123,25 @@ describe('moverSecao e modelo', () => {
       'Contato',
     ])
     expect(normalizarFicha(m).secoes).toHaveLength(5)
+  })
+})
+
+describe('temConteudo', () => {
+  it('seção só com título não tem conteúdo; texto, linhas ou links têm', () => {
+    expect(temConteudo(secaoVazia('texto'))).toBe(false)
+    expect(temConteudo({ ...secaoVazia('texto'), texto: 'Oi' } as never)).toBe(
+      true,
+    )
+    expect(temConteudo(secaoVazia('tabela'))).toBe(false)
+    expect(
+      temConteudo({ ...secaoVazia('tabela'), linhas: [['1', '2']] } as never),
+    ).toBe(true)
+    expect(temConteudo(secaoVazia('links'))).toBe(false)
+    expect(
+      temConteudo({
+        ...secaoVazia('links'),
+        itens: [{ rotulo: 'a', url: '' }],
+      } as never),
+    ).toBe(true)
   })
 })

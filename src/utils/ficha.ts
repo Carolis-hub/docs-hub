@@ -70,6 +70,14 @@ export function textoParaLinks(
     .filter((i) => i.rotulo !== '')
 }
 
+/** A seção tem algo para mostrar ao leitor (texto, linhas ou links)? */
+export function temConteudo(s: SecaoFicha): boolean {
+  if (s.texto.trim()) return true
+  if (s.tipo === 'tabela') return s.linhas.length > 0
+  if (s.tipo === 'links') return s.itens.length > 0
+  return false
+}
+
 /** Só endereços http(s) e mailto viram link; o resto é descartado. */
 export function urlSegura(url: string): string {
   const u = url.trim()

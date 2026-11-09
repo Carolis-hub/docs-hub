@@ -34,8 +34,9 @@ import {
 import { listArticlesByBlock } from '../services/articles'
 import { getUnidade, listUnidades } from '../services/unidades'
 import { contarArtigosPorBlocos } from '../services/visaoGeral'
-import type { Block, Ficha } from '../types/content'
+import type { Block } from '../types/content'
 import { comDescendentes, tipoDoNivel, tipoDosFilhos } from '../utils/blocos'
+import { fichaModelo, temConteudo } from '../utils/ficha'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
 import { normalizar } from '../utils/search'
@@ -109,6 +110,9 @@ export function BlockPage() {
     'lista',
     ['lista', 'grade'],
   )
+
+  // Estrutura padrão (as 5 opções), mostrada ao admin enquanto a ficha não foi salva.
+  const [fichaPadrao] = useState(() => fichaModelo())
 
   const secoes = useMemo(() => {
     const q = normalizar(filtroSecoes.trim())
@@ -273,65 +277,70 @@ export function BlockPage() {
         </p>
       )}
 
-      {ehProduto && (
-        <>
-          <DescricaoDoProduto
-            descricao={bloco.descricao}
-            editavel={isAdmin}
-            aoSalvar={async (texto) => {
-              await salvarDescricao(bloco.id, texto, uid)
-              recarregar()
-            }}
-          />
-          {editandoFicha ? (
-            <div className="mb-10">
-              <EditorDaFicha
-                inicial={bloco.ficha ?? { secoes: [] }}
-                aoCancelar={() => setEditandoFicha(false)}
-                aoSalvar={async (ficha) => {
-                  await salvarFicha(bloco.id, ficha, uid)
-                  setEditandoFicha(false)
-                  recarregar()
-                }}
-              />
-            </div>
-          ) : (bloco.ficha?.secoes.length ?? 0) > 0 || isAdmin ? (
-            <section className="mb-10" aria-label="Informações do produto">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">
-                  Informações do produto
-                </h2>
-                {isAdmin && (
-                  <button
-                    type="button"
-                    className="botao"
-                    onClick={() => setEditandoFicha(true)}
-                  >
-                    <Pencil className="size-4" aria-hidden />
-                    Editar informações
-                  </button>
-                )}
+      {ehProduto &&
+        (() => {
+          const salva = bloco.ficha?.secoes ?? []
+          const fichaPronta = salva.length > 0
+          const exibida = fichaPronta
+            ? isAdmin
+              ? { secoes: salva }
+              : { secoes: salva.filter(temConteudo) }
+            : isAdmin
+              ? fichaPadrao
+              : { secoes: [] }
+          const descricao = (
+            <DescricaoDoProduto
+              descricao={bloco.descricao}
+              editavel={isAdmin}
+              aoSalvar={async (texto) => {
+                await salvarDescricao(bloco.id, texto, uid)
+                recarregar()
+              }}
+            />
+          )
+          if (editandoFicha) {
+            return (
+              <div className="mb-10 space-y-6">
+                {descricao}
+                <EditorDaFicha
+                  inicial={fichaPronta ? { secoes: salva } : fichaPadrao}
+                  aoCancelar={() => setEditandoFicha(false)}
+                  aoSalvar={async (ficha) => {
+                    await salvarFicha(bloco.id, ficha, uid)
+                    setEditandoFicha(false)
+                    recarregar()
+                  }}
+                />
               </div>
-              {(bloco.ficha?.secoes.length ?? 0) > 0 ? (
-                <FichaDoProduto ficha={bloco.ficha as Ficha} />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setEditandoFicha(true)}
-                  className="flex w-full flex-col items-center gap-1 rounded-2xl border-[1.5px] border-dashed border-borda p-8 text-sm text-suave transition hover:border-destaque/60 hover:text-texto"
-                >
-                  <Plus className="size-5" aria-hidden />
-                  Adicionar informações do produto
-                  <span className="text-xs">
-                    Compatibilidade, instaladores, release notes e contato:
-                    editáveis a cada liberação.
-                  </span>
-                </button>
-              )}
+            )
+          }
+          return (
+            <section className="mb-10" aria-label="Informações do produto">
+              <FichaDoProduto
+                ficha={exibida}
+                admin={isAdmin}
+                topo={descricao}
+                aviso={
+                  isAdmin && !fichaPronta
+                    ? 'Estrutura padrão, ainda não salva. Edite e salve para criar as opções.'
+                    : undefined
+                }
+                acoes={
+                  isAdmin && (
+                    <button
+                      type="button"
+                      className="botao w-full"
+                      onClick={() => setEditandoFicha(true)}
+                    >
+                      <Pencil className="size-4" aria-hidden />
+                      Editar informações
+                    </button>
+                  )
+                }
+              />
             </section>
-          ) : null}
-        </>
-      )}
+          )
+        })()}
 
       {filhos.length > 0 && (
         <section className="mb-10" aria-label={tipoFilho.plural}>
