@@ -4,8 +4,8 @@ Plataforma interna da Selbetti para hospedar a documentação dos produtos,
 organizada em **BU → produto → subproduto → módulo → artigo**. Tem busca,
 métricas, governança editorial, assistente de IA e importação da base atual.
 
-Este texto descreve o que está na branch padrão. O que está em PR ou ainda não
-foi exercitado vem marcado. Detalhes de decisão e fases: `PLAN.md`; o que falta:
+Este texto descreve o que está na branch padrão. O que ainda não foi exercitado
+de verdade vem marcado. Detalhes de decisão e fases: `PLAN.md`; o que falta:
 `docs/roadmap.md`; como rodar: `README.md`.
 
 ## 1. Visão geral
@@ -68,15 +68,15 @@ Node.
 
 ### Modelo de dados (coleções principais)
 
-| Coleção                                                                                  | Conteúdo                                                                                                                         |
-| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `unidades`                                                                               | BUs                                                                                                                              |
-| `blocks`                                                                                 | Produtos (raiz) e subníveis, por `parentId`; produtos têm `unidadeId`, `descricao` e `ficha` (as 5 opções fixas) _(ficha em PR)_ |
-| `articles` (+ `versions`, `revisoes`, `comentarios`, `suggestions`, `viewsDaily`)        | Artigos e seus bastidores                                                                                                        |
-| `searchIndex/{produto}` (+ `partes`)                                                     | Índice de busca por produto, dividido por subproduto ao passar de ~800 KB (teto de 1 MiB do Firestore)                           |
-| `users`                                                                                  | Perfil e permissões                                                                                                              |
-| `preferenciasUsuario/{uid}`                                                              | Configurações pessoais (aside); só o dono lê e grava _(em PR)_                                                                   |
-| `auditLog`, `searchMisses`, `fontes`, `sincronizacoes`, `assistenteUso`, `assistenteLog` | Trilha, métricas e controles                                                                                                     |
+| Coleção                                                                                  | Conteúdo                                                                                                         |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `unidades`                                                                               | BUs                                                                                                              |
+| `blocks`                                                                                 | Produtos (raiz) e subníveis, por `parentId`; produtos têm `unidadeId`, `descricao` e `ficha` (as 5 opções fixas) |
+| `articles` (+ `versions`, `revisoes`, `comentarios`, `suggestions`, `viewsDaily`)        | Artigos e seus bastidores                                                                                        |
+| `searchIndex/{produto}` (+ `partes`)                                                     | Índice de busca por produto, dividido por subproduto ao passar de ~800 KB (teto de 1 MiB do Firestore)           |
+| `users`                                                                                  | Perfil e permissões                                                                                              |
+| `preferenciasUsuario/{uid}`                                                              | Configurações pessoais (aside); só o dono lê e grava                                                             |
+| `auditLog`, `searchMisses`, `fontes`, `sincronizacoes`, `assistenteUso`, `assistenteLog` | Trilha, métricas e controles                                                                                     |
 
 Toda coleção nova nas regras exige uma linha na matriz de permissões
 (`tests/rules/matriz-permissoes.test.ts`).
