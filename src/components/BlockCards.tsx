@@ -70,6 +70,94 @@ function Cartao({
   const produto = variante === 'produto'
   const Icone = produto ? Layers : Folder
 
+  if (produto) {
+    return (
+      <li
+        ref={setNodeRef}
+        style={{ transform: CSS.Transform.toString(transform), transition }}
+        className={`cartao flex flex-col gap-3 p-5 transition hover:border-destaque/50 ${isDragging ? 'z-10 shadow-xl' : ''}`}
+      >
+        <div className="flex items-start gap-2">
+          {organizar && (
+            <button
+              type="button"
+              aria-label={`Mover ${bloco.nome}`}
+              className="botao-icone cursor-grab touch-none"
+              {...attributes}
+              {...listeners}
+            >
+              <GripVertical className="size-4" aria-hidden />
+            </button>
+          )}
+          <Link
+            to={`/b/${bloco.id}`}
+            className="flex min-w-0 flex-1 items-start gap-3.5"
+          >
+            <span className="tile size-12 text-xl" aria-hidden>
+              {bloco.icone ? bloco.icone : <Icone className="size-6" />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-xs font-semibold text-destaque">
+                Produto
+              </span>
+              <span className="mt-0.5 block text-xl font-extrabold leading-tight tracking-tight">
+                {bloco.nome}
+              </span>
+            </span>
+          </Link>
+          {editavel && (
+            <span className="flex shrink-0 items-center">
+              <button
+                type="button"
+                aria-label={`Editar ${bloco.nome}`}
+                title="Editar"
+                onClick={() => onEdit?.(bloco)}
+                className="botao-icone"
+              >
+                <Pencil className="size-4" aria-hidden />
+              </button>
+              <button
+                type="button"
+                aria-label={`Excluir ${bloco.nome}`}
+                title="Excluir"
+                onClick={() => onDelete?.(bloco)}
+                className="botao-icone hover:text-perigo"
+              >
+                <Trash2 className="size-4" aria-hidden />
+              </button>
+            </span>
+          )}
+        </div>
+        <p
+          className={`line-clamp-3 min-h-[3.75rem] text-sm leading-relaxed ${bloco.descricao ? 'text-texto/80' : 'italic text-suave'}`}
+        >
+          {bloco.descricao ||
+            (editavel
+              ? 'Sem descrição. Use Editar para escrever uma breve descrição do produto.'
+              : 'Sem descrição.')}
+        </p>
+        {resumo && <p className="text-xs text-suave">{resumo}</p>}
+        {filhos && filhos.length > 0 && (
+          <ul
+            aria-label={`Subprodutos de ${bloco.nome}`}
+            className="flex flex-wrap gap-1.5 rounded-xl bg-fundo p-3"
+          >
+            {filhos.map((f) => (
+              <li key={f.id}>
+                <Link
+                  to={`/b/${f.id}`}
+                  className="selo transition hover:text-texto"
+                >
+                  {f.nome}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </li>
+    )
+  }
+
   return (
     <li
       ref={setNodeRef}
@@ -189,7 +277,13 @@ export function BlockCards({
         items={blocos.map((b) => b.id)}
         strategy={rectSortingStrategy}
       >
-        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <ul
+          className={
+            variante === 'produto'
+              ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3'
+              : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'
+          }
+        >
           {blocos.map((b) => (
             <Cartao
               key={b.id}

@@ -29,7 +29,8 @@ Pastas dentro da origem viram subprodutos (blocos). Sem --gravar é só simulaç
 Não lê .docx nem .pdf ainda: eles aparecem no relatório como ignorados.
 
   --produto <ref>      Produto de destino: id, nome ou slug (obrigatório)
-  --bloco <id>         Subproduto (bloco) do produto que recebe os arquivos
+  --bloco <ref>        Subproduto (bloco) do produto que recebe os arquivos:
+                       id, nome ou slug (se errar, o erro lista os blocos e ids)
   --fonte <nome>       Nome da origem (padrão: produto + nome da pasta)
   --projeto <id>       Projeto Firebase (ou FIREBASE_PROJECT_ID)
   --gravar             Grava no Firestore (sem isto, simulação)

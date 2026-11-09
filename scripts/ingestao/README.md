@@ -79,8 +79,8 @@ e o editor permite trocar antes de aprovar.
 
 ## Opções
 
-`--produto` (obrigatório; id, nome ou slug), `--bloco <id>` (subproduto que
-recebe os arquivos), `--fonte <nome>` (padrão: produto + nome da pasta; é o que
+`--produto` (obrigatório; id, nome ou slug), `--bloco <ref>` (subproduto que
+recebe os arquivos; id, nome ou slug), `--fonte <nome>` (padrão: produto + nome da pasta; é o que
 liga os arquivos aos registros, então não mude depois), `--projeto`, `--gravar`,
 `--sem-imagens`, `--verificar-links`, `--rest`, `--autor`, `--saida`,
 `--estrito`, `--ajuda`.

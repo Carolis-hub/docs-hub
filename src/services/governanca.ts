@@ -467,3 +467,68 @@ export async function aprovarSugestao(
   invalidarCacheBusca()
   return versao
 }
+
+/**
+ * Muda o artigo de lugar (subproduto, módulo ou outro produto). Vale em
+ * qualquer estado: se o artigo estiver publicado, a busca acompanha (sai do
+ * índice do produto de origem e entra no do destino). São duas transações:
+ * se a segunda falhar, o artigo continua no lugar antigo e fora da busca até
+ * a ação ser repetida.
+ */
+export async function moverArtigo(
+  articleId: string,
+  destinoBlockId: string,
+  uid: string,
+): Promise<{ productId: string; blockId: string }> {
+  const snapArtigo = await getDoc(artigoRef(articleId))
+  if (!snapArtigo.exists()) throw new Error('Artigo não encontrado.')
+  const artigo = fromSnap(snapArtigo)
+  if (artigo.blockId === destinoBlockId) {
+    return { productId: artigo.productId, blockId: artigo.blockId }
+  }
+  const snapDestino = await getDoc(doc(db, 'blocks', destinoBlockId))
+  if (!snapDestino.exists()) throw new Error('Destino não encontrado.')
+  const destinoProduto = snapDestino.get('productId') as string
+  const publicado = artigo.status === 'published'
+
+  if (publicado) {
+    await runTransaction(db, async (tx) => {
+      await atualizarIndiceTx(
+        tx,
+        artigo.productId,
+        artigo.blockId,
+        articleId,
+        null,
+      )
+    })
+  }
+  await runTransaction(db, async (tx) => {
+    const atual = await tx.get(artigoRef(articleId))
+    if (!atual.exists()) throw new Error('Artigo não encontrado.')
+    const a = fromSnap(atual)
+    if (a.status === 'published') {
+      await atualizarIndiceTx(
+        tx,
+        destinoProduto,
+        destinoBlockId,
+        articleId,
+        itemDoArtigo({ ...a, id: articleId, blockId: destinoBlockId }),
+      )
+    }
+    tx.update(artigoRef(articleId), {
+      blockId: destinoBlockId,
+      productId: destinoProduto,
+      atualizadoPor: uid,
+      atualizadoEm: Date.now(),
+    })
+    registrarAuditoria(
+      tx,
+      uid,
+      'artigo.mover',
+      `articles/${articleId}`,
+      `para o bloco ${destinoBlockId}`,
+    )
+  })
+  invalidarCacheBusca()
+  return { productId: destinoProduto, blockId: destinoBlockId }
+}

@@ -110,9 +110,50 @@ async function acharProduto(db: Firestore, ref: string) {
       slugify(String(d.get('nome') ?? '')) === slugify(ref) ||
       d.get('slug') === slugify(ref),
   )
-  if (!alvo)
-    throw new Error(`Produto "${ref}" não encontrado (id, nome ou slug).`)
+  if (!alvo) {
+    const lista = raiz.docs
+      .map((d) => `  - ${String(d.get('nome') ?? '')}`)
+      .sort()
+      .join('\n')
+    throw new Error(
+      `Produto "${ref}" não encontrado (id, nome ou slug).` +
+        (lista ? `\nProdutos cadastrados:\n${lista}` : ''),
+    )
+  }
   return { id: alvo.id, nome: String(alvo.get('nome') ?? '') }
+}
+
+/**
+ * Subproduto (bloco) de destino: id, nome ou slug, dentro do produto. Quando
+ * não acha, a mensagem lista os blocos do produto com seus ids.
+ */
+async function acharBloco(
+  db: Firestore,
+  produto: { id: string; nome: string },
+  ref: string,
+) {
+  const todos = await db
+    .collection('blocks')
+    .where('productId', '==', produto.id)
+    .get()
+  const filhos = todos.docs.filter((d) => d.get('parentId') !== null)
+  const porId = filhos.find((d) => d.id === ref)
+  if (porId) return porId
+  const nomeOuSlug = filhos.filter(
+    (d) =>
+      slugify(String(d.get('nome') ?? '')) === slugify(ref) ||
+      d.get('slug') === slugify(ref),
+  )
+  if (nomeOuSlug.length === 1) return nomeOuSlug[0]!
+  const lista = (nomeOuSlug.length > 1 ? nomeOuSlug : filhos)
+    .map((d) => `  - ${String(d.get('nome') ?? '')} (id: ${d.id})`)
+    .join('\n')
+  throw new Error(
+    nomeOuSlug.length > 1
+      ? `Mais de um bloco chamado "${ref}" no produto "${produto.nome}". Use o id:\n${lista}`
+      : `Bloco "${ref}" não existe dentro do produto "${produto.nome}".` +
+          (lista ? `\nBlocos do produto:\n${lista}` : ''),
+  )
 }
 
 /**
@@ -131,12 +172,7 @@ export async function ingerir(
   let destinoId = produto.id
   let produtoDoDestino = produto.id
   if (opts.bloco) {
-    const snap = await db.collection('blocks').doc(opts.bloco).get()
-    if (!snap.exists || snap.get('productId') !== produto.id) {
-      throw new Error(
-        `Bloco "${opts.bloco}" não existe dentro do produto "${produto.nome}".`,
-      )
-    }
+    const snap = await acharBloco(db, produto, opts.bloco)
     destinoId = snap.id
     produtoDoDestino = produto.id
   }

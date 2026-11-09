@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Layers, PanelLeft, Sparkles } from 'lucide-react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -6,6 +6,7 @@ import { useModoAside } from '../hooks/useModoAside'
 import { estaEmConfiguracoes } from '../utils/governanca'
 import { iniciais } from '../utils/iniciais'
 import { Aside } from './Aside'
+import { PainelAssistente } from './PainelAssistente'
 import { QuickSearch } from './QuickSearch'
 import { ThemeToggle } from './ThemeToggle'
 
@@ -18,6 +19,12 @@ export function Layout({ children }: { children: ReactNode }) {
   const { user, profile, isAdmin, signOut } = useAuth()
   const { modo, setModo } = useModoAside(user?.uid)
   const { pathname } = useLocation()
+  const [painelAberto, setPainelAberto] = useState(false)
+  const fecharPainel = useCallback(() => setPainelAberto(false), [])
+  useEffect(() => {
+    // Na página do assistente a conversa já está na tela.
+    if (pathname === '/assistente') setPainelAberto(false)
+  }, [pathname])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -107,15 +114,21 @@ export function Layout({ children }: { children: ReactNode }) {
         </main>
       </div>
       {pathname !== '/assistente' && (
-        <Link
-          to="/assistente"
-          className="fixed bottom-6 right-6 z-30 flex h-[52px] items-center gap-2.5 rounded-full bg-escuro pl-3 pr-5 text-[15px] font-semibold text-white shadow-[0_0_0_4px_rgb(61_220_151_/_0.16),0_18px_40px_rgb(18_53_43_/_0.3)]"
-        >
-          <span className="inline-flex size-[30px] items-center justify-center rounded-full bg-[#7CC4A3] text-[#0E2A22]">
-            <Sparkles className="size-4" aria-hidden />
-          </span>
-          Assistente
-        </Link>
+        <>
+          <PainelAssistente aberto={painelAberto} aoFechar={fecharPainel} />
+          {!painelAberto && (
+            <button
+              type="button"
+              onClick={() => setPainelAberto(true)}
+              className="fixed bottom-6 right-6 z-30 flex h-[52px] items-center gap-2.5 rounded-full bg-escuro pl-3 pr-5 text-[15px] font-semibold text-white shadow-[0_0_0_4px_rgb(61_220_151_/_0.16),0_18px_40px_rgb(18_53_43_/_0.3)]"
+            >
+              <span className="inline-flex size-[30px] items-center justify-center rounded-full bg-[#7CC4A3] text-[#0E2A22]">
+                <Sparkles className="size-4" aria-hidden />
+              </span>
+              Assistente
+            </button>
+          )}
+        </>
       )}
     </div>
   )
