@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { Ficha } from '../types/content'
 import { FichaDoProduto } from './FichaDoProduto'
@@ -39,8 +39,45 @@ describe('FichaDoProduto', () => {
     expect(within(tabela).getByText('3.85.23').tagName).toBe('SPAN')
   })
 
+  it('cada seção é uma aba e só a escolhida aparece', () => {
+    render(<FichaDoProduto ficha={ficha} />)
+    const abas = screen.getAllByRole('tab')
+    expect(abas.map((a) => a.textContent)).toEqual([
+      'Compatibilidade DI',
+      'Instaladores',
+    ])
+    expect(abas[0]).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('table')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^Portal/ })).toBeNull()
+    fireEvent.click(abas[1] as HTMLElement)
+    expect(abas[1]).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByRole('table')).toBeNull()
+    expect(screen.getByRole('link', { name: /^Portal/ })).toBeInTheDocument()
+  })
+
+  it('as setas do teclado trocam de aba', () => {
+    render(<FichaDoProduto ficha={ficha} />)
+    const lista = screen.getByRole('tablist')
+    fireEvent.keyDown(lista, { key: 'ArrowRight' })
+    expect(screen.getAllByRole('tab')[1]).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    fireEvent.keyDown(lista, { key: 'ArrowRight' })
+    expect(screen.getAllByRole('tab')[0]).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    fireEvent.keyDown(lista, { key: 'End' })
+    expect(screen.getAllByRole('tab')[1]).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+  })
+
   it('links: só endereços seguros viram link', () => {
     render(<FichaDoProduto ficha={ficha} />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Instaladores' }))
     const portal = screen.getByRole('link', { name: /^Portal/ })
     expect(portal).toHaveAttribute('href', 'https://portal.example.com')
     expect(portal).toHaveAttribute('rel', expect.stringContaining('noopener'))
