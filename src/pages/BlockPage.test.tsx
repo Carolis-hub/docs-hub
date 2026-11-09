@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Article, Block } from '../types/content'
@@ -21,6 +27,8 @@ vi.mock('../services/blocks', () => ({
   updateBlock: vi.fn(),
   deleteBlock: vi.fn(),
   reorderBlocks: vi.fn(),
+  salvarDescricao: vi.fn(),
+  salvarFicha: vi.fn(),
 }))
 vi.mock('../services/unidades', () => ({
   getUnidade: vi.fn(async () => null),
@@ -133,6 +141,88 @@ describe('BlockPage', () => {
     expect(
       screen.getAllByRole('button', { name: /novo subproduto/i }),
     ).toHaveLength(2)
+  })
+
+  it('produto: mostra a descrição e as informações do produto', async () => {
+    getBlock.mockImplementation(async (id: string) =>
+      id === 'p'
+        ? {
+            ...produto,
+            descricao: 'Plataforma de gestão de documentos.',
+            ficha: {
+              secoes: [
+                {
+                  id: 'compatibilidade-di',
+                  tipo: 'tabela',
+                  titulo: 'Compatibilidade DI',
+                  texto: 'Mantenha sempre o produto atualizado.',
+                  colunas: ['SmartShare', 'DI Client'],
+                  linhas: [['3.85.23', '3.85.19']],
+                },
+              ],
+            },
+          }
+        : anexos,
+    )
+    await abrir('p')
+    expect(
+      await screen.findByText('Plataforma de gestão de documentos.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Compatibilidade DI' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Editar informações/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('produto sem nada salvo: as 5 opções fixas já aparecem, para admin e leitor', async () => {
+    const nomes = [
+      'Compatibilidade DI',
+      'Compatibilidade SmartShare',
+      'Instaladores e Aplicativos',
+      'Release Notes',
+      'Contato',
+    ]
+    await abrir('p')
+    const admin = await screen.findAllByRole('tab')
+    expect(admin.map((o) => o.textContent)).toEqual(nomes)
+    cleanup()
+    useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
+    await abrir('p')
+    const leitor = await screen.findAllByRole('tab')
+    expect(leitor.map((o) => o.textContent)).toEqual(nomes)
+  })
+
+  it('leitor não vê a edição das informações do produto', async () => {
+    useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
+    await abrir('p')
+    await screen.findByText('Dashboard')
+    expect(screen.queryByText(/Informações do produto/)).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: /Editar informações/ }),
+    ).toBeNull()
+  })
+
+  it('produto: as 5 opções ficam abaixo dos subprodutos', async () => {
+    await abrir('p')
+    const subprodutos = await screen.findByRole('region', {
+      name: 'Subprodutos',
+    })
+    const opcoes = screen.getByRole('region', {
+      name: 'Informações do produto',
+    })
+    expect(
+      subprodutos.compareDocumentPosition(opcoes) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    const descricao = screen.getByRole('region', {
+      name: 'Descrição do produto',
+    })
+    expect(
+      descricao.compareDocumentPosition(subprodutos) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
   })
 
   it('filtra as seções sem acento nem caixa', async () => {

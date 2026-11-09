@@ -12,6 +12,7 @@ import { PageHeader } from '../components/PageHeader'
 import { useSearchEngine } from '../hooks/useSearchEngine'
 import type { CategoriaId } from '../types/content'
 import { CATEGORIAS } from '../utils/categorias'
+import { Carregando } from '../components/Carregando'
 
 const ICONES: Record<CategoriaId, LucideIcon> = {
   funcionalidades: Boxes,
@@ -52,7 +53,7 @@ export function CategoriasPage() {
         titulo="Categorias"
         subtitulo="Explore a documentação pelo tipo de assunto."
       />
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo">
           {erro}

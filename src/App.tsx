@@ -6,6 +6,7 @@ import { Login } from './pages/Login'
 import { RequireAdmin } from './components/RequireAdmin'
 import { BlockPage } from './pages/BlockPage'
 import { Home } from './pages/Home'
+import { Carregando } from './components/Carregando'
 
 /*
  * Páginas carregadas só quando a rota é aberta: o leitor que entra na Home não
@@ -91,7 +92,7 @@ function App() {
         element={
           <RequireAuth>
             <Layout>
-              <Suspense fallback={<p className="text-suave">Carregando…</p>}>
+              <Suspense fallback={<Carregando />}>
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/u/:unidadeId" element={<UnidadePage />} />

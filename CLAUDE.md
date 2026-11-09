@@ -9,6 +9,7 @@ Interface e documentação em **português do Brasil**.
 
 - `PLAN.md`: decisões de arquitetura, modelo de dados, regras de segurança e
   as fases (0 a 7, todas implementadas em código).
+- `docs/arquitetura.md`: arquitetura tecnológica (camadas, dados, IA, automação, riscos).
 - `docs/roadmap.md`: o que falta e o que vem a seguir. **Atualize ao terminar
   uma tarefa** (marque o item e faça commit).
 - `README.md`: como rodar, checklist de configuração dos workflows do GitHub.

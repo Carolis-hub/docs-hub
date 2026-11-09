@@ -248,6 +248,14 @@ ou mudar de banco antes da Fase 5.
       preferências; Sugestões e Unidades saíram do menu (rotas mantidas)
 - [x] Mover o artigo de lugar (produto, subproduto, módulo) na Revisão e no
       editor, em qualquer estado; a busca acompanha se estiver publicado
+- [x] Tela do produto: breve descrição em destaque (editável) e "Informações do
+      produto" editáveis a cada liberação (tabelas de compatibilidade, instaladores,
+      release notes, contato); as 5 opções são fixas (só o conteúdo é editável)
+- [ ] Formulário de contato na tela do produto (precisa de um destino para as
+      mensagens: e-mail ou coleção no Firestore)
+- [x] Modelo de configurações de usuário (`preferenciasUsuario/{uid}`), guardado na
+      conta de cada pessoa; hoje traz as configurações da aside (mostrar, e quais
+      entradas). A tela Configurações ganhou "Minhas configurações"
 - [ ] Documentação de API na aside (falta definir a fonte)
 - [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
       texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"

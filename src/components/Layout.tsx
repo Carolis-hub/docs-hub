@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { Layers, PanelLeft, Sparkles } from 'lucide-react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useModoAside } from '../hooks/useModoAside'
+import { usePreferencias } from '../hooks/usePreferencias'
 import { estaEmConfiguracoes } from '../utils/governanca'
 import { iniciais } from '../utils/iniciais'
 import { Aside } from './Aside'
@@ -17,7 +17,7 @@ const LINKS_ADMIN = [
 
 export function Layout({ children }: { children: ReactNode }) {
   const { user, profile, isAdmin, signOut } = useAuth()
-  const { modo, setModo } = useModoAside(user?.uid)
+  const { aside, atualizarAside } = usePreferencias(user?.uid)
   const { pathname } = useLocation()
   const [painelAberto, setPainelAberto] = useState(false)
   const fecharPainel = useCallback(() => setPainelAberto(false), [])
@@ -64,10 +64,10 @@ export function Layout({ children }: { children: ReactNode }) {
           )}
 
           <div className="ml-auto flex items-center gap-2">
-            {modo === 'oculta' && (
+            {!aside.visivel && (
               <button
                 type="button"
-                onClick={() => setModo('toda')}
+                onClick={() => void atualizarAside({ visivel: true })}
                 className="botao-icone"
                 title="Mostrar menu lateral"
                 aria-label="Mostrar menu lateral"

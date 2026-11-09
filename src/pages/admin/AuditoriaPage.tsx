@@ -11,6 +11,7 @@ import {
   grupoDaAcao,
   rotuloDaAuditoria,
 } from '../../utils/auditoria'
+import { Carregando } from '../../components/Carregando'
 
 const LIMITE = 200
 
@@ -59,7 +60,7 @@ export function AuditoriaPage() {
         }
       />
 
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo">
           {erro}

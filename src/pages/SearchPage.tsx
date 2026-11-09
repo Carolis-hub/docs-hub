@@ -12,6 +12,7 @@ import { comDescendentes } from '../utils/blocos'
 import { CATEGORIAS, nomeDaCategoria } from '../utils/categorias'
 import { gerarTrecho } from '../utils/search'
 import type { SearchFilters } from '../utils/searchEngine'
+import { Carregando } from '../components/Carregando'
 
 const campo = 'campo h-10'
 const SEM_UNIDADE = 'sem-unidade'
@@ -279,7 +280,7 @@ export function SearchPage() {
         </div>
       </form>
 
-      {carregando && !dados && <p className="text-suave">Carregando índice…</p>}
+      {carregando && !dados && <Carregando texto="Carregando índice…" />}
       {erro && (
         <p role="alert" className="text-perigo ">
           {erro}

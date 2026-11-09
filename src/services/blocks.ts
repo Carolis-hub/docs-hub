@@ -10,7 +10,8 @@ import {
 } from 'firebase/firestore'
 import { registrarAuditoria } from './audit'
 import { db } from './firebase'
-import type { Block, BlockInput } from '../types/content'
+import type { Block, BlockInput, Ficha } from '../types/content'
+import { normalizarFicha } from '../utils/ficha'
 import { slugify } from '../utils/slug'
 
 const blocks = collection(db, 'blocks')
@@ -135,6 +136,35 @@ export async function updateBlock(
   })
   registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`)
   await batch.commit()
+}
+
+/** Troca só a descrição do bloco (usada na descrição do produto, na própria tela). */
+export async function salvarDescricao(
+  id: string,
+  descricao: string,
+  uid: string,
+): Promise<void> {
+  const batch = writeBatch(db)
+  batch.update(doc(blocks, id), { descricao: descricao.trim() })
+  registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'descrição')
+  await batch.commit()
+}
+
+/**
+ * Grava a ficha do produto (compatibilidade, instaladores, release notes…).
+ * Devolve a ficha como foi gravada, já limpa e dentro dos limites.
+ */
+export async function salvarFicha(
+  id: string,
+  ficha: Ficha,
+  uid: string,
+): Promise<Ficha> {
+  const limpa = normalizarFicha(ficha)
+  const batch = writeBatch(db)
+  batch.update(doc(blocks, id), { ficha: limpa })
+  registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'ficha')
+  await batch.commit()
+  return limpa
 }
 
 /** Grava a nova ordem (índice na lista) de todos os irmãos de uma vez. */

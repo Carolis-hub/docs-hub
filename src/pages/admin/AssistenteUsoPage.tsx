@@ -12,6 +12,7 @@ import {
   semResposta,
   totalGlobal,
 } from '../../utils/assistenteUso'
+import { Carregando } from '../../components/Carregando'
 
 const DIAS = 30
 
@@ -62,7 +63,7 @@ export function AssistenteUsoPage() {
         }
       />
 
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo">
           {erro}

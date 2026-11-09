@@ -47,6 +47,7 @@ import {
   transitar,
 } from '../../src/services/governanca'
 import { listarAuditoriaDoArtigo } from '../../src/services/audit'
+import { salvarDescricao, salvarFicha } from '../../src/services/blocks'
 
 const { db } = firebase
 const env = (
@@ -542,5 +543,51 @@ describe('mover o artigo de lugar (Emulator)', () => {
     await expect(moverArtigo(id, 'nao-existe', ADMIN)).rejects.toThrow(
       /Destino não encontrado/,
     )
+  })
+})
+
+describe('descrição e ficha do produto (Emulator)', () => {
+  it('grava a descrição e registra na auditoria', async () => {
+    await salvarDescricao('p1', '  ECM e BPM.  ', ADMIN)
+    expect((await getDoc(doc(db, 'blocks/p1'))).get('descricao')).toBe(
+      'ECM e BPM.',
+    )
+    const log = await getDocs(collection(db, 'auditLog'))
+    expect(log.docs.some((d) => d.get('detalhe') === 'descrição')).toBe(true)
+  })
+
+  it('grava sempre as 5 opções fixas, já limpas (sem link inseguro, sem seção inventada)', async () => {
+    const gravada = await salvarFicha(
+      'p1',
+      {
+        secoes: [
+          { id: 'inventada', tipo: 'texto', titulo: 'Outra', texto: 'x' },
+          {
+            id: 'instaladores-e-aplicativos',
+            tipo: 'links',
+            titulo: 'Instaladores e Aplicativos',
+            texto: '',
+            itens: [
+              { rotulo: 'Portal', url: 'https://portal.example.com' },
+              { rotulo: 'Ruim', url: 'javascript:alert(1)' },
+            ],
+          },
+        ],
+      },
+      ADMIN,
+    )
+    expect(gravada.secoes.map((s) => s.id)).toEqual([
+      'compatibilidade-di',
+      'compatibilidade-smartshare',
+      'instaladores-e-aplicativos',
+      'release-notes',
+      'contato',
+    ])
+    const salvo = (await getDoc(doc(db, 'blocks/p1'))).get('ficha')
+    expect(salvo.secoes).toHaveLength(5)
+    expect(salvo.secoes[2].itens).toEqual([
+      { rotulo: 'Portal', url: 'https://portal.example.com' },
+      { rotulo: 'Ruim', url: '' },
+    ])
   })
 })

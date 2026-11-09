@@ -10,6 +10,7 @@ import {
 } from '../../services/users'
 import type { Block } from '../../types/content'
 import type { AppUser, UserRole } from '../../types/user'
+import { Carregando } from '../../components/Carregando'
 
 const campo =
   'mt-1 w-full rounded-md border border-borda bg-cartao px-3 py-2 text-sm  '
@@ -247,7 +248,7 @@ export function UsersPage() {
           {aviso}
         </p>
       )}
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo ">
           {erro}

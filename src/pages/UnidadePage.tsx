@@ -9,6 +9,7 @@ import { createBlock, deleteBlock, updateBlock } from '../services/blocks'
 import { carregarVisaoGeral } from '../services/visaoGeral'
 import type { Block } from '../types/content'
 import { pluralizar, resumirUnidade } from '../utils/resumoUnidade'
+import { Carregando } from '../components/Carregando'
 
 export function UnidadePage() {
   const { unidadeId = '' } = useParams()
@@ -50,7 +51,7 @@ export function UnidadePage() {
     }
   }
 
-  if (carregando) return <p className="text-suave">Carregando…</p>
+  if (carregando) return <Carregando />
   if (erro) {
     return (
       <p role="alert" className="text-perigo">

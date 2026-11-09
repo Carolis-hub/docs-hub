@@ -36,6 +36,24 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Configurações de cada pessoa (aside etc.): só o próprio dono lê e grava,
+    // e só no formato esperado. Nem o admin lê as dos outros.
+    function preferenciasValidas(d) {
+      return d.keys().hasOnly(['aside', 'atualizadoEm']) &&
+        d.aside is map &&
+        d.aside.keys().hasOnly(['visivel', 'manual', 'busca']) &&
+        d.aside.visivel is bool &&
+        d.aside.manual is bool &&
+        d.aside.busca is bool &&
+        (!('atualizadoEm' in d) || d.atualizadoEm is number);
+    }
+    match /preferenciasUsuario/{uid} {
+      allow read: if hasProfile() && request.auth.uid == uid;
+      allow create, update: if hasProfile() && request.auth.uid == uid &&
+        preferenciasValidas(request.resource.data);
+      allow delete: if false;
+    }
+
     // Unidades de negócio (BU): qualquer usuário ativo lê o nome para montar a
     // navegação; o acesso aos produtos continua sendo decidido em `blocks`.
     match /unidades/{unidadeId} {

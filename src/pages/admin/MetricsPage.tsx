@@ -15,6 +15,7 @@ import {
   ultimosDias,
   viewsPorArtigo,
 } from '../../utils/metrics'
+import { Carregando } from '../../components/Carregando'
 
 const campo = 'rounded-xl border border-borda bg-cartao px-2 py-1 text-sm'
 
@@ -191,7 +192,7 @@ export function MetricsPage() {
         no período. Atualize só quando precisar, para poupar a cota do Spark.
       </p>
 
-      {carregando && !dados && <p className="text-suave">Carregando…</p>}
+      {carregando && !dados && <Carregando />}
       {erro && (
         <p role="alert" className="text-perigo ">
           {erro}

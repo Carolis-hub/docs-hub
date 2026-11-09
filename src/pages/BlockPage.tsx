@@ -4,6 +4,9 @@ import { Link, useParams } from 'react-router-dom'
 import { ArticleList } from '../components/ArticleList'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
+import { DescricaoDoProduto } from '../components/DescricaoDoProduto'
+import { EditorDaFicha } from '../components/EditorDaFicha'
+import { FichaDoProduto } from '../components/FichaDoProduto'
 import { Breadcrumb } from '../components/Breadcrumb'
 import {
   AlternarVisao,
@@ -24,6 +27,8 @@ import {
   listChildren,
   listProductTree,
   reorderBlocks,
+  salvarDescricao,
+  salvarFicha,
   updateBlock,
 } from '../services/blocks'
 import { listArticlesByBlock } from '../services/articles'
@@ -31,9 +36,11 @@ import { getUnidade, listUnidades } from '../services/unidades'
 import { contarArtigosPorBlocos } from '../services/visaoGeral'
 import type { Block } from '../types/content'
 import { comDescendentes, tipoDoNivel, tipoDosFilhos } from '../utils/blocos'
+import { completarFicha } from '../utils/ficha'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
 import { normalizar } from '../utils/search'
+import { Carregando } from '../components/Carregando'
 
 const plural = (n: number, um: string, varios: string) =>
   `${n} ${n === 1 ? um : varios}`
@@ -90,6 +97,7 @@ export function BlockPage() {
   const [modo, setModo] = useState<'novo' | 'editar' | null>(null)
   const [editandoFilho, setEditandoFilho] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [editandoFicha, setEditandoFicha] = useState(false)
   const [organizar, setOrganizar] = useState(false)
   const [filtroSecoes, setFiltroSecoes] = useState('')
   const [filtroArtigos, setFiltroArtigos] = useState('')
@@ -124,7 +132,7 @@ export function BlockPage() {
     })
   }, [dados, filtroArtigos, filtroCategoria, ordem])
 
-  if (carregando && !dados) return <p className="text-suave">Carregando…</p>
+  if (carregando && !dados) return <Carregando />
   if (erro)
     return (
       <p role="alert" className="text-perigo">
@@ -266,6 +274,17 @@ export function BlockPage() {
         </p>
       )}
 
+      {ehProduto && (
+        <DescricaoDoProduto
+          descricao={bloco.descricao}
+          editavel={isAdmin}
+          aoSalvar={async (texto) => {
+            await salvarDescricao(bloco.id, texto, uid)
+            recarregar()
+          }}
+        />
+      )}
+
       {filhos.length > 0 && (
         <section className="mb-10" aria-label={tipoFilho.plural}>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -306,6 +325,47 @@ export function BlockPage() {
           )}
         </section>
       )}
+
+      {ehProduto &&
+        (() => {
+          // As 5 opções são fixas: sempre aparecem, só o conteúdo muda.
+          const ficha = completarFicha(bloco.ficha)
+          if (editandoFicha) {
+            return (
+              <div className="mb-10">
+                <EditorDaFicha
+                  inicial={ficha}
+                  aoCancelar={() => setEditandoFicha(false)}
+                  aoSalvar={async (nova) => {
+                    await salvarFicha(bloco.id, nova, uid)
+                    setEditandoFicha(false)
+                    recarregar()
+                  }}
+                />
+              </div>
+            )
+          }
+          return (
+            <section className="mb-10" aria-label="Informações do produto">
+              <FichaDoProduto
+                ficha={ficha}
+                admin={isAdmin}
+                acoes={
+                  isAdmin && (
+                    <button
+                      type="button"
+                      className="botao w-full"
+                      onClick={() => setEditandoFicha(true)}
+                    >
+                      <Pencil className="size-4" aria-hidden />
+                      Editar informações
+                    </button>
+                  )
+                }
+              />
+            </section>
+          )
+        })()}
 
       {(todosArtigos.length > 0 || !ehProduto) && (
         <section aria-label="Artigos">

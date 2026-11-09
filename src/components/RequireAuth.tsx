@@ -1,16 +1,13 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import { Carregando } from './Carregando'
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { user, profile, loading, signOut } = useAuth()
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center text-suave ">
-        Carregando…
-      </div>
-    )
+    return <Carregando />
   }
 
   if (!user) {
