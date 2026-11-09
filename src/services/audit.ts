@@ -20,6 +20,7 @@ export type AuditAction =
   | 'unidade.excluir'
   | 'artigo.criar'
   | 'artigo.editar'
+  | 'artigo.mover'
   | 'artigo.publicar'
   | 'artigo.despublicar'
   | 'artigo.enviar-revisao'

@@ -42,6 +42,7 @@ import {
   aprovarSugestao,
   descartarRevisao,
   getRevisao,
+  moverArtigo,
   salvarAlteracoes,
   transitar,
 } from '../../src/services/governanca'
@@ -471,5 +472,75 @@ describe('modelos por preencher (Emulator)', () => {
     await expect(
       transitar(id, 'reprovar', ADMIN, { comentario: 'ajustar' }),
     ).resolves.toBeDefined()
+  })
+})
+
+describe('mover o artigo de lugar (Emulator)', () => {
+  const indiceDe = async (produto: string) =>
+    ((await getDoc(doc(db, `searchIndex/${produto}`))).data()?.itens ??
+      []) as Array<{ id: string; blockId: string }>
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const d = ctx.firestore()
+      await setDoc(doc(d, 'blocks/s1'), {
+        productId: 'p1',
+        parentId: 'p1',
+        nome: 'Subproduto',
+      })
+      await setDoc(doc(d, 'blocks/p2'), {
+        productId: 'p2',
+        parentId: null,
+        nome: 'Outro produto',
+      })
+    })
+  })
+
+  it('rascunho: troca o bloco e o produto, registra na trilha e não mexe na busca', async () => {
+    const id = await novoArtigo()
+    const r = await moverArtigo(id, 'p2', ADMIN)
+    expect(r).toEqual({ productId: 'p2', blockId: 'p2' })
+    expect(await getArticle(id)).toMatchObject({
+      blockId: 'p2',
+      productId: 'p2',
+    })
+    expect(await indiceDe('p1')).toEqual([])
+    expect(await indiceDe('p2')).toEqual([])
+    const trilha = await listarAuditoriaDoArtigo(id)
+    expect(trilha.map((t) => t.acao)).toContain('artigo.mover')
+  })
+
+  it('publicado: sai do índice do produto de origem e entra no do destino', async () => {
+    const id = await publicado()
+    expect((await indiceDe('p1')).map((i) => i.id)).toEqual([id])
+    await moverArtigo(id, 'p2', ADMIN)
+    expect(await indiceDe('p1')).toEqual([])
+    expect((await indiceDe('p2')).map((i) => i.id)).toEqual([id])
+    expect(await getArticle(id)).toMatchObject({
+      productId: 'p2',
+      status: 'published',
+    })
+  })
+
+  it('publicado: mudar para um subproduto do mesmo produto mantém uma só entrada na busca', async () => {
+    const id = await publicado()
+    await moverArtigo(id, 's1', ADMIN)
+    const itens = await indiceDe('p1')
+    expect(itens).toHaveLength(1)
+    expect(itens[0]).toMatchObject({ id, blockId: 's1' })
+  })
+
+  it('mover para o mesmo lugar não faz nada', async () => {
+    const id = await novoArtigo()
+    await moverArtigo(id, 'p1', ADMIN)
+    const trilha = await listarAuditoriaDoArtigo(id)
+    expect(trilha.map((t) => t.acao)).not.toContain('artigo.mover')
+  })
+
+  it('destino inexistente é recusado', async () => {
+    const id = await novoArtigo()
+    await expect(moverArtigo(id, 'nao-existe', ADMIN)).rejects.toThrow(
+      /Destino não encontrado/,
+    )
   })
 })

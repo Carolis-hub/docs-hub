@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { JSONContent } from '@tiptap/react'
 import { RichEditor } from '../../components/editor/RichEditor'
+import { MoverArtigo } from '../../components/MoverArtigo'
 import { SeletorDeLocal } from '../../components/SeletorDeLocal'
 import { useAsync } from '../../hooks/useAsync'
 import { useAuth } from '../../hooks/useAuth'
@@ -135,6 +136,7 @@ export function ArticleEditor() {
   const [mensagem, setMensagem] = useState<string | null>(null)
   const [falha, setFalha] = useState<string | null>(null)
   const [ocupado, setOcupado] = useState(false)
+  const [movendo, setMovendo] = useState(false)
 
   const artigo = dados?.artigo ?? null
   const revisao = dados?.revisao ?? null
@@ -467,6 +469,30 @@ export function ArticleEditor() {
             Prints atualizados
           </button>
         </div>
+      )}
+
+      {artigo && (
+        <section aria-label="Local do artigo" className="mb-4">
+          {movendo ? (
+            <MoverArtigo
+              artigo={artigo}
+              aoCancelar={() => setMovendo(false)}
+              aoMover={() => {
+                setMovendo(false)
+                setMensagem('Artigo movido.')
+                recarregar()
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className={botaoSec}
+              onClick={() => setMovendo(true)}
+            >
+              Mover para outro produto, subproduto ou módulo
+            </button>
+          )}
+        </section>
       )}
 
       <div className="space-y-4">
