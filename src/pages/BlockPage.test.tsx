@@ -204,6 +204,27 @@ describe('BlockPage', () => {
     ).toBeNull()
   })
 
+  it('produto: as 5 opções ficam abaixo dos subprodutos', async () => {
+    await abrir('p')
+    const subprodutos = await screen.findByRole('region', {
+      name: 'Subprodutos',
+    })
+    const opcoes = screen.getByRole('region', {
+      name: 'Informações do produto',
+    })
+    expect(
+      subprodutos.compareDocumentPosition(opcoes) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    const descricao = screen.getByRole('region', {
+      name: 'Descrição do produto',
+    })
+    expect(
+      descricao.compareDocumentPosition(subprodutos) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
   it('filtra as seções sem acento nem caixa', async () => {
     await abrir('p')
     await screen.findByText('Dashboard')

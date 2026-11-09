@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { CampoDeValor } from './CampoDeValor'
 import type { Ficha, SecaoFicha } from '../types/content'
 import {
-  LIMITES_FICHA,
   completarFicha,
   linksParaTexto,
   tabelaParaTexto,
@@ -96,43 +96,19 @@ export function EditorDaFicha({ inicial, aoSalvar, aoCancelar }: Props) {
           <legend className="px-1 text-sm font-bold uppercase tracking-wide text-destaque">
             {secao.titulo}
           </legend>
-          <label className="block text-sm">
-            Texto de apoio (opcional)
-            <textarea
-              className="campo mt-1"
-              rows={3}
-              maxLength={LIMITES_FICHA.texto}
-              value={secao.texto}
-              aria-label={`Texto de apoio de ${secao.titulo}`}
-              onChange={(e) =>
-                alterar(secao.id, {
-                  secao: { ...secao, texto: e.target.value },
-                })
-              }
-            />
-          </label>
-          {secao.tipo === 'tabela' && (
-            <label className="block text-sm">
-              Tabela de {secao.titulo} (primeira linha = colunas)
-              <textarea
-                className="campo mt-1 font-mono text-xs"
-                rows={7}
-                value={tabela}
-                onChange={(e) => alterar(secao.id, { tabela: e.target.value })}
-              />
-            </label>
-          )}
-          {secao.tipo === 'links' && (
-            <label className="block text-sm">
-              Links de {secao.titulo} (um por linha: Rótulo | https://…)
-              <textarea
-                className="campo mt-1 font-mono text-xs"
-                rows={4}
-                value={links}
-                onChange={(e) => alterar(secao.id, { links: e.target.value })}
-              />
-            </label>
-          )}
+          <CampoDeValor
+            secao={secao}
+            valor={secao.tipo === 'tabela' ? tabela : links}
+            aoMudarTexto={(texto) =>
+              alterar(secao.id, { secao: { ...secao, texto } })
+            }
+            aoMudarValor={(v) =>
+              alterar(
+                secao.id,
+                secao.tipo === 'tabela' ? { tabela: v } : { links: v },
+              )
+            }
+          />
         </fieldset>
       ))}
 

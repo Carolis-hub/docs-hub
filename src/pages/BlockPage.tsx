@@ -274,58 +274,16 @@ export function BlockPage() {
         </p>
       )}
 
-      {ehProduto &&
-        (() => {
-          // As 5 opções são fixas: sempre aparecem, só o conteúdo muda.
-          const ficha = completarFicha(bloco.ficha)
-          const descricao = (
-            <DescricaoDoProduto
-              descricao={bloco.descricao}
-              editavel={isAdmin}
-              aoSalvar={async (texto) => {
-                await salvarDescricao(bloco.id, texto, uid)
-                recarregar()
-              }}
-            />
-          )
-          if (editandoFicha) {
-            return (
-              <div className="mb-10 space-y-6">
-                {descricao}
-                <EditorDaFicha
-                  inicial={ficha}
-                  aoCancelar={() => setEditandoFicha(false)}
-                  aoSalvar={async (nova) => {
-                    await salvarFicha(bloco.id, nova, uid)
-                    setEditandoFicha(false)
-                    recarregar()
-                  }}
-                />
-              </div>
-            )
-          }
-          return (
-            <section className="mb-10" aria-label="Informações do produto">
-              <FichaDoProduto
-                ficha={ficha}
-                admin={isAdmin}
-                topo={descricao}
-                acoes={
-                  isAdmin && (
-                    <button
-                      type="button"
-                      className="botao w-full"
-                      onClick={() => setEditandoFicha(true)}
-                    >
-                      <Pencil className="size-4" aria-hidden />
-                      Editar informações
-                    </button>
-                  )
-                }
-              />
-            </section>
-          )
-        })()}
+      {ehProduto && (
+        <DescricaoDoProduto
+          descricao={bloco.descricao}
+          editavel={isAdmin}
+          aoSalvar={async (texto) => {
+            await salvarDescricao(bloco.id, texto, uid)
+            recarregar()
+          }}
+        />
+      )}
 
       {filhos.length > 0 && (
         <section className="mb-10" aria-label={tipoFilho.plural}>
@@ -367,6 +325,47 @@ export function BlockPage() {
           )}
         </section>
       )}
+
+      {ehProduto &&
+        (() => {
+          // As 5 opções são fixas: sempre aparecem, só o conteúdo muda.
+          const ficha = completarFicha(bloco.ficha)
+          if (editandoFicha) {
+            return (
+              <div className="mb-10">
+                <EditorDaFicha
+                  inicial={ficha}
+                  aoCancelar={() => setEditandoFicha(false)}
+                  aoSalvar={async (nova) => {
+                    await salvarFicha(bloco.id, nova, uid)
+                    setEditandoFicha(false)
+                    recarregar()
+                  }}
+                />
+              </div>
+            )
+          }
+          return (
+            <section className="mb-10" aria-label="Informações do produto">
+              <FichaDoProduto
+                ficha={ficha}
+                admin={isAdmin}
+                acoes={
+                  isAdmin && (
+                    <button
+                      type="button"
+                      className="botao w-full"
+                      onClick={() => setEditandoFicha(true)}
+                    >
+                      <Pencil className="size-4" aria-hidden />
+                      Editar informações
+                    </button>
+                  )
+                }
+              />
+            </section>
+          )
+        })()}
 
       {(todosArtigos.length > 0 || !ehProduto) && (
         <section aria-label="Artigos">
