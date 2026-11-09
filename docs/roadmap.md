@@ -250,7 +250,7 @@ ou mudar de banco antes da Fase 5.
       editor, em qualquer estado; a busca acompanha se estiver publicado
 - [x] Tela do produto: breve descrição em destaque (editável) e "Informações do
       produto" editáveis a cada liberação (tabelas de compatibilidade, instaladores,
-      release notes, contato); modelo inicial pronto
+      release notes, contato); as 5 opções são fixas (só o conteúdo é editável)
 - [ ] Formulário de contato na tela do produto (precisa de um destino para as
       mensagens: e-mail ou coleção no Firestore)
 - [ ] Documentação de API na aside (falta definir a fonte)

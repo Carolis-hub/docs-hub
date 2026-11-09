@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Article, Block } from '../types/content'
@@ -146,10 +152,12 @@ describe('BlockPage', () => {
             ficha: {
               secoes: [
                 {
-                  id: 'i1',
-                  tipo: 'texto',
-                  titulo: 'Compatibilidade',
+                  id: 'compatibilidade-di',
+                  tipo: 'tabela',
+                  titulo: 'Compatibilidade DI',
                   texto: 'Mantenha sempre o produto atualizado.',
+                  colunas: ['SmartShare', 'DI Client'],
+                  linhas: [['3.85.23', '3.85.19']],
                 },
               ],
             },
@@ -161,26 +169,29 @@ describe('BlockPage', () => {
       await screen.findByText('Plataforma de gestão de documentos.'),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Compatibilidade' }),
+      screen.getByRole('heading', { name: 'Compatibilidade DI' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /Editar informações/ }),
     ).toBeInTheDocument()
   })
 
-  it('produto sem ficha salva: o admin já vê as 5 opções da estrutura padrão', async () => {
-    await abrir('p')
-    const opcoes = await screen.findAllByRole('tab')
-    expect(opcoes.map((o) => o.textContent)).toEqual([
+  it('produto sem nada salvo: as 5 opções fixas já aparecem, para admin e leitor', async () => {
+    const nomes = [
       'Compatibilidade DI',
       'Compatibilidade SmartShare',
       'Instaladores e Aplicativos',
       'Release Notes',
       'Contato',
-    ])
-    expect(
-      screen.getByText(/Estrutura padrão, ainda não salva/),
-    ).toBeInTheDocument()
+    ]
+    await abrir('p')
+    const admin = await screen.findAllByRole('tab')
+    expect(admin.map((o) => o.textContent)).toEqual(nomes)
+    cleanup()
+    useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
+    await abrir('p')
+    const leitor = await screen.findAllByRole('tab')
+    expect(leitor.map((o) => o.textContent)).toEqual(nomes)
   })
 
   it('leitor não vê a edição das informações do produto', async () => {

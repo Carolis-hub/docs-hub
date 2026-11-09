@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import type { Ficha } from '../types/content'
 import {
-  fichaModelo,
+  OPCOES_FIXAS,
+  completarFicha,
   linksParaTexto,
-  moverSecao,
   normalizarFicha,
-  secaoVazia,
   temConteudo,
   tabelaParaTexto,
   textoParaLinks,
@@ -54,15 +52,84 @@ describe('links em texto', () => {
   })
 })
 
-describe('normalizarFicha', () => {
-  it('descarta seções vazias e links inseguros e completa linhas curtas', () => {
-    const f: Ficha = {
+describe('as 5 opções fixas', () => {
+  it('sem nada salvo, devolve as 5 na ordem fixa, com os textos padrão', () => {
+    const f = completarFicha(undefined)
+    expect(f.secoes.map((s) => s.titulo)).toEqual([
+      'Compatibilidade DI',
+      'Compatibilidade SmartShare',
+      'Instaladores e Aplicativos',
+      'Release Notes',
+      'Contato',
+    ])
+    expect(f.secoes.map((s) => s.id)).toEqual(OPCOES_FIXAS.map((o) => o.id))
+    expect(f.secoes[0]).toMatchObject({
+      tipo: 'tabela',
+      colunas: [
+        'SmartShare',
+        'DI Client',
+        'DI Server',
+        'WS DI Server',
+        'WS DI Client',
+      ],
+      linhas: [],
+    })
+    expect(f.secoes[2]?.tipo).toBe('links')
+  })
+
+  it('preenche com o que foi salvo, casando pelo id ou pelo título, e ignora o resto', () => {
+    const f = completarFicha({
       secoes: [
-        { id: 'a', tipo: 'texto', titulo: '  ', texto: '' },
         {
-          id: 'b',
+          id: 'qualquer',
+          tipo: 'tabela',
+          titulo: 'compatibilidade smartshare',
+          texto: 'Texto salvo',
+          colunas: ['A', 'B'],
+          linhas: [['1', '2']],
+        },
+        {
+          id: 'release-notes',
           tipo: 'links',
-          titulo: 'Portal',
+          titulo: 'nome mudado',
+          texto: '',
+          itens: [{ rotulo: 'SmartShare', url: 'https://x.com' }],
+        },
+        { id: 'extra', tipo: 'texto', titulo: 'Seção inventada', texto: 'x' },
+      ],
+    })
+    expect(f.secoes).toHaveLength(5)
+    expect(f.secoes[1]).toMatchObject({
+      id: 'compatibilidade-smartshare',
+      titulo: 'Compatibilidade SmartShare',
+      texto: 'Texto salvo',
+      colunas: ['A', 'B'],
+      linhas: [['1', '2']],
+    })
+    expect(f.secoes[3]).toMatchObject({
+      itens: [{ rotulo: 'SmartShare', url: 'https://x.com' }],
+      texto: '',
+    })
+    expect(f.secoes.some((s) => s.titulo === 'Seção inventada')).toBe(false)
+  })
+})
+
+describe('normalizarFicha', () => {
+  it('mantém as 5 opções, tira links inseguros e completa linhas curtas', () => {
+    const n = normalizarFicha({
+      secoes: [
+        {
+          id: 'compatibilidade-di',
+          tipo: 'tabela',
+          titulo: 'x',
+          texto: '',
+          colunas: ['A', 'B'],
+          linhas: [['1']],
+        },
+        {
+          id: 'instaladores-e-aplicativos',
+          tipo: 'links',
+          titulo: 'x',
           texto: '',
           itens: [
             { rotulo: 'ok', url: 'https://x.com' },
@@ -70,78 +137,69 @@ describe('normalizarFicha', () => {
             { rotulo: '', url: 'https://y.com' },
           ],
         },
-        {
-          id: 'c',
-          tipo: 'tabela',
-          titulo: 'T',
-          texto: '',
-          colunas: ['A', 'B'],
-          linhas: [['1']],
-        },
       ],
-    }
-    const n = normalizarFicha(f)
-    expect(n.secoes.map((s) => s.id)).toEqual(['b', 'c'])
-    expect(n.secoes[0]).toMatchObject({
+    })
+    expect(n.secoes).toHaveLength(5)
+    expect(n.secoes[0]).toMatchObject({ linhas: [['1', '']] })
+    expect(n.secoes[2]).toMatchObject({
       itens: [
         { rotulo: 'ok', url: 'https://x.com' },
         { rotulo: 'ruim', url: '' },
       ],
     })
-    expect(n.secoes[1]).toMatchObject({ linhas: [['1', '']] })
   })
-  it('limita o número de seções', () => {
-    const secoes = Array.from({ length: 30 }, (_, i) => ({
-      id: `s${i}`,
-      tipo: 'texto' as const,
-      titulo: `T${i}`,
-      texto: '',
-    }))
-    expect(normalizarFicha({ secoes }).secoes).toHaveLength(20)
-  })
-})
 
-describe('moverSecao e modelo', () => {
-  it('troca a ordem e respeita as pontas', () => {
-    const f: Ficha = {
-      secoes: [secaoVazia('texto'), secaoVazia('links')],
-    }
-    const [a, b] = f.secoes
-    expect(moverSecao(f, (a as { id: string }).id, 1).secoes[1]?.id).toBe(
-      (a as { id: string }).id,
-    )
-    expect(moverSecao(f, (a as { id: string }).id, -1)).toBe(f)
-    expect(moverSecao(f, (b as { id: string }).id, 1)).toBe(f)
-  })
-  it('o modelo traz as cinco seções e passa pela limpeza', () => {
-    const m = fichaModelo()
-    expect(m.secoes.map((s) => s.titulo)).toEqual([
-      'Compatibilidade DI',
-      'Compatibilidade SmartShare',
-      'Instaladores e Aplicativos',
-      'Release Notes',
-      'Contato',
-    ])
-    expect(normalizarFicha(m).secoes).toHaveLength(5)
+  it('limita linhas e itens', () => {
+    const linhas = Array.from({ length: 100 }, () => ['1'])
+    const n = normalizarFicha({
+      secoes: [
+        {
+          id: 'compatibilidade-di',
+          tipo: 'tabela',
+          titulo: '',
+          texto: '',
+          colunas: ['A'],
+          linhas,
+        },
+      ],
+    })
+    expect((n.secoes[0] as { linhas: string[][] }).linhas).toHaveLength(60)
   })
 })
 
 describe('temConteudo', () => {
+  const base = { id: 'x', titulo: 'T' }
   it('seção só com título não tem conteúdo; texto, linhas ou links têm', () => {
-    expect(temConteudo(secaoVazia('texto'))).toBe(false)
-    expect(temConteudo({ ...secaoVazia('texto'), texto: 'Oi' } as never)).toBe(
-      true,
-    )
-    expect(temConteudo(secaoVazia('tabela'))).toBe(false)
-    expect(
-      temConteudo({ ...secaoVazia('tabela'), linhas: [['1', '2']] } as never),
-    ).toBe(true)
-    expect(temConteudo(secaoVazia('links'))).toBe(false)
+    expect(temConteudo({ ...base, tipo: 'texto', texto: '' })).toBe(false)
+    expect(temConteudo({ ...base, tipo: 'texto', texto: 'Oi' })).toBe(true)
     expect(
       temConteudo({
-        ...secaoVazia('links'),
+        ...base,
+        tipo: 'tabela',
+        texto: '',
+        colunas: ['A'],
+        linhas: [],
+      }),
+    ).toBe(false)
+    expect(
+      temConteudo({
+        ...base,
+        tipo: 'tabela',
+        texto: '',
+        colunas: ['A'],
+        linhas: [['1']],
+      }),
+    ).toBe(true)
+    expect(temConteudo({ ...base, tipo: 'links', texto: '', itens: [] })).toBe(
+      false,
+    )
+    expect(
+      temConteudo({
+        ...base,
+        tipo: 'links',
+        texto: '',
         itens: [{ rotulo: 'a', url: '' }],
-      } as never),
+      }),
     ).toBe(true)
   })
 })

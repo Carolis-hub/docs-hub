@@ -1,14 +1,15 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { Ficha } from '../types/content'
+import { completarFicha } from '../utils/ficha'
 import { EditorDaFicha } from './EditorDaFicha'
 
-const inicial: Ficha = {
+const salva: Ficha = {
   secoes: [
     {
-      id: 't1',
+      id: 'compatibilidade-di',
       tipo: 'tabela',
-      titulo: 'Compatibilidade',
+      titulo: 'Compatibilidade DI',
       texto: '',
       colunas: ['SmartShare', 'DI'],
       linhas: [['3.85.23', '3.85.19']],
@@ -17,24 +18,51 @@ const inicial: Ficha = {
 }
 
 describe('EditorDaFicha', () => {
+  it('mostra as 5 opções fixas, sem adicionar, remover nem renomear', () => {
+    render(
+      <EditorDaFicha
+        inicial={completarFicha(undefined)}
+        aoSalvar={vi.fn()}
+        aoCancelar={vi.fn()}
+      />,
+    )
+    expect(
+      screen.getAllByRole('group').map((g) => g.textContent?.slice(0, 40)),
+    ).toHaveLength(5)
+    for (const t of [
+      'Compatibilidade DI',
+      'Compatibilidade SmartShare',
+      'Instaladores e Aplicativos',
+      'Release Notes',
+      'Contato',
+    ]) {
+      expect(screen.getByText(t, { selector: 'legend' })).toBeInTheDocument()
+    }
+    expect(screen.queryByRole('button', { name: /Remover/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Subir|Descer/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Tabela' })).toBeNull()
+    expect(screen.queryByLabelText('Título')).toBeNull()
+  })
+
   it('edita a tabela em texto e salva com as linhas novas', async () => {
     const aoSalvar = vi.fn(async () => undefined)
     render(
       <EditorDaFicha
-        inicial={inicial}
+        inicial={salva}
         aoSalvar={aoSalvar}
         aoCancelar={vi.fn()}
       />,
     )
-    fireEvent.change(screen.getByLabelText(/Tabela/), {
+    fireEvent.change(screen.getByLabelText(/Tabela de Compatibilidade DI/), {
       target: {
         value: 'SmartShare | DI\n3.86.7 | **3.86.7**\n3.85.23 | 3.85.19',
       },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar informações' }))
     await waitFor(() => expect(aoSalvar).toHaveBeenCalledTimes(1))
-    const salva = (aoSalvar.mock.calls[0] as unknown as [Ficha])[0]
-    expect(salva.secoes[0]).toMatchObject({
+    const enviada = (aoSalvar.mock.calls[0] as unknown as [Ficha])[0]
+    expect(enviada.secoes).toHaveLength(5)
+    expect(enviada.secoes[0]).toMatchObject({
       tipo: 'tabela',
       colunas: ['SmartShare', 'DI'],
       linhas: [
@@ -44,30 +72,24 @@ describe('EditorDaFicha', () => {
     })
   })
 
-  it('adiciona uma seção de links e a remove', () => {
+  it('edita os links de uma opção', async () => {
+    const aoSalvar = vi.fn(async () => undefined)
     render(
       <EditorDaFicha
-        inicial={inicial}
-        aoSalvar={vi.fn()}
+        inicial={completarFicha(undefined)}
+        aoSalvar={aoSalvar}
         aoCancelar={vi.fn()}
       />,
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Links' }))
-    expect(screen.getByLabelText(/Links \(um por linha/)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: /Remover a seção 2/ }))
-    expect(screen.queryByLabelText(/Links \(um por linha/)).toBeNull()
-  })
-
-  it('sem seções oferece começar pelo modelo', () => {
-    render(
-      <EditorDaFicha
-        inicial={{ secoes: [] }}
-        aoSalvar={vi.fn()}
-        aoCancelar={vi.fn()}
-      />,
-    )
-    fireEvent.click(screen.getByRole('button', { name: /Começar pelo modelo/ }))
-    expect(screen.getAllByLabelText('Título')).toHaveLength(5)
+    fireEvent.change(screen.getByLabelText(/Links de Release Notes/), {
+      target: { value: 'SmartShare 4 | https://exemplo.com/ss4' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar informações' }))
+    await waitFor(() => expect(aoSalvar).toHaveBeenCalled())
+    const enviada = (aoSalvar.mock.calls[0] as unknown as [Ficha])[0]
+    expect(enviada.secoes[3]).toMatchObject({
+      itens: [{ rotulo: 'SmartShare 4', url: 'https://exemplo.com/ss4' }],
+    })
   })
 
   it('mostra o erro de gravação', async () => {
@@ -76,7 +98,7 @@ describe('EditorDaFicha', () => {
     })
     render(
       <EditorDaFicha
-        inicial={inicial}
+        inicial={salva}
         aoSalvar={aoSalvar}
         aoCancelar={vi.fn()}
       />,

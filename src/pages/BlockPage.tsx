@@ -36,7 +36,7 @@ import { getUnidade, listUnidades } from '../services/unidades'
 import { contarArtigosPorBlocos } from '../services/visaoGeral'
 import type { Block } from '../types/content'
 import { comDescendentes, tipoDoNivel, tipoDosFilhos } from '../utils/blocos'
-import { fichaModelo, temConteudo } from '../utils/ficha'
+import { completarFicha } from '../utils/ficha'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
 import { normalizar } from '../utils/search'
@@ -110,9 +110,6 @@ export function BlockPage() {
     'lista',
     ['lista', 'grade'],
   )
-
-  // Estrutura padrão (as 5 opções), mostrada ao admin enquanto a ficha não foi salva.
-  const [fichaPadrao] = useState(() => fichaModelo())
 
   const secoes = useMemo(() => {
     const q = normalizar(filtroSecoes.trim())
@@ -279,15 +276,8 @@ export function BlockPage() {
 
       {ehProduto &&
         (() => {
-          const salva = bloco.ficha?.secoes ?? []
-          const fichaPronta = salva.length > 0
-          const exibida = fichaPronta
-            ? isAdmin
-              ? { secoes: salva }
-              : { secoes: salva.filter(temConteudo) }
-            : isAdmin
-              ? fichaPadrao
-              : { secoes: [] }
+          // As 5 opções são fixas: sempre aparecem, só o conteúdo muda.
+          const ficha = completarFicha(bloco.ficha)
           const descricao = (
             <DescricaoDoProduto
               descricao={bloco.descricao}
@@ -303,10 +293,10 @@ export function BlockPage() {
               <div className="mb-10 space-y-6">
                 {descricao}
                 <EditorDaFicha
-                  inicial={fichaPronta ? { secoes: salva } : fichaPadrao}
+                  inicial={ficha}
                   aoCancelar={() => setEditandoFicha(false)}
-                  aoSalvar={async (ficha) => {
-                    await salvarFicha(bloco.id, ficha, uid)
+                  aoSalvar={async (nova) => {
+                    await salvarFicha(bloco.id, nova, uid)
                     setEditandoFicha(false)
                     recarregar()
                   }}
@@ -317,14 +307,9 @@ export function BlockPage() {
           return (
             <section className="mb-10" aria-label="Informações do produto">
               <FichaDoProduto
-                ficha={exibida}
+                ficha={ficha}
                 admin={isAdmin}
                 topo={descricao}
-                aviso={
-                  isAdmin && !fichaPronta
-                    ? 'Estrutura padrão, ainda não salva. Edite e salve para criar as opções.'
-                    : undefined
-                }
                 acoes={
                   isAdmin && (
                     <button

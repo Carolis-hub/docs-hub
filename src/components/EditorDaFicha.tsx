@@ -1,18 +1,15 @@
 import { useState } from 'react'
-import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react'
 import type { Ficha, SecaoFicha } from '../types/content'
 import {
   LIMITES_FICHA,
-  fichaModelo,
+  completarFicha,
   linksParaTexto,
-  secaoVazia,
   tabelaParaTexto,
   textoParaLinks,
   textoParaTabela,
-  type TipoSecao,
 } from '../utils/ficha'
 
-/** Seção em edição: tabelas e links ficam como texto até salvar. */
+/** Opção em edição: tabela e links ficam como texto até salvar. */
 interface Edicao {
   secao: SecaoFicha
   tabela: string
@@ -40,21 +37,19 @@ function dasEdicoes(edicoes: Edicao[]): Ficha {
   }
 }
 
-const ROTULO_TIPO: Record<TipoSecao, string> = {
-  texto: 'Texto',
-  tabela: 'Tabela',
-  links: 'Links',
-}
-
 interface Props {
   inicial: Ficha
   aoSalvar: (ficha: Ficha) => Promise<void>
   aoCancelar: () => void
 }
 
+/**
+ * Edita o conteúdo das 5 opções fixas do produto. Títulos, tipos e ordem são
+ * fixos: só o texto, as tabelas e os links mudam a cada liberação.
+ */
 export function EditorDaFicha({ inicial, aoSalvar, aoCancelar }: Props) {
   const [edicoes, setEdicoes] = useState<Edicao[]>(() =>
-    inicial.secoes.map(paraEdicao),
+    completarFicha(inicial).secoes.map(paraEdicao),
   )
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -63,24 +58,6 @@ export function EditorDaFicha({ inicial, aoSalvar, aoCancelar }: Props) {
     setEdicoes((atual) =>
       atual.map((e) => (e.secao.id === id ? { ...e, ...mudanca } : e)),
     )
-  const alterarSecao = (id: string, campos: Record<string, string>) =>
-    setEdicoes((atual) =>
-      atual.map((e) =>
-        e.secao.id === id
-          ? { ...e, secao: { ...e.secao, ...campos } as SecaoFicha }
-          : e,
-      ),
-    )
-  const mover = (id: string, delta: -1 | 1) =>
-    setEdicoes((atual) => {
-      const i = atual.findIndex((e) => e.secao.id === id)
-      const j = i + delta
-      if (i < 0 || j < 0 || j >= atual.length) return atual
-      const novo = [...atual]
-      const [item] = novo.splice(i, 1)
-      novo.splice(j, 0, item as Edicao)
-      return novo
-    })
 
   async function salvar() {
     setSalvando(true)
@@ -104,78 +81,39 @@ export function EditorDaFicha({ inicial, aoSalvar, aoCancelar }: Props) {
       className="cartao space-y-4 p-5"
     >
       <p className="text-sm text-suave">
-        Use <code>**texto**</code> para negrito (versões homologadas) e escreva
+        As 5 opções são fixas; edite o conteúdo de cada uma. Use{' '}
+        <code>**texto**</code> para negrito (versões homologadas) e escreva
         endereços completos (https://…) para virarem link. Nas tabelas, a
         primeira linha são as colunas e as células ficam separadas por{' '}
         <code>|</code>.
       </p>
 
-      {edicoes.map(({ secao, tabela, links }, i) => (
+      {edicoes.map(({ secao, tabela, links }) => (
         <fieldset
           key={secao.id}
           className="space-y-3 rounded-xl border border-borda p-4"
         >
-          <legend className="flex items-center gap-2 px-1 text-sm font-semibold">
-            {ROTULO_TIPO[secao.tipo]}
+          <legend className="px-1 text-sm font-bold uppercase tracking-wide text-destaque">
+            {secao.titulo}
           </legend>
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="block min-w-[200px] flex-1 text-sm">
-              Título
-              <input
-                className="campo mt-1"
-                value={secao.titulo}
-                maxLength={LIMITES_FICHA.titulo}
-                onChange={(e) =>
-                  alterarSecao(secao.id, { titulo: e.target.value })
-                }
-              />
-            </label>
-            <button
-              type="button"
-              className="botao-icone"
-              aria-label={`Subir a seção ${secao.titulo || i + 1}`}
-              disabled={i === 0}
-              onClick={() => mover(secao.id, -1)}
-            >
-              <ArrowUp className="size-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className="botao-icone"
-              aria-label={`Descer a seção ${secao.titulo || i + 1}`}
-              disabled={i === edicoes.length - 1}
-              onClick={() => mover(secao.id, 1)}
-            >
-              <ArrowDown className="size-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className="botao-icone hover:text-perigo"
-              aria-label={`Remover a seção ${secao.titulo || i + 1}`}
-              onClick={() =>
-                setEdicoes((atual) =>
-                  atual.filter((e) => e.secao.id !== secao.id),
-                )
-              }
-            >
-              <Trash2 className="size-4" aria-hidden />
-            </button>
-          </div>
           <label className="block text-sm">
-            {secao.tipo === 'texto' ? 'Texto' : 'Texto de apoio (opcional)'}
+            Texto de apoio (opcional)
             <textarea
               className="campo mt-1"
-              rows={secao.tipo === 'texto' ? 5 : 3}
+              rows={3}
               maxLength={LIMITES_FICHA.texto}
               value={secao.texto}
+              aria-label={`Texto de apoio de ${secao.titulo}`}
               onChange={(e) =>
-                alterarSecao(secao.id, { texto: e.target.value })
+                alterar(secao.id, {
+                  secao: { ...secao, texto: e.target.value },
+                })
               }
             />
           </label>
           {secao.tipo === 'tabela' && (
             <label className="block text-sm">
-              Tabela (primeira linha = colunas)
+              Tabela de {secao.titulo} (primeira linha = colunas)
               <textarea
                 className="campo mt-1 font-mono text-xs"
                 rows={7}
@@ -186,10 +124,10 @@ export function EditorDaFicha({ inicial, aoSalvar, aoCancelar }: Props) {
           )}
           {secao.tipo === 'links' && (
             <label className="block text-sm">
-              Links (um por linha: Rótulo | https://…)
+              Links de {secao.titulo} (um por linha: Rótulo | https://…)
               <textarea
                 className="campo mt-1 font-mono text-xs"
-                rows={5}
+                rows={4}
                 value={links}
                 onChange={(e) => alterar(secao.id, { links: e.target.value })}
               />
@@ -197,33 +135,6 @@ export function EditorDaFicha({ inicial, aoSalvar, aoCancelar }: Props) {
           )}
         </fieldset>
       ))}
-
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Adicionar">
-        {(['texto', 'tabela', 'links'] as TipoSecao[]).map((tipo) => (
-          <button
-            key={tipo}
-            type="button"
-            className="botao"
-            disabled={edicoes.length >= LIMITES_FICHA.secoes}
-            onClick={() =>
-              setEdicoes((atual) => [...atual, paraEdicao(secaoVazia(tipo))])
-            }
-          >
-            <Plus className="size-4" aria-hidden />
-            {ROTULO_TIPO[tipo]}
-          </button>
-        ))}
-        {edicoes.length === 0 && (
-          <button
-            type="button"
-            className="botao"
-            onClick={() => setEdicoes(fichaModelo().secoes.map(paraEdicao))}
-          >
-            Começar pelo modelo (compatibilidade, instaladores, release notes e
-            contato)
-          </button>
-        )}
-      </div>
 
       {erro && (
         <p role="alert" className="text-sm text-perigo">

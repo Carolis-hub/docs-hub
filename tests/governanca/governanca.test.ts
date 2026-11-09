@@ -556,16 +556,16 @@ describe('descrição e ficha do produto (Emulator)', () => {
     expect(log.docs.some((d) => d.get('detalhe') === 'descrição')).toBe(true)
   })
 
-  it('grava a ficha já limpa (sem seção vazia nem link inseguro)', async () => {
+  it('grava sempre as 5 opções fixas, já limpas (sem link inseguro, sem seção inventada)', async () => {
     const gravada = await salvarFicha(
       'p1',
       {
         secoes: [
-          { id: 'a', tipo: 'texto', titulo: '', texto: '' },
+          { id: 'inventada', tipo: 'texto', titulo: 'Outra', texto: 'x' },
           {
-            id: 'b',
+            id: 'instaladores-e-aplicativos',
             tipo: 'links',
-            titulo: 'Instaladores',
+            titulo: 'Instaladores e Aplicativos',
             texto: '',
             itens: [
               { rotulo: 'Portal', url: 'https://portal.example.com' },
@@ -576,9 +576,16 @@ describe('descrição e ficha do produto (Emulator)', () => {
       },
       ADMIN,
     )
-    expect(gravada.secoes).toHaveLength(1)
+    expect(gravada.secoes.map((s) => s.id)).toEqual([
+      'compatibilidade-di',
+      'compatibilidade-smartshare',
+      'instaladores-e-aplicativos',
+      'release-notes',
+      'contato',
+    ])
     const salvo = (await getDoc(doc(db, 'blocks/p1'))).get('ficha')
-    expect(salvo.secoes[0].itens).toEqual([
+    expect(salvo.secoes).toHaveLength(5)
+    expect(salvo.secoes[2].itens).toEqual([
       { rotulo: 'Portal', url: 'https://portal.example.com' },
       { rotulo: 'Ruim', url: '' },
     ])
