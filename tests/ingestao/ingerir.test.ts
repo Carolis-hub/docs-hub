@@ -77,6 +77,14 @@ beforeEach(async () => {
   await escrever('manual.pdf', 'pdf')
 })
 
+describe('produto de destino', () => {
+  it('produto inexistente: o erro lista os produtos cadastrados', async () => {
+    await expect(
+      ingerir(db(), opcoes({ produto: 'NOME DO PRODUTO', gravar: false })),
+    ).rejects.toThrow(/Produtos cadastrados:\n {2}- SmartShare DI/)
+  })
+})
+
 describe('destino por subproduto (--bloco)', () => {
   const criarSub = async (id: string, nome: string) =>
     db().doc(`blocks/${id}`).set({

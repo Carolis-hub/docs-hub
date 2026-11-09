@@ -110,8 +110,16 @@ async function acharProduto(db: Firestore, ref: string) {
       slugify(String(d.get('nome') ?? '')) === slugify(ref) ||
       d.get('slug') === slugify(ref),
   )
-  if (!alvo)
-    throw new Error(`Produto "${ref}" não encontrado (id, nome ou slug).`)
+  if (!alvo) {
+    const lista = raiz.docs
+      .map((d) => `  - ${String(d.get('nome') ?? '')}`)
+      .sort()
+      .join('\n')
+    throw new Error(
+      `Produto "${ref}" não encontrado (id, nome ou slug).` +
+        (lista ? `\nProdutos cadastrados:\n${lista}` : ''),
+    )
+  }
   return { id: alvo.id, nome: String(alvo.get('nome') ?? '') }
 }
 
