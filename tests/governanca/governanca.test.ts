@@ -47,6 +47,7 @@ import {
   transitar,
 } from '../../src/services/governanca'
 import { listarAuditoriaDoArtigo } from '../../src/services/audit'
+import { salvarDescricao, salvarFicha } from '../../src/services/blocks'
 
 const { db } = firebase
 const env = (
@@ -542,5 +543,44 @@ describe('mover o artigo de lugar (Emulator)', () => {
     await expect(moverArtigo(id, 'nao-existe', ADMIN)).rejects.toThrow(
       /Destino não encontrado/,
     )
+  })
+})
+
+describe('descrição e ficha do produto (Emulator)', () => {
+  it('grava a descrição e registra na auditoria', async () => {
+    await salvarDescricao('p1', '  ECM e BPM.  ', ADMIN)
+    expect((await getDoc(doc(db, 'blocks/p1'))).get('descricao')).toBe(
+      'ECM e BPM.',
+    )
+    const log = await getDocs(collection(db, 'auditLog'))
+    expect(log.docs.some((d) => d.get('detalhe') === 'descrição')).toBe(true)
+  })
+
+  it('grava a ficha já limpa (sem seção vazia nem link inseguro)', async () => {
+    const gravada = await salvarFicha(
+      'p1',
+      {
+        secoes: [
+          { id: 'a', tipo: 'texto', titulo: '', texto: '' },
+          {
+            id: 'b',
+            tipo: 'links',
+            titulo: 'Instaladores',
+            texto: '',
+            itens: [
+              { rotulo: 'Portal', url: 'https://portal.example.com' },
+              { rotulo: 'Ruim', url: 'javascript:alert(1)' },
+            ],
+          },
+        ],
+      },
+      ADMIN,
+    )
+    expect(gravada.secoes).toHaveLength(1)
+    const salvo = (await getDoc(doc(db, 'blocks/p1'))).get('ficha')
+    expect(salvo.secoes[0].itens).toEqual([
+      { rotulo: 'Portal', url: 'https://portal.example.com' },
+      { rotulo: 'Ruim', url: '' },
+    ])
   })
 })

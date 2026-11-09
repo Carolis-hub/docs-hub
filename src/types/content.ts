@@ -13,6 +13,31 @@ export interface Block {
   productId: string
   /** Unidade de negócio (BU) do produto; só existe nos blocos raiz. */
   unidadeId?: string | null
+  /** Informações editáveis do produto (compatibilidade, instaladores…); só em produtos. */
+  ficha?: Ficha
+}
+
+/** Uma seção da ficha do produto. `texto` aceita **negrito** e links. */
+export type SecaoFicha =
+  | { id: string; tipo: 'texto'; titulo: string; texto: string }
+  | {
+      id: string
+      tipo: 'tabela'
+      titulo: string
+      texto: string
+      colunas: string[]
+      linhas: string[][]
+    }
+  | {
+      id: string
+      tipo: 'links'
+      titulo: string
+      texto: string
+      itens: { rotulo: string; url: string }[]
+    }
+
+export interface Ficha {
+  secoes: SecaoFicha[]
 }
 
 export type BlockInput = Pick<Block, 'nome' | 'descricao' | 'icone'> & {

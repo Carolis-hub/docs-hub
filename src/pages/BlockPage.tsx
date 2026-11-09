@@ -4,6 +4,9 @@ import { Link, useParams } from 'react-router-dom'
 import { ArticleList } from '../components/ArticleList'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
+import { DescricaoDoProduto } from '../components/DescricaoDoProduto'
+import { EditorDaFicha } from '../components/EditorDaFicha'
+import { FichaDoProduto } from '../components/FichaDoProduto'
 import { Breadcrumb } from '../components/Breadcrumb'
 import {
   AlternarVisao,
@@ -24,12 +27,14 @@ import {
   listChildren,
   listProductTree,
   reorderBlocks,
+  salvarDescricao,
+  salvarFicha,
   updateBlock,
 } from '../services/blocks'
 import { listArticlesByBlock } from '../services/articles'
 import { getUnidade, listUnidades } from '../services/unidades'
 import { contarArtigosPorBlocos } from '../services/visaoGeral'
-import type { Block } from '../types/content'
+import type { Block, Ficha } from '../types/content'
 import { comDescendentes, tipoDoNivel, tipoDosFilhos } from '../utils/blocos'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
@@ -90,6 +95,7 @@ export function BlockPage() {
   const [modo, setModo] = useState<'novo' | 'editar' | null>(null)
   const [editandoFilho, setEditandoFilho] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [editandoFicha, setEditandoFicha] = useState(false)
   const [organizar, setOrganizar] = useState(false)
   const [filtroSecoes, setFiltroSecoes] = useState('')
   const [filtroArtigos, setFiltroArtigos] = useState('')
@@ -264,6 +270,66 @@ export function BlockPage() {
         <p role="alert" className="mb-4 text-sm text-perigo">
           {aviso}
         </p>
+      )}
+
+      {ehProduto && (
+        <>
+          <DescricaoDoProduto
+            descricao={bloco.descricao}
+            editavel={isAdmin}
+            aoSalvar={async (texto) => {
+              await salvarDescricao(bloco.id, texto, uid)
+              recarregar()
+            }}
+          />
+          {editandoFicha ? (
+            <div className="mb-10">
+              <EditorDaFicha
+                inicial={bloco.ficha ?? { secoes: [] }}
+                aoCancelar={() => setEditandoFicha(false)}
+                aoSalvar={async (ficha) => {
+                  await salvarFicha(bloco.id, ficha, uid)
+                  setEditandoFicha(false)
+                  recarregar()
+                }}
+              />
+            </div>
+          ) : (bloco.ficha?.secoes.length ?? 0) > 0 || isAdmin ? (
+            <section className="mb-10" aria-label="Informações do produto">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">
+                  Informações do produto
+                </h2>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    className="botao"
+                    onClick={() => setEditandoFicha(true)}
+                  >
+                    <Pencil className="size-4" aria-hidden />
+                    Editar informações
+                  </button>
+                )}
+              </div>
+              {(bloco.ficha?.secoes.length ?? 0) > 0 ? (
+                <FichaDoProduto ficha={bloco.ficha as Ficha} />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditandoFicha(true)}
+                  className="flex w-full flex-col items-center gap-1 rounded-2xl border-[1.5px] border-dashed border-borda p-8 text-sm text-suave transition hover:border-destaque/60 hover:text-texto"
+                >
+                  <Plus className="size-5" aria-hidden />
+                  Adicionar informações do produto
+                  <span className="text-xs">
+                    Compatibilidade, instaladores, release notes e contato:
+                    editáveis a cada liberação.
+                  </span>
+                </button>
+              )}
+            </section>
+          ) : null}
+        </>
       )}
 
       {filhos.length > 0 && (

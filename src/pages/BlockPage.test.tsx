@@ -21,6 +21,8 @@ vi.mock('../services/blocks', () => ({
   updateBlock: vi.fn(),
   deleteBlock: vi.fn(),
   reorderBlocks: vi.fn(),
+  salvarDescricao: vi.fn(),
+  salvarFicha: vi.fn(),
 }))
 vi.mock('../services/unidades', () => ({
   getUnidade: vi.fn(async () => null),
@@ -133,6 +135,56 @@ describe('BlockPage', () => {
     expect(
       screen.getAllByRole('button', { name: /novo subproduto/i }),
     ).toHaveLength(2)
+  })
+
+  it('produto: mostra a descrição e as informações do produto', async () => {
+    getBlock.mockImplementation(async (id: string) =>
+      id === 'p'
+        ? {
+            ...produto,
+            descricao: 'Plataforma de gestão de documentos.',
+            ficha: {
+              secoes: [
+                {
+                  id: 'i1',
+                  tipo: 'texto',
+                  titulo: 'Compatibilidade',
+                  texto: 'Mantenha sempre o produto atualizado.',
+                },
+              ],
+            },
+          }
+        : anexos,
+    )
+    await abrir('p')
+    expect(
+      await screen.findByText('Plataforma de gestão de documentos.'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Compatibilidade' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /Editar informações/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('produto sem informações: o admin vê o convite e o leitor não vê nada', async () => {
+    await abrir('p')
+    expect(
+      await screen.findByRole('button', {
+        name: /Adicionar informações do produto/,
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('leitor não vê a edição das informações do produto', async () => {
+    useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
+    await abrir('p')
+    await screen.findByText('Dashboard')
+    expect(screen.queryByText(/Informações do produto/)).toBeNull()
+    expect(
+      screen.queryByRole('button', { name: /Editar informações/ }),
+    ).toBeNull()
   })
 
   it('filtra as seções sem acento nem caixa', async () => {
