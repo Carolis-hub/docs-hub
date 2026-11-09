@@ -66,6 +66,12 @@ export function BlockForm({
         <textarea
           className="campo mt-1"
           rows={2}
+          maxLength={240}
+          placeholder={
+            unidades
+              ? 'Breve descrição do produto (aparece no cartão)'
+              : undefined
+          }
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
         />
