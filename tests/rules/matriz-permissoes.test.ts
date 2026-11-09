@@ -119,6 +119,9 @@ beforeAll(async () => {
     await setDoc(doc(d, 'auditLog/a1'), { usuarioId: 'admin', acao: 'x' })
     await setDoc(doc(d, 'fontes/f1'), { fonteId: 'f' })
     await setDoc(doc(d, 'sincronizacoes/s1'), { fonteId: 's' })
+    const prefs = { aside: { visivel: true, manual: true, busca: true } }
+    await setDoc(doc(d, 'preferenciasUsuario/leitor'), prefs)
+    await setDoc(doc(d, 'preferenciasUsuario/admin'), prefs)
     await setDoc(doc(d, 'colecaoDesconhecida/x'), { x: 1 })
   })
 })
@@ -177,6 +180,9 @@ describe('matriz de permissões: leitura', () => {
     ['auditLog/a1', SO_ADMIN],
     ['fontes/f1', SO_ADMIN],
     ['sincronizacoes/s1', SO_ADMIN],
+    // Configurações pessoais: só o dono lê as suas (nem o admin lê as dos outros).
+    ['preferenciasUsuario/leitor', ['leitor']],
+    ['preferenciasUsuario/admin', ['admin']],
     // O que não está nas regras é negado a todos, até ao admin.
     ['colecaoDesconhecida/x', NINGUEM],
   ]
@@ -206,6 +212,12 @@ describe('matriz de permissões: escrita', () => {
     ['sincronizacoes', NINGUEM, { fonteId: 'x' }],
     ['assistenteUso', NINGUEM, { perguntas: 1 }],
     ['assistenteLog', NINGUEM, { uid: 'leitor' }],
+    // Só o dono grava, no documento com o próprio uid (ver o teste abaixo).
+    [
+      'preferenciasUsuario',
+      NINGUEM,
+      { aside: { visivel: true, manual: true, busca: true } },
+    ],
     ['colecaoDesconhecida', NINGUEM, { x: 1 }],
   ]
 
@@ -238,6 +250,33 @@ describe('matriz de permissões: escrita', () => {
       })
       return deleteDoc(alvo)
     })
+  })
+
+  it('configurações pessoais: só o dono grava, no formato certo, e ninguém apaga', async () => {
+    const validas = { aside: { visivel: false, manual: true, busca: false } }
+    for (const p of PESSOAS) {
+      const meu = doc(banco(p), `preferenciasUsuario/${p}`)
+      const pode = ATIVOS.includes(p)
+      await (pode ? assertSucceeds : assertFails)(setDoc(meu, validas))
+      if (pode) {
+        // Não grava no documento de outra pessoa.
+        await assertFails(
+          setDoc(doc(banco(p), 'preferenciasUsuario/outra-pessoa'), validas),
+        )
+        // Formato inválido: campo a mais, valor que não é verdadeiro/falso, mapa faltando.
+        await assertFails(setDoc(meu, { ...validas, extra: 1 }))
+        await assertFails(
+          setDoc(meu, { aside: { visivel: 'sim', manual: true, busca: true } }),
+        )
+        await assertFails(
+          setDoc(meu, { aside: { visivel: true, manual: true } }),
+        )
+        await assertFails(setDoc(meu, { aside: 'tudo' }))
+        // Com o carimbo de data, aceita.
+        await assertSucceeds(setDoc(meu, { ...validas, atualizadoEm: 123 }))
+        await assertFails(deleteDoc(meu))
+      }
+    }
   })
 
   it('auditoria: admin cria com o próprio id; ninguém edita nem apaga', async () => {
@@ -380,6 +419,7 @@ describe('matriz de permissões: cobertura das regras', () => {
       'assistenteUso',
       'assistenteLog',
       'auditLog',
+      'preferenciasUsuario',
     ])
     const semCobertura = nasRegras.filter((c) => !cobertas.has(c))
     expect(

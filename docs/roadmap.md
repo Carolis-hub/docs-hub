@@ -253,6 +253,9 @@ ou mudar de banco antes da Fase 5.
       release notes, contato); as 5 opções são fixas (só o conteúdo é editável)
 - [ ] Formulário de contato na tela do produto (precisa de um destino para as
       mensagens: e-mail ou coleção no Firestore)
+- [x] Modelo de configurações de usuário (`preferenciasUsuario/{uid}`), guardado na
+      conta de cada pessoa; hoje traz as configurações da aside (mostrar, e quais
+      entradas). A tela Configurações ganhou "Minhas configurações"
 - [ ] Documentação de API na aside (falta definir a fonte)
 - [x] Busca com IA: pergunta sem palavras comuns, sinônimos e índice com mais
       texto (4.000 → 16.000 caracteres); prompt para perguntas "o que é X"

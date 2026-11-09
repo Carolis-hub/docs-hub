@@ -1,8 +1,8 @@
 import { BookOpen, Sparkles } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { useModoAside } from '../hooks/useModoAside'
-import { entradasVisiveis } from '../utils/aside'
+import { usePreferencias } from '../hooks/usePreferencias'
+import { entradasDaAside } from '../utils/preferencias'
 
 const ENTRADAS = {
   manual: {
@@ -17,12 +17,12 @@ const ENTRADAS = {
   },
 }
 
-/** Aside esquerda: vale para qualquer usuário (a escolha fica em Minhas preferências). */
+/** Aside esquerda: vale para qualquer usuário (cada pessoa escolhe o que ela mostra em Minhas configurações). */
 export function Aside() {
   const { user } = useAuth()
-  const { modo } = useModoAside(user?.uid)
-  const entradas = entradasVisiveis(modo)
-  if (modo === 'oculta') return null
+  const { aside } = usePreferencias(user?.uid)
+  const entradas = entradasDaAside(aside)
+  if (entradas.length === 0) return null
   return (
     <aside
       aria-label="Visualizações"
