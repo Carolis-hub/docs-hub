@@ -326,11 +326,32 @@ e confere o login de admin).
   Chrome/Edge, reler a pasta de tempos em tempos, exige mudar as regras do
   Firestore) e só o workflow de Git (`ingestao.yml`, ainda não exercitado)
 
+### Consulta inteligente à KB (estudo de nov/2026)
+
+Estudo completo em `docs/estudo-consulta-kb.md` (diagnóstico, alternativas,
+arquitetura, MVP e riscos). Resumo: manter a busca por palavras como padrão e a
+pergunta com IA sob demanda, as duas presas a um produto; embeddings só se a
+medição pedir.
+
+- [x] Estudo técnico e proposta de arquitetura (2026-11-12)
+- [ ] Fase 0, medir: conjunto de 30 a 50 perguntas reais e primeira execução
+      do `assistente-avaliar` com chave real (latência e custo por etapa)
+- [ ] Fase 1, base correta: produto obrigatório na busca e no assistente;
+      separar o conteúdo técnico no índice de busca (hoje o texto técnico chega
+      ao navegador de quem não tem `verTecnico`); recuperação por trecho
+- [ ] Fase 2, produção: plano Blaze, assistente no Cloud Run, cache do índice
+      no servidor, resposta transmitida aos poucos, modelo por etapa
+- [ ] Fase 3, experiência: caixa única, glossário de sinônimos por produto,
+      relatório de lacunas
+- [ ] Fase 4, busca híbrida (vetores): só se a avaliação mostrar falha de
+      recuperação por vocabulário
+- [ ] Fase 5, evolução: contexto do artigo aberto, resumo, `.docx` e `.pdf`
+
 ### Backlog (do `PLAN.md`)
 
 - [ ] Versões por versão do produto
 - [ ] Botão "Este artigo foi útil?"
-- [ ] Busca semântica
+- [ ] Busca semântica (ver Fase 4 de "Consulta inteligente à KB")
 - [ ] Exportação em PDF
 
 ## Como atualizar este arquivo
