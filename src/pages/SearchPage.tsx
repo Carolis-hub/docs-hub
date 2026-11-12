@@ -7,6 +7,7 @@ import { useAsync } from '../hooks/useAsync'
 import { useProdutoEmContexto } from '../hooks/useProdutoEmContexto'
 import { useSearchEngine } from '../hooks/useSearchEngine'
 import { listProductTree } from '../services/blocks'
+import { RetornoDaBusca } from '../components/RetornoDaBusca'
 import { registrarBuscaSemResultado } from '../services/search'
 import type { ArticlePublico, CategoriaId } from '../types/content'
 import { comDescendentes } from '../utils/blocos'
@@ -124,8 +125,8 @@ export function SearchPage() {
   useEffect(() => {
     // Só a busca sem filtros (além do produto) conta como "sem resultado".
     if (semResultado && q.trim() && !temFiltro)
-      void registrarBuscaSemResultado(q)
-  }, [semResultado, q, temFiltro])
+      void registrarBuscaSemResultado(q, produto)
+  }, [semResultado, q, temFiltro, produto])
 
   function atualizar(mudancas: Record<string, string>) {
     const novo = new URLSearchParams(params)
@@ -411,6 +412,13 @@ export function SearchPage() {
               )
             })}
           </ul>
+          {q.trim() && (
+            <RetornoDaBusca
+              key={`${produto}|${q.trim()}`}
+              consulta={q}
+              produtoId={produto}
+            />
+          )}
         </>
       )}
     </div>

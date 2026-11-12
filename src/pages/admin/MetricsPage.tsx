@@ -107,6 +107,9 @@ export function MetricsPage() {
     return { blocos, unidades }
   }, [])
 
+  const nomeDoProduto = (id: string | undefined) =>
+    id ? (estrutura?.blocos.find((b) => b.id === id)?.nome ?? id) : ''
+
   const porEstrutura = useMemo(
     () =>
       dados && estrutura
@@ -360,9 +363,42 @@ export function MetricsPage() {
               <ul className="space-y-1 text-sm">
                 {dados.buscasSemResultado.map((b) => (
                   <li key={b.id} className="flex justify-between gap-3">
-                    <span className="truncate">{b.termo}</span>
+                    <span className="min-w-0 truncate">
+                      {b.termo}
+                      {nomeDoProduto(b.productId) && (
+                        <span className="text-suave">
+                          {' '}
+                          · {nomeDoProduto(b.productId)}
+                        </span>
+                      )}
+                    </span>
                     <span className="shrink-0 tabular-nums text-suave">
                       {b.count}×
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Painel>
+
+            <Painel
+              titulo="Buscas que não ajudaram"
+              total={dados.buscasQueNaoAjudaram.length}
+              vazio="Ninguém marcou uma busca como “não ajudou”."
+            >
+              <ul className="space-y-1 text-sm">
+                {dados.buscasQueNaoAjudaram.map((b) => (
+                  <li key={b.id} className="flex justify-between gap-3">
+                    <span className="min-w-0 truncate">
+                      {b.termo}
+                      {nomeDoProduto(b.productId) && (
+                        <span className="text-suave">
+                          {' '}
+                          · {nomeDoProduto(b.productId)}
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 tabular-nums text-suave">
+                      {b.nao} não · {b.sim} sim
                     </span>
                   </li>
                 ))}

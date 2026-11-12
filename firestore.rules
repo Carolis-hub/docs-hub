@@ -156,19 +156,46 @@ service cloud.firestore {
       }
     }
 
-    // Buscas sem resultado: contador agregado por termo. O leitor só cria
-    // com 1 ou soma 1; apenas admins leem (painel da Fase 4).
+    // Buscas sem resultado: contador agregado por termo e produto. O leitor
+    // só cria com 1 ou soma 1; apenas admins leem (painel de métricas).
+    // Registros antigos não têm `productId`.
     match /searchMisses/{termoId} {
       allow read, write: if isAdmin();
       allow create: if hasProfile() &&
-        request.resource.data.keys().hasOnly(['termo', 'count', 'ultimaVez']) &&
+        request.resource.data.keys().hasOnly(['termo', 'count', 'ultimaVez', 'productId']) &&
         request.resource.data.termo is string &&
         request.resource.data.termo.size() <= 100 &&
+        (!('productId' in request.resource.data) ||
+          canSeeProduct(request.resource.data.productId)) &&
         request.resource.data.count == 1;
       allow update: if hasProfile() &&
-        request.resource.data.keys().hasOnly(['termo', 'count', 'ultimaVez']) &&
+        request.resource.data.keys().hasOnly(['termo', 'count', 'ultimaVez', 'productId']) &&
         request.resource.data.termo == resource.data.termo &&
+        request.resource.data.get('productId', null) == resource.data.get('productId', null) &&
         request.resource.data.count == resource.data.count + 1;
+    }
+
+    // "Esta busca ajudou?": dois contadores (sim e não) por termo e produto,
+    // sem dizer quem respondeu. O leitor só cria com um voto ou soma um voto
+    // num dos dois; apenas admins leem.
+    match /searchFeedback/{id} {
+      allow read, write: if isAdmin();
+      allow create: if hasProfile() &&
+        request.resource.data.keys().hasOnly(['termo', 'productId', 'sim', 'nao', 'ultimaVez']) &&
+        request.resource.data.termo is string &&
+        request.resource.data.termo.size() <= 100 &&
+        canSeeProduct(request.resource.data.productId) &&
+        ((request.resource.data.sim == 1 && request.resource.data.nao == 0) ||
+          (request.resource.data.sim == 0 && request.resource.data.nao == 1));
+      allow update: if hasProfile() &&
+        request.resource.data.keys().hasOnly(['termo', 'productId', 'sim', 'nao', 'ultimaVez']) &&
+        request.resource.data.termo == resource.data.termo &&
+        request.resource.data.productId == resource.data.productId &&
+        canSeeProduct(resource.data.productId) &&
+        ((request.resource.data.sim == resource.data.sim + 1 &&
+            request.resource.data.nao == resource.data.nao) ||
+          (request.resource.data.sim == resource.data.sim &&
+            request.resource.data.nao == resource.data.nao + 1));
     }
 
     // Assistente de IA: só o servidor do assistente (Admin SDK) escreve os

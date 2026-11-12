@@ -16,7 +16,8 @@ Interface e documentação em **português do Brasil**.
   uma tarefa** (marque o item e faça commit).
 - `README.md`: como rodar, checklist de configuração dos workflows do GitHub.
 - `scripts/<pasta>/README.md`: cada ferramenta (migrate, doc-sync, alt-texto,
-  backup, cloudinary-limpeza, verificar-links, estrutura, ingestao, assistente)
+  backup, cloudinary-limpeza, verificar-links, estrutura, ingestao, assistente,
+  busca)
   tem o seu.
 
 ## Comandos
@@ -33,6 +34,7 @@ Interface e documentação em **português do Brasil**.
 | `npm run estrutura -- …`                                | Cria uma BU e liga produtos já importados a ela                                                    |
 | `npm run assistente -- --projeto …`                     | Servidor do assistente de IA (precisa de `ANTHROPIC_API_KEY`)                                      |
 | `npm run assistente-avaliar -- --casos …`               | Mede a qualidade do assistente com perguntas suas (gasta com a IA; sem `--executar` só confere)    |
+| `npm run busca-avaliar -- --casos … --projeto …`        | Mede a taxa de acerto da busca com consultas suas (sem IA, sem gasto)                              |
 | `npm run alt-texto -- …`                                | Sugere textos alternativos de imagens (IA)                                                         |
 | `npm run doc-sync -- …`                                 | Sugere atualizações de artigos a partir de `.md` de regras                                         |
 

@@ -22,7 +22,14 @@ vi.mock('../hooks/useSearchEngine', () => ({
 vi.mock('../services/blocks', () => ({
   listProductTree: (...a: unknown[]) => listProductTree(...a),
 }))
-vi.mock('../services/search', () => ({ registrarBuscaSemResultado: vi.fn() }))
+const registrarBuscaSemResultado = vi.fn()
+const registrarRetornoDaBusca = vi.fn()
+vi.mock('../services/search', () => ({
+  registrarBuscaSemResultado: (...a: unknown[]) =>
+    registrarBuscaSemResultado(...a),
+  registrarRetornoDaBusca: (...a: unknown[]) => registrarRetornoDaBusca(...a),
+  jaAvaliouBusca: () => false,
+}))
 
 const bloco = (
   id: string,
@@ -331,6 +338,28 @@ describe('SearchPage', () => {
     expect(
       screen.getByRole('link', { name: 'Configurar envio' }),
     ).toHaveAttribute('href', '/a/a1')
+  })
+
+  it('"Esta busca ajudou?" registra o voto do termo no produto, uma vez', () => {
+    abrir('/busca?produto=p1&q=configurar')
+    fireEvent.click(screen.getByRole('button', { name: 'Não' }))
+    expect(registrarRetornoDaBusca).toHaveBeenCalledWith(
+      'configurar',
+      'p1',
+      false,
+    )
+    expect(screen.getByText('Obrigado pela resposta.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Sim' })).toBeNull()
+  })
+
+  it('sem texto (só navegando por filtro) não pergunta se ajudou', () => {
+    abrir('/busca?produto=p1&categoria=processos')
+    expect(screen.queryByText('Esta busca ajudou?')).toBeNull()
+  })
+
+  it('busca sem resultado é registrada com o produto', () => {
+    abrir('/busca?produto=p1&q=inexistente')
+    expect(registrarBuscaSemResultado).toHaveBeenCalledWith('inexistente', 'p1')
   })
 
   it('avisa quando os filtros não encontram nada', () => {

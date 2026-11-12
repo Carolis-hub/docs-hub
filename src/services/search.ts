@@ -53,18 +53,61 @@ export function invalidarCacheBusca(): void {
 
 const jaRegistradas = new Set<string>()
 
+/** Termo como fica no relatório, e o id do contador (por produto). */
+function chaveDoTermo(consulta: string, productId: string) {
+  const termo = normalizar(consulta).replace(/\s+/g, ' ').trim().slice(0, 100)
+  const slug = slugify(termo).slice(0, 100)
+  return { termo, id: slug ? `${productId}__${slug}` : '' }
+}
+
 /** Contador agregado de buscas sem resultado, uma vez por termo e sessão. */
 export async function registrarBuscaSemResultado(
   consulta: string,
+  productId: string,
 ): Promise<void> {
-  const termo = normalizar(consulta).replace(/\s+/g, ' ').trim().slice(0, 100)
-  const id = slugify(termo).slice(0, 100)
-  if (!id || jaRegistradas.has(id)) return
+  const { termo, id } = chaveDoTermo(consulta, productId)
+  if (!id || !productId || jaRegistradas.has(id)) return
   jaRegistradas.add(id)
   try {
     await setDoc(
       doc(db, 'searchMisses', id),
-      { termo, count: increment(1), ultimaVez: Date.now() },
+      { termo, productId, count: increment(1), ultimaVez: Date.now() },
+      { merge: true },
+    )
+  } catch {
+    // Métrica é opcional: falha de rede ou de regra não deve afetar a busca.
+  }
+}
+
+const jaAvaliadas = new Set<string>()
+
+/** `true` se a pessoa já respondeu "ajudou?" para este termo nesta sessão. */
+export function jaAvaliouBusca(consulta: string, productId: string): boolean {
+  return jaAvaliadas.has(chaveDoTermo(consulta, productId).id)
+}
+
+/**
+ * "Esta busca ajudou?": soma um voto (sim ou não) no contador do termo e do
+ * produto. Não guarda quem votou. Um voto por termo e sessão.
+ */
+export async function registrarRetornoDaBusca(
+  consulta: string,
+  productId: string,
+  ajudou: boolean,
+): Promise<void> {
+  const { termo, id } = chaveDoTermo(consulta, productId)
+  if (!id || !productId || jaAvaliadas.has(id)) return
+  jaAvaliadas.add(id)
+  try {
+    await setDoc(
+      doc(db, 'searchFeedback', id),
+      {
+        termo,
+        productId,
+        sim: increment(ajudou ? 1 : 0),
+        nao: increment(ajudou ? 0 : 1),
+        ultimaVez: Date.now(),
+      },
       { merge: true },
     )
   } catch {

@@ -65,24 +65,39 @@ export interface SearchMiss {
   termo: string
   count: number
   ultimaVez: number
+  /** Ausente nos registros anteriores à busca por produto. */
+  productId?: string
+}
+
+/** Votos de "Esta busca ajudou?" de um termo num produto. */
+export interface SearchFeedback {
+  id: string
+  termo: string
+  productId: string
+  sim: number
+  nao: number
+  ultimaVez: number
 }
 
 export interface MetricsData {
   artigos: Article[]
   views: DailyView[]
   buscasSemResultado: SearchMiss[]
+  /** As buscas com mais votos "não ajudou". */
+  buscasQueNaoAjudaram: SearchFeedback[]
 }
 
 /**
  * Carrega os dados do painel. Custo em leituras: um documento por artigo, um
- * por (artigo × dia com acesso) no período e até 20 termos buscados.
+ * por (artigo × dia com acesso) no período, até 20 buscas sem resultado e
+ * até 20 buscas que não ajudaram.
  */
 export async function carregarMetricas(
   dias: number,
   hoje: Date = new Date(),
 ): Promise<MetricsData> {
   const inicio = ultimosDias(dias, hoje)[0] as string
-  const [artigosSnap, viewsSnap, missesSnap] = await Promise.all([
+  const [artigosSnap, viewsSnap, missesSnap, retornoSnap] = await Promise.all([
     getDocs(collection(db, 'articles')),
     getDocs(
       query(collectionGroup(db, 'viewsDaily'), where('dia', '>=', inicio)),
@@ -91,6 +106,14 @@ export async function carregarMetricas(
       query(
         collection(db, 'searchMisses'),
         orderBy('count', 'desc'),
+        limit(20),
+      ),
+    ),
+    getDocs(
+      query(
+        collection(db, 'searchFeedback'),
+        where('nao', '>', 0),
+        orderBy('nao', 'desc'),
         limit(20),
       ),
     ),
@@ -106,6 +129,9 @@ export async function carregarMetricas(
     })),
     buscasSemResultado: missesSnap.docs.map(
       (d) => ({ id: d.id, ...d.data() }) as SearchMiss,
+    ),
+    buscasQueNaoAjudaram: retornoSnap.docs.map(
+      (d) => ({ id: d.id, ...d.data() }) as SearchFeedback,
     ),
   }
 }

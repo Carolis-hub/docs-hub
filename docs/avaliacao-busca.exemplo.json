@@ -1,0 +1,23 @@
+{
+  "_leia-me": "Exemplo do arquivo de casos do 'npm run busca-avaliar'. Copie para fora do repositório (as consultas reais podem citar assuntos internos) e troque pelas consultas do suporte e pelos artigos do seu produto.",
+  "casos": [
+    {
+      "id": "envio-de-email",
+      "consulta": "configurar envio de email",
+      "produto": "SmartShare 4",
+      "esperados": ["envio de e-mail"]
+    },
+    {
+      "id": "palavras-do-usuario",
+      "consulta": "apagar documento",
+      "produto": "SmartShare 4",
+      "esperados": ["Excluir documentos", "Lixeira"]
+    },
+    {
+      "id": "pelo-id-do-artigo",
+      "consulta": "prazo de aprovação",
+      "produto": "smartshare-4",
+      "esperados": ["id-do-artigo-no-sistema"]
+    }
+  ]
+}

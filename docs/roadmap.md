@@ -351,8 +351,15 @@ medição pedir.
       **Artigos publicados antes só ganham seções ao serem publicados de novo
       ou ao rodar o importador outra vez.** O assistente de IA ainda usa a lista
       fixa de sinônimos do código
-- [ ] Etapa A3, medir: conjunto de 30 a 50 consultas reais, teste da taxa de
-      acerto da busca (sem IA), "isto ajudou?", piloto com o suporte
+- [x] Etapa A3, ferramentas para medir (2026-11-12): `npm run busca-avaliar`
+      (consultas reais com o artigo esperado, taxa de acerto entre os 5 primeiros
+      e em primeiro lugar, relatório do que veio no lugar; sem IA e sem gasto);
+      "Esta busca ajudou?" abaixo dos resultados (voto anônimo por termo e
+      produto); painel "Buscas que não ajudaram" em Métricas; buscas sem
+      resultado agora registradas por produto. **Publicar as regras antes de usar**
+- [ ] Etapa A3, medir de verdade: montar as 30 a 50 consultas reais do suporte
+      (com o artigo esperado), rodar o `busca-avaliar` na base real e fazer o
+      piloto de duas semanas. O resultado decide as Etapas B e C
 - [ ] Etapa B, semântica no navegador (modelo de código aberto, sem servidor):
       só se a A3 mostrar falha por vocabulário
 - [ ] Etapa C, resposta por IA: modelo local em máquina que a empresa já tenha

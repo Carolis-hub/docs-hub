@@ -117,6 +117,12 @@ beforeAll(async () => {
     await setDoc(doc(d, 'searchIndexTecnico/p1/partes/bpm'), { itens: [] })
     await setDoc(doc(d, 'searchIndexTecnico/p2'), { itens: [] })
     await setDoc(doc(d, 'searchMisses/termo'), { termo: 'x', count: 1 })
+    await setDoc(doc(d, 'searchFeedback/p1__x'), {
+      termo: 'x',
+      productId: 'p1',
+      sim: 1,
+      nao: 0,
+    })
     await setDoc(doc(d, 'assistenteUso/g_2026-01-01'), { perguntas: 1 })
     await setDoc(doc(d, 'assistenteLog/log'), { uid: 'leitor', feedback: null })
     await setDoc(doc(d, 'auditLog/a1'), { usuarioId: 'admin', acao: 'x' })
@@ -182,6 +188,7 @@ describe('matriz de permissões: leitura', () => {
     ['searchIndexTecnico/p2', ['admin']],
     // Painéis e registros: só admin.
     ['searchMisses/termo', SO_ADMIN],
+    ['searchFeedback/p1__x', SO_ADMIN],
     ['assistenteUso/g_2026-01-01', SO_ADMIN],
     ['assistenteLog/log', SO_ADMIN],
     ['auditLog/a1', SO_ADMIN],
@@ -426,6 +433,7 @@ describe('matriz de permissões: cobertura das regras', () => {
       'searchIndex',
       'searchIndexTecnico',
       'searchMisses',
+      'searchFeedback',
       'assistenteUso',
       'assistenteLog',
       'auditLog',

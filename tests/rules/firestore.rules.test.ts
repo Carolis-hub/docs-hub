@@ -351,6 +351,100 @@ describe('firestore.rules — busca (Fase 3)', () => {
     )
   })
 
+  it('searchMisses: aceita o produto, se a pessoa pode vê-lo, e não deixa trocá-lo', async () => {
+    const db = testEnv.authenticatedContext('leitor').firestore()
+    const ref = doc(db, 'searchMisses/p1__boleto')
+    const dados = { termo: 'boleto', productId: 'p1', ultimaVez: 1 }
+    await assertSucceeds(
+      setDoc(ref, { ...dados, count: increment(1) }, { merge: true }),
+    )
+    await assertSucceeds(
+      setDoc(ref, { ...dados, count: increment(1) }, { merge: true }),
+    )
+    await assertFails(
+      setDoc(
+        ref,
+        { ...dados, productId: 'p2', count: increment(1) },
+        { merge: true },
+      ),
+    )
+    await assertFails(
+      setDoc(doc(db, 'searchMisses/p2__boleto'), {
+        termo: 'boleto',
+        productId: 'p2',
+        count: 1,
+        ultimaVez: 1,
+      }),
+    )
+  })
+
+  it('searchFeedback: leitor soma um voto por vez, no seu produto, sem ler', async () => {
+    const db = testEnv.authenticatedContext('leitor').firestore()
+    const ref = doc(db, 'searchFeedback/p1__envio')
+    const base = { termo: 'envio', productId: 'p1', ultimaVez: 1 }
+    const voto = (sim: number, nao: number) =>
+      setDoc(
+        ref,
+        { ...base, sim: increment(sim), nao: increment(nao) },
+        { merge: true },
+      )
+    await assertSucceeds(voto(0, 1)) // cria com um "não"
+    await assertSucceeds(voto(1, 0)) // soma um "sim"
+    await assertFails(voto(1, 1)) // dois votos de uma vez
+    await assertFails(voto(5, 0)) // mais de um
+    await assertFails(voto(0, 0)) // nenhum voto
+    await assertFails(voto(-1, 0)) // desfazer voto dos outros
+    await assertFails(
+      setDoc(
+        ref,
+        { ...base, termo: 'outro', sim: increment(1) },
+        { merge: true },
+      ),
+    )
+    await assertFails(getDoc(ref))
+  })
+
+  it('searchFeedback: rejeita outro produto, campos extras e quem não tem perfil', async () => {
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    const voto = { termo: 'x', sim: 1, nao: 0, ultimaVez: 1 }
+    await assertFails(
+      setDoc(doc(leitor, 'searchFeedback/p2__x'), { ...voto, productId: 'p2' }),
+    )
+    await assertFails(
+      setDoc(doc(leitor, 'searchFeedback/p1__x'), {
+        ...voto,
+        productId: 'p1',
+        uid: 'leitor',
+      }),
+    )
+    await assertFails(
+      setDoc(doc(leitor, 'searchFeedback/p1__y'), {
+        ...voto,
+        productId: 'p1',
+        sim: 3,
+      }),
+    )
+    const semPerfil = testEnv.authenticatedContext('sem-perfil').firestore()
+    await assertFails(
+      setDoc(doc(semPerfil, 'searchFeedback/p1__z'), {
+        ...voto,
+        productId: 'p1',
+      }),
+    )
+    const inativo = testEnv.authenticatedContext('inativo').firestore()
+    await assertFails(
+      setDoc(doc(inativo, 'searchFeedback/p1__z'), {
+        ...voto,
+        productId: 'p1',
+      }),
+    )
+  })
+
+  it('searchFeedback: admin lê', async () => {
+    const db = testEnv.authenticatedContext('admin').firestore()
+    await assertSucceeds(getDoc(doc(db, 'searchFeedback/p1__envio')))
+  })
+
   it('searchMisses: admin lê', async () => {
     const db = testEnv.authenticatedContext('admin').firestore()
     await assertSucceeds(getDoc(doc(db, 'searchMisses/termo-x')))
