@@ -1,5 +1,6 @@
 import type { Article, Block } from '../types/content'
 import type { SearchItem } from '../types/search'
+import { extrairSecoes } from './secoes.ts'
 
 /** Margem de segurança sobre o limite de 1 MiB de um documento do Firestore. */
 export const INDEX_LIMITE_BYTES = 800_000
@@ -126,17 +127,27 @@ export function itemDoArtigo(
   a: Pick<
     Article,
     'titulo' | 'resumo' | 'textoPlano' | 'blockId' | 'publico'
-  > & { id: string; categoria?: Article['categoria'] },
+  > & {
+    id: string
+    categoria?: Article['categoria']
+    /** Com o conteúdo, o item leva também onde começa cada seção do artigo. */
+    conteudo?: Article['conteudo']
+  },
 ): SearchItem {
+  const textoPlano = truncarTexto(a.textoPlano)
+  const secoes = extrairSecoes(a.conteudo).filter(
+    (s) => s.i < textoPlano.length,
+  )
   return {
     id: a.id,
     titulo: a.titulo,
     resumo: a.resumo,
-    textoPlano: truncarTexto(a.textoPlano),
+    textoPlano,
     blockId: a.blockId,
     publico: a.publico,
     // Só grava quando há categoria: o índice é limitado a ~1 MiB por documento.
     ...(a.categoria ? { categoria: a.categoria } : {}),
+    ...(secoes.length > 0 ? { secoes } : {}),
   }
 }
 

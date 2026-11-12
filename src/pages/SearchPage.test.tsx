@@ -294,6 +294,45 @@ describe('SearchPage', () => {
     ).toBe('p1')
   })
 
+  it('aponta para a seção do artigo que respondeu e destaca o primeiro resultado', () => {
+    const texto =
+      'Visão geral do envio de documentos.\nPermissões\nSó o gestor aprova o envio.\nPrazos\nO prazo de aprovação é de dois dias.'
+    useSearchEngine.mockReturnValue({
+      dados: {
+        produtos,
+        unidades: [],
+        motor: criarMotor(
+          [
+            item('s1', 'Aprovação de documentos', {
+              textoPlano: texto,
+              secoes: [
+                { t: 'Permissões', i: texto.indexOf('Permissões') },
+                { t: 'Prazos', i: texto.indexOf('Prazos') },
+              ],
+            }),
+          ],
+          true,
+        ),
+      },
+      erro: null,
+      carregando: false,
+    })
+    abrir('/busca?produto=p1&q=prazo')
+    expect(screen.getByText('Resposta mais provável')).toBeInTheDocument()
+    expect(screen.getByText('Seção: Prazos')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Abrir o artigo nesta seção' }),
+    ).toHaveAttribute('href', '/a/s1?secao=Prazos')
+  })
+
+  it('artigo sem seções no índice continua apontando para o artigo', () => {
+    abrir('/busca?produto=p1&q=configurar')
+    expect(screen.queryByText('Resposta mais provável')).toBeNull()
+    expect(
+      screen.getByRole('link', { name: 'Configurar envio' }),
+    ).toHaveAttribute('href', '/a/a1')
+  })
+
   it('avisa quando os filtros não encontram nada', () => {
     abrir('/busca?produto=p2&categoria=processos')
     expect(

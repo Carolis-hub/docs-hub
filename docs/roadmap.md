@@ -343,8 +343,14 @@ medição pedir.
       liberam a quem tem `verTecnico`; a tela baixa só o índice do produto em
       contexto. **Antes de usar no `dev`: publicar as regras** e reindexar os
       artigos técnicos que já estavam publicados (ver `docs/estudo-consulta-kb.md`)
-- [ ] Etapa A2, busca que responde: artigos divididos em trechos, resultado
-      aponta para a seção, "resposta direta", glossário de sinônimos por produto
+- [x] Etapa A2, busca que responde (2026-11-12): o índice guarda onde começa
+      cada seção do artigo (títulos 1 a 3); o resultado mostra a seção que casou
+      e abre o artigo nela; o primeiro resultado vira "Resposta mais provável",
+      com trecho maior; sinônimos por produto, editados pelo admin na tela do
+      produto; plural e singular se encontram ("relatórios" acha "relatório").
+      **Artigos publicados antes só ganham seções ao serem publicados de novo
+      ou ao rodar o importador outra vez.** O assistente de IA ainda usa a lista
+      fixa de sinônimos do código
 - [ ] Etapa A3, medir: conjunto de 30 a 50 consultas reais, teste da taxa de
       acerto da busca (sem IA), "isto ajudou?", piloto com o suporte
 - [ ] Etapa B, semântica no navegador (modelo de código aberto, sem servidor):

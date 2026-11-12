@@ -3,6 +3,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
@@ -16,6 +17,8 @@ const getAncestors = vi.fn()
 const listArticlesByBlock = vi.fn()
 const listProductTree = vi.fn()
 const contarArtigosPorBlocos = vi.fn()
+const salvarSinonimos = vi.fn()
+const invalidarCacheBusca = vi.fn()
 
 vi.mock('../hooks/useAuth', () => ({ useAuth: () => useAuth() }))
 vi.mock('../services/blocks', () => ({
@@ -29,6 +32,10 @@ vi.mock('../services/blocks', () => ({
   reorderBlocks: vi.fn(),
   salvarDescricao: vi.fn(),
   salvarFicha: vi.fn(),
+  salvarSinonimos: (...a: unknown[]) => salvarSinonimos(...a),
+}))
+vi.mock('../services/search', () => ({
+  invalidarCacheBusca: () => invalidarCacheBusca(),
 }))
 vi.mock('../services/unidades', () => ({
   getUnidade: vi.fn(async () => null),
@@ -202,6 +209,34 @@ describe('BlockPage', () => {
     expect(
       screen.queryByRole('button', { name: /Editar informações/ }),
     ).toBeNull()
+  })
+
+  it('admin edita os sinônimos da busca do produto; leitor nem os vê', async () => {
+    salvarSinonimos.mockResolvedValue([])
+    await abrir('p')
+    fireEvent.click(
+      await screen.findByRole('button', { name: /Editar sinônimos/ }),
+    )
+    fireEvent.change(screen.getByLabelText('Grupos de sinônimos'), {
+      target: { value: 'excluir, apagar\nfluxo, processo' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+    await waitFor(() =>
+      expect(salvarSinonimos).toHaveBeenCalledWith(
+        'p',
+        ['excluir, apagar', 'fluxo, processo'],
+        'u',
+      ),
+    )
+    // A busca precisa recarregar com os grupos novos.
+    expect(invalidarCacheBusca).toHaveBeenCalled()
+  })
+
+  it('leitor não vê os sinônimos da busca', async () => {
+    useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
+    await abrir('p')
+    await screen.findByText('Dashboard')
+    expect(screen.queryByText('Sinônimos da busca')).toBeNull()
   })
 
   it('produto: as 5 opções ficam abaixo dos subprodutos', async () => {

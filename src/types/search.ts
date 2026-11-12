@@ -11,6 +11,14 @@ export interface SearchItem {
   publico: ArticlePublico
   /** Ausente nos itens indexados antes das categorias existirem. */
   categoria?: CategoriaId | ''
+  /** Seções do artigo (títulos H1 a H3). Ausente em artigo sem títulos ou indexado antes delas. */
+  secoes?: SecaoIndice[]
+}
+
+/** Uma seção no índice: o título (`t`) e onde ela começa em `textoPlano` (`i`). */
+export interface SecaoIndice {
+  t: string
+  i: number
 }
 
 /** Item carregado no navegador, com o produto de origem. */

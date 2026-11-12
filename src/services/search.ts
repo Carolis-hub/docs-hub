@@ -16,6 +16,8 @@ export interface SearchScope {
   productIds: string[]
   /** Admins e leitores com `verTecnico` enxergam artigos técnicos. */
   verTecnico: boolean
+  /** Sinônimos do produto (grupos de termos normalizados). */
+  sinonimos?: string[][]
 }
 
 export { criarMotor }
@@ -25,13 +27,16 @@ export { criarMotor }
 const motores = new Map<string, Promise<SearchEngine>>()
 
 export function carregarMotor(escopo: SearchScope): Promise<SearchEngine> {
-  const chave = `${escopo.verTecnico}|${[...escopo.productIds].sort().join(',')}`
+  const sinonimos = escopo.sinonimos ?? []
+  const chave = `${escopo.verTecnico}|${[...escopo.productIds].sort().join(',')}|${JSON.stringify(sinonimos)}`
   let motor = motores.get(chave)
   if (!motor) {
     motor = Promise.all(
       escopo.productIds.map((p) => lerIndiceDoProduto(p, escopo.verTecnico)),
     )
-      .then((listas) => criarMotor(listas.flat(), escopo.verTecnico))
+      .then((listas) =>
+        criarMotor(listas.flat(), escopo.verTecnico, { sinonimos }),
+      )
       .catch((e: unknown) => {
         motores.delete(chave)
         throw e

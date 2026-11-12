@@ -1,7 +1,9 @@
 import MiniSearch from 'minisearch'
 import type { ArticlePublico, CategoriaId } from '../types/content'
 import type { IndexedItem } from '../types/search'
-import { normalizar } from './search.ts'
+import { variantesComSinonimos } from './consulta.ts'
+import { formasDoRadical, normalizar, radical } from './search.ts'
+import { melhorSecao, type Secao } from './secoes.ts'
 
 export interface SearchFilters {
   productId?: string
@@ -20,7 +22,21 @@ export interface SearchHit {
   score: number
   /** Termos do texto que casaram, para destacar o trecho. */
   termos: string[]
+  /** Seção do artigo que melhor responde à busca, quando o índice tem seções. */
+  secao?: Secao
 }
+
+export interface OpcoesDoMotor {
+  /**
+   * Sinônimos do produto (grupos de termos já normalizados). A busca roda
+   * também com cada troca, e o que só casa por sinônimo fica abaixo do que
+   * casa com o texto digitado.
+   */
+  sinonimos?: readonly (readonly string[])[]
+}
+
+/** Peso de um resultado achado por sinônimo, em relação ao termo digitado. */
+const PESO_SINONIMO = 0.7
 
 export interface SearchEngine {
   total: number
@@ -40,18 +56,21 @@ function passa(item: IndexedItem, f: SearchFilters): boolean {
 export function criarMotor(
   itens: IndexedItem[],
   verTecnico: boolean,
+  opcoes: OpcoesDoMotor = {},
 ): SearchEngine {
+  const sinonimos = opcoes.sinonimos ?? []
+  const termoDeBusca = (termo: string) => radical(normalizar(termo))
   const visiveis = itens.filter((i) => verTecnico || i.publico !== 'tecnico')
   const mini = new MiniSearch<IndexedItem>({
     fields: ['titulo', 'resumo', 'textoPlano'],
     storeFields: ['id'],
-    processTerm: (termo) => normalizar(termo),
+    processTerm: termoDeBusca,
     searchOptions: {
       boost: { titulo: 4, resumo: 1.5 },
       prefix: true,
       fuzzy: 0.2,
       combineWith: 'AND',
-      processTerm: (termo) => normalizar(termo),
+      processTerm: termoDeBusca,
     },
   })
   mini.addAll(visiveis)
@@ -66,19 +85,59 @@ export function criarMotor(
     },
     buscar(consulta, filtros = {}) {
       if (!consulta.trim()) return []
-      return mini
-        .search(consulta, {
+      const rodar = (texto: string) =>
+        mini.search(texto, {
           combineWith: filtros.combinar ?? 'AND',
           filter: (r) => {
             const item = porId.get(r.id as string)
             return !!item && passa(item, filtros)
           },
         })
-        .map((r) => ({
-          item: porId.get(r.id as string) as IndexedItem,
-          score: r.score,
-          termos: Object.keys(r.match),
-        }))
+      const achados = new Map<
+        string,
+        { score: number; termos: Set<string>; direto: boolean }
+      >()
+      const somar = (texto: string, peso: number) => {
+        for (const r of rodar(texto)) {
+          const id = r.id as string
+          const atual = achados.get(id) ?? {
+            score: 0,
+            termos: new Set<string>(),
+            direto: false,
+          }
+          if (peso === 1) atual.direto = true
+          atual.score = Math.max(atual.score, r.score * peso)
+          Object.keys(r.match).forEach((t) => atual.termos.add(t))
+          achados.set(id, atual)
+        }
+      }
+      somar(consulta, 1)
+      if (sinonimos.length > 0) {
+        for (const variante of variantesComSinonimos(consulta, 6, sinonimos)) {
+          somar(variante, PESO_SINONIMO)
+        }
+      }
+      return (
+        [...achados.entries()]
+          // Quem casou com o que foi digitado vem antes de quem só casou por sinônimo.
+          .sort(
+            (a, b) =>
+              Number(b[1].direto) - Number(a[1].direto) ||
+              b[1].score - a[1].score,
+          )
+          .map(([id, achado]) => {
+            const item = porId.get(id) as IndexedItem
+            // O índice guarda o radical: o destaque precisa também dos plurais.
+            const termos = [...achado.termos].flatMap(formasDoRadical)
+            const secao = melhorSecao(item, termos)
+            return {
+              item,
+              score: achado.score,
+              termos,
+              ...(secao ? { secao } : {}),
+            }
+          })
+      )
     },
   }
 }

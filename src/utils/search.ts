@@ -3,6 +3,49 @@ export function normalizar(texto: string): string {
   return texto.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
 
+const SEM_RADICAL = new Set(['jamais', 'demais', 'depois', 'pois'])
+
+/**
+ * Reduz o plural ao singular, para "relatórios" achar "relatório" e
+ * "permissões" achar "permissão". Recebe o termo já normalizado (sem acento).
+ * É de propósito leve: só plural. Conjugações e derivações ("configurar",
+ * "configuração") continuam por conta do prefixo e da tolerância a erro.
+ */
+export function radical(termo: string): string {
+  if (termo.length <= 3 || !termo.endsWith('s') || SEM_RADICAL.has(termo)) {
+    return termo
+  }
+  const troca = (fim: string, novo: string, minimo: number) =>
+    termo.endsWith(fim) && termo.length - fim.length >= minimo
+      ? termo.slice(0, -fim.length) + novo
+      : null
+  return (
+    troca('oes', 'ao', 2) ?? // permissoes → permissao
+    troca('aes', 'ao', 2) ?? // capitaes → capitao
+    troca('ais', 'al', 3) ?? // manuais → manual
+    troca('eis', 'el', 3) ?? // niveis → nivel
+    troca('ois', 'ol', 3) ?? // lencois → lencol
+    troca('ns', 'm', 2) ?? // itens → item
+    troca('s', '', 3) ?? // relatorios → relatorio
+    termo
+  )
+}
+
+/** O radical e os plurais que ele pode ter no texto, para destacar o trecho. */
+export function formasDoRadical(termo: string): string[] {
+  const formas = [termo]
+  const plural = (fim: string, novo: string) => {
+    if (termo.endsWith(fim)) formas.push(termo.slice(0, -fim.length) + novo)
+  }
+  plural('ao', 'oes')
+  plural('ao', 'aes')
+  plural('al', 'ais')
+  plural('el', 'eis')
+  plural('ol', 'ois')
+  plural('m', 'ns')
+  return formas
+}
+
 /** Igual a `normalizar`, mas garante o mesmo tamanho do original (1 char → 1 char). */
 function normalizarMesmoTamanho(texto: string): string {
   let saida = ''

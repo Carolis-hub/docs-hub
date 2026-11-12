@@ -15,6 +15,8 @@ export interface Block {
   unidadeId?: string | null
   /** Informações editáveis do produto (compatibilidade, instaladores…); só em produtos. */
   ficha?: Ficha
+  /** Sinônimos da busca do produto: um grupo por item, termos separados por vírgula. */
+  sinonimos?: string[]
 }
 
 /** Uma seção da ficha do produto. `texto` aceita **negrito** e links. */

@@ -12,6 +12,7 @@ import { registrarAuditoria } from './audit'
 import { db } from './firebase'
 import type { Block, BlockInput, Ficha } from '../types/content'
 import { normalizarFicha } from '../utils/ficha'
+import { limparSinonimos } from '../utils/sinonimos'
 import { slugify } from '../utils/slug'
 
 const blocks = collection(db, 'blocks')
@@ -165,6 +166,23 @@ export async function salvarFicha(
   registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'ficha')
   await batch.commit()
   return limpa
+}
+
+/**
+ * Grava os sinônimos da busca do produto (um grupo por linha, termos
+ * separados por vírgula). Devolve o que foi gravado, já limpo.
+ */
+export async function salvarSinonimos(
+  id: string,
+  linhas: string[],
+  uid: string,
+): Promise<string[]> {
+  const limpos = limparSinonimos(linhas)
+  const batch = writeBatch(db)
+  batch.update(doc(blocks, id), { sinonimos: limpos })
+  registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'sinônimos')
+  await batch.commit()
+  return limpos
 }
 
 /** Grava a nova ordem (índice na lista) de todos os irmãos de uma vez. */

@@ -91,6 +91,12 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 - **Toda busca vale para um produto**: `useSearchEngine(produto?)` carrega só
   o índice do produto pedido ou do produto em contexto
   (`src/hooks/useProdutoEmContexto.ts`). Não volte a carregar todos os índices.
+- **Seções e sinônimos da busca**: o item do índice leva `secoes` (título e
+  posição em `textoPlano`), calculadas por `itemDoArtigo` **quando recebe o
+  `conteudo`**: passe-o sempre. Os sinônimos ficam em `blocks/{produto}.sinonimos`
+  (um grupo por item, termos separados por vírgula) e o motor os recebe em
+  `criarMotor(itens, verTecnico, { sinonimos })`. O índice guarda o radical das
+  palavras (`radical` em `src/utils/search.ts`, só plural).
 - **Índice de busca tem teto de 1 MiB por documento**: toda gravação de parte
   passa por `caberNoLimite` (`src/utils/searchIndex.ts`), que encurta o texto
   em vez de deixar a publicação falhar.

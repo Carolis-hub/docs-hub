@@ -100,21 +100,28 @@ export const GRUPOS_SINONIMOS: readonly (readonly string[])[] = [
  * Consultas extras trocando um termo da pergunta por seus sinônimos, uma por
  * troca, para a busca achar artigos escritos com outro vocabulário.
  */
-export function variantesComSinonimos(pergunta: string, maximo = 6): string[] {
+export function variantesComSinonimos(
+  pergunta: string,
+  maximo = 6,
+  grupos: readonly (readonly string[])[] = GRUPOS_SINONIMOS,
+): string[] {
   const limpa = limparPergunta(pergunta)
   const base = normalizar(limpa)
   const saida: string[] = []
-  for (const grupo of GRUPOS_SINONIMOS) {
+  // Os termos podem vir de um glossário digitado: nada neles é expressão regular.
+  const literal = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  for (const grupo of grupos) {
     const presente = grupo.find((t) =>
-      new RegExp(`(^|\\s)${t}(s|es)?(\\s|$)`).test(base),
+      new RegExp(`(^|\\s)${literal(t)}(s|es)?(\\s|$)`).test(base),
     )
     if (!presente) continue
     for (const alt of grupo) {
       if (alt === presente) continue
       saida.push(
         base.replace(
-          new RegExp(`(^|\\s)${presente}(s|es)?(?=\\s|$)`),
-          `$1${alt}`,
+          new RegExp(`(^|\\s)${literal(presente)}(s|es)?(?=\\s|$)`),
+          // Função, para um "$" no sinônimo não virar referência de grupo.
+          (_, antes: string) => `${antes}${alt}`,
         ),
       )
     }

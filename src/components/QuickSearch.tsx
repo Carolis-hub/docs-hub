@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Search } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useSearchEngine } from '../hooks/useSearchEngine'
+import { linkDoArtigo } from '../utils/linkDoArtigo'
 
 /** Busca rápida do cabeçalho: atalho Ctrl+K (ou ⌘K) e sugestões. */
 export function QuickSearch() {
@@ -78,18 +79,23 @@ export function QuickSearch() {
           role="listbox"
           className="absolute right-0 top-full z-20 mt-1 w-80 max-w-[90vw] overflow-hidden rounded-lg border border-borda bg-cartao shadow-xl"
         >
-          {sugestoes.map(({ item }) => (
+          {sugestoes.map(({ item, secao }) => (
             <li key={item.id} role="option" aria-selected={false}>
               <button
                 type="button"
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => {
                   setAberto(false)
-                  navigate(`/a/${item.id}`)
+                  navigate(linkDoArtigo(item.id, secao?.titulo))
                 }}
                 className="block w-full px-3 py-2 text-left text-sm text-texto hover:bg-bloco"
               >
                 {item.titulo}
+                {secao && (
+                  <span className="block text-xs text-suave">
+                    {secao.titulo}
+                  </span>
+                )}
               </button>
             </li>
           ))}

@@ -7,6 +7,7 @@ import { BlockForm } from '../components/BlockForm'
 import { DescricaoDoProduto } from '../components/DescricaoDoProduto'
 import { EditorDaFicha } from '../components/EditorDaFicha'
 import { FichaDoProduto } from '../components/FichaDoProduto'
+import { SinonimosDoProduto } from '../components/SinonimosDoProduto'
 import { Breadcrumb } from '../components/Breadcrumb'
 import {
   AlternarVisao,
@@ -30,6 +31,7 @@ import {
   reorderBlocks,
   salvarDescricao,
   salvarFicha,
+  salvarSinonimos,
   updateBlock,
 } from '../services/blocks'
 import { listArticlesByBlock } from '../services/articles'
@@ -37,6 +39,7 @@ import { getUnidade, listUnidades } from '../services/unidades'
 import { contarArtigosPorBlocos } from '../services/visaoGeral'
 import type { Block } from '../types/content'
 import { comDescendentes, tipoDoNivel, tipoDosFilhos } from '../utils/blocos'
+import { invalidarCacheBusca } from '../services/search'
 import { completarFicha } from '../utils/ficha'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
@@ -373,6 +376,18 @@ export function BlockPage() {
             </section>
           )
         })()}
+
+      {ehProduto && isAdmin && (
+        <SinonimosDoProduto
+          sinonimos={bloco.sinonimos ?? []}
+          aoSalvar={async (linhas) => {
+            await salvarSinonimos(bloco.id, linhas, uid)
+            // A busca deste produto passa a usar os novos grupos.
+            invalidarCacheBusca()
+            recarregar()
+          }}
+        />
+      )}
 
       {(todosArtigos.length > 0 || !ehProduto) && (
         <section aria-label="Artigos">

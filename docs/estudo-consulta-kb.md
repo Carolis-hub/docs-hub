@@ -90,6 +90,22 @@ própria e testes no Emulator. Para valer num projeto que já tem dados:
    esses itens para quem não vê técnico, mas o texto só sai do documento com a
    regravação. No `dev` de hoje nenhum artigo foi marcado como técnico.
 
+**Atualização (Etapa A2 implementada em 12/11/2026):** L2 e L7 foram tratadas
+na busca, de forma mais simples que a desenhada na Seção 4:
+
+- **Seções sem índice novo.** Em vez de gravar trechos em documentos próprios,
+  o item do índice ganhou só a posição de cada seção dentro do texto que já
+  estava lá (poucos bytes por artigo). A ordem dos resultados continua por
+  artigo; a seção que melhor casa é escolhida no navegador. Não muda a cota
+  nem o tamanho do índice de forma relevante.
+- **Sinônimos no documento do produto**, que a busca já lia: nenhuma leitura
+  a mais. O que só casa por sinônimo fica abaixo do que casa com o digitado.
+- **Radical só de plural.** Conjugações e derivações seguem por conta do
+  prefixo e da tolerância a erro que já existiam.
+- **Limite que continua:** o texto indexado ainda é cortado em 16.000
+  caracteres por artigo (menos em subprodutos muito grandes); seções depois do
+  corte não aparecem na busca.
+
 L8 é um problema de controle de acesso que existe independentemente deste
 estudo e deve ser corrigido antes de qualquer conteúdo técnico real entrar.
 

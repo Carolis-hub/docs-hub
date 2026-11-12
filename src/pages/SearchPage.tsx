@@ -12,7 +12,9 @@ import type { ArticlePublico, CategoriaId } from '../types/content'
 import { comDescendentes } from '../utils/blocos'
 import { CATEGORIAS, nomeDaCategoria } from '../utils/categorias'
 import { produtoDaConsulta } from '../utils/produtoDaConsulta'
+import { linkDoArtigo } from '../utils/linkDoArtigo'
 import { gerarTrecho } from '../utils/search'
+import type { Secao } from '../utils/secoes'
 import type { SearchFilters } from '../utils/searchEngine'
 import { Carregando } from '../components/Carregando'
 
@@ -106,12 +108,14 @@ export function SearchPage() {
     if (q.trim()) {
       return dados.motor
         .buscar(q, filtros)
-        .map((h) => ({ item: h.item, termos: h.termos }))
+        .map((h) => ({ item: h.item, termos: h.termos, secao: h.secao }))
     }
     return temFiltro
-      ? dados.motor
-          .listar(filtros)
-          .map((item) => ({ item, termos: [] as string[] }))
+      ? dados.motor.listar(filtros).map((item) => ({
+          item,
+          termos: [] as string[],
+          secao: undefined as Secao | undefined,
+        }))
       : []
   }, [dados, produto, q, filtros, temFiltro])
 
@@ -342,37 +346,70 @@ export function SearchPage() {
             {q.trim() ? ` para “${q.trim()}”, ordenados por relevância` : ''}
           </p>
           <ul className="space-y-3">
-            {resultados.map(({ item, termos }) => (
-              <li key={item.id} className="cartao p-5">
-                <Link
-                  to={`/a/${item.id}`}
-                  className="text-[17px] font-bold text-destaque hover:underline"
+            {resultados.map(({ item, termos, secao }, posicao) => {
+              // O primeiro resultado com seção vira a "resposta direta":
+              // mostra o trecho do artigo que casou, com mais texto.
+              const direta = posicao === 0 && !!secao
+              return (
+                <li
+                  key={item.id}
+                  className={`cartao p-5 ${direta ? 'border-destaque/60' : ''}`}
                 >
-                  <Highlight partes={gerarTrecho(item.titulo, termos, 120)} />
-                </Link>
-                <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-suave">
-                  <span className="font-medium">{caminho(item)}</span>
-                  {nomeDaCategoria(item.categoria) && (
-                    <span className="selo">
-                      {nomeDaCategoria(item.categoria)}
-                    </span>
+                  {direta && (
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-destaque">
+                      Resposta mais provável
+                    </p>
                   )}
-                  {item.publico === 'tecnico' && (
-                    <span className="selo">Técnico</span>
-                  )}
-                </p>
-                <p className="mt-2 text-sm text-texto ">
-                  <Highlight
-                    partes={gerarTrecho(
-                      termos.length > 0
-                        ? item.textoPlano || item.resumo
-                        : item.resumo || item.textoPlano,
-                      termos,
+                  <Link
+                    to={linkDoArtigo(item.id, secao?.titulo)}
+                    className="text-[17px] font-bold text-destaque hover:underline"
+                  >
+                    <Highlight partes={gerarTrecho(item.titulo, termos, 120)} />
+                  </Link>
+                  <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-suave">
+                    <span className="font-medium">{caminho(item)}</span>
+                    {nomeDaCategoria(item.categoria) && (
+                      <span className="selo">
+                        {nomeDaCategoria(item.categoria)}
+                      </span>
                     )}
-                  />
-                </p>
-              </li>
-            ))}
+                    {item.publico === 'tecnico' && (
+                      <span className="selo">Técnico</span>
+                    )}
+                  </p>
+                  {secao && (
+                    <p className="mt-2 text-sm font-semibold text-texto">
+                      Seção: {secao.titulo}
+                    </p>
+                  )}
+                  <p
+                    className={`text-sm text-texto ${secao ? 'mt-1' : 'mt-2'}`}
+                  >
+                    <Highlight
+                      partes={gerarTrecho(
+                        secao
+                          ? secao.texto
+                          : termos.length > 0
+                            ? item.textoPlano || item.resumo
+                            : item.resumo || item.textoPlano,
+                        termos,
+                        direta ? 420 : 180,
+                      )}
+                    />
+                  </p>
+                  {direta && (
+                    <p className="mt-2 text-sm">
+                      <Link
+                        to={linkDoArtigo(item.id, secao?.titulo)}
+                        className="text-bloco-icone hover:underline"
+                      >
+                        Abrir o artigo nesta seção
+                      </Link>
+                    </p>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </>
       )}

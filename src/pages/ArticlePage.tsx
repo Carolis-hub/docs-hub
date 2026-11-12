@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { Pencil } from 'lucide-react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { ArticleContent } from '../components/ArticleContent'
 import { Breadcrumb } from '../components/Breadcrumb'
 import { useAsync } from '../hooks/useAsync'
@@ -53,16 +53,35 @@ export function ArticlePage() {
   )
   const topicos = useMemo(() => extrairTopicos(atual?.conteudo), [atual])
 
-  function irParaTopico(texto: string) {
+  function irParaTopico(texto: string, suave = true): boolean {
+    const alvo = texto.replace(/\s+/g, ' ').trim()
     const titulos =
       conteudoRef.current?.querySelectorAll<HTMLElement>('h1, h2, h3') ?? []
     for (const h of titulos) {
-      if (h.textContent?.trim() === texto) {
-        h.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        return
+      if (h.textContent?.replace(/\s+/g, ' ').trim() === alvo) {
+        h.scrollIntoView({
+          behavior: suave ? 'smooth' : 'auto',
+          block: 'start',
+        })
+        return true
       }
     }
+    return false
   }
+
+  // Vindo da busca (`?secao=`), abre o artigo já no trecho que respondeu.
+  // O conteúdo é desenhado depois de carregar: tenta por alguns instantes.
+  const secaoPedida = useSearchParams()[0].get('secao') ?? ''
+  useEffect(() => {
+    if (!secaoPedida || !artigoId) return
+    let tentativas = 0
+    const relogio = window.setInterval(() => {
+      if (irParaTopico(secaoPedida, false) || ++tentativas >= 40) {
+        window.clearInterval(relogio)
+      }
+    }, 100)
+    return () => window.clearInterval(relogio)
+  }, [secaoPedida, artigoId])
 
   if (carregando) return <Carregando />
   if (erro)
