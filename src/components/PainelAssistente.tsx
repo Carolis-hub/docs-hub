@@ -14,13 +14,13 @@ interface Props {
  * primeira abertura continua montado (só escondido), para a conversa não se
  * perder ao fechar o painel ou trocar de tela.
  */
-/** Quantos artigos a base tem para o usuário (só carrega depois da 1ª abertura). */
+/** Quantos artigos tem o produto em contexto (só carrega depois da 1ª abertura). */
 function TotalDeArtigos() {
   const total = useSearchEngine().dados?.motor.total
-  if (total === undefined) return null
+  if (!total) return null
   return (
     <p className="text-xs text-suave">
-      Base completa: {total} {total === 1 ? 'artigo' : 'artigos'}
+      Produto atual: {total} {total === 1 ? 'artigo' : 'artigos'}
     </p>
   )
 }

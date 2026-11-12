@@ -28,7 +28,7 @@ describe('PainelAssistente', () => {
     expect(
       screen.getByRole('dialog', { name: 'Assistente de documentação' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Base completa: 25 artigos')).toBeInTheDocument()
+    expect(screen.getByText('Produto atual: 25 artigos')).toBeInTheDocument()
     fireEvent.click(
       screen.getByRole('button', { name: /fechar o assistente/i }),
     )

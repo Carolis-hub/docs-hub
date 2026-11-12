@@ -5,6 +5,11 @@ import type { IndexedItem, SearchItem } from '../../src/types/search.ts'
 import { comDescendentes } from '../../src/utils/blocos.ts'
 import { consultasLocais } from '../../src/utils/consulta.ts'
 import { criarMotor } from '../../src/utils/searchEngine.ts'
+import {
+  COLECAO_INDICE,
+  COLECAO_INDICE_TECNICO,
+  juntarColecoes,
+} from '../../src/utils/searchIndex.ts'
 import { docParaMarkdown } from '../../src/utils/tiptapMarkdown.ts'
 
 /** O que o usuário pode ler: o mesmo que as regras do Firestore permitem na tela. */
@@ -79,25 +84,30 @@ export async function aplicarFiltros(
   return { produtos }
 }
 
-/** Lê o índice de busca (só artigos publicados) dos produtos. */
+/**
+ * Lê o índice de busca (só artigos publicados) dos produtos. A parte técnica
+ * do índice só é lida para quem pode ver artigos técnicos.
+ */
 export async function lerIndice(
   db: Firestore,
   produtos: string[],
+  verTecnico: boolean,
 ): Promise<IndexedItem[]> {
   const itens: IndexedItem[] = []
   for (const productId of produtos) {
-    const ref = db.collection('searchIndex').doc(productId)
-    const principal = await ref.get()
-    if (!principal.exists) continue
-    const dados = principal.data() as {
-      itens?: SearchItem[]
-      dividido?: boolean
-    }
-    let lista = dados.itens ?? []
-    if (dados.dividido) {
+    const lerColecao = async (colecao: string): Promise<SearchItem[]> => {
+      const ref = db.collection(colecao).doc(productId)
+      const principal = await ref.get()
+      const dados = principal.data() as
+        { itens?: SearchItem[]; dividido?: boolean } | undefined
+      if (!dados?.dividido) return dados?.itens ?? []
       const partes = await ref.collection('partes').get()
-      lista = partes.docs.flatMap((p) => (p.data().itens as SearchItem[]) ?? [])
+      return partes.docs.flatMap((p) => (p.data().itens as SearchItem[]) ?? [])
     }
+    const lista = juntarColecoes(
+      await lerColecao(COLECAO_INDICE),
+      verTecnico ? await lerColecao(COLECAO_INDICE_TECNICO) : null,
+    )
     itens.push(...lista.map((i) => ({ ...i, productId })))
   }
   return itens

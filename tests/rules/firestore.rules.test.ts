@@ -58,6 +58,9 @@ beforeAll(async () => {
     await setDoc(doc(db, 'searchIndex/p2'), { itens: [] })
     await setDoc(doc(db, 'searchIndex/p1/partes/bpm'), { itens: [] })
     await setDoc(doc(db, 'searchIndex/p2/partes/bpm'), { itens: [] })
+    await setDoc(doc(db, 'searchIndexTecnico/p1'), { itens: [] })
+    await setDoc(doc(db, 'searchIndexTecnico/p1/partes/bpm'), { itens: [] })
+    await setDoc(doc(db, 'searchIndexTecnico/p2'), { itens: [] })
     await setDoc(doc(db, 'articles/tec'), {
       productId: 'p1',
       status: 'published',
@@ -275,6 +278,32 @@ describe('firestore.rules — busca (Fase 3)', () => {
     await assertFails(getDoc(doc(db, 'searchIndex/p2/partes/bpm')))
     await assertFails(
       setDoc(doc(db, 'searchIndex/p1/partes/bpm'), { itens: [] }),
+    )
+  })
+
+  it('índice técnico: só quem tem verTecnico (e o produto) lê', async () => {
+    const leitor = testEnv.authenticatedContext('leitor').firestore()
+    await assertFails(getDoc(doc(leitor, 'searchIndexTecnico/p1')))
+    await assertFails(getDoc(doc(leitor, 'searchIndexTecnico/p1/partes/bpm')))
+
+    const tecnico = testEnv.authenticatedContext('tecnico').firestore()
+    await assertSucceeds(getDoc(doc(tecnico, 'searchIndexTecnico/p1')))
+    await assertSucceeds(
+      getDoc(doc(tecnico, 'searchIndexTecnico/p1/partes/bpm')),
+    )
+    // Ver técnico não dá acesso a produto que a pessoa não tem.
+    await assertFails(getDoc(doc(tecnico, 'searchIndexTecnico/p2')))
+    await assertFails(
+      setDoc(doc(tecnico, 'searchIndexTecnico/p1'), { itens: [] }),
+    )
+
+    const inativo = testEnv.authenticatedContext('inativo').firestore()
+    await assertFails(getDoc(doc(inativo, 'searchIndexTecnico/p1')))
+
+    const admin = testEnv.authenticatedContext('admin').firestore()
+    await assertSucceeds(getDoc(doc(admin, 'searchIndexTecnico/p2')))
+    await assertSucceeds(
+      setDoc(doc(admin, 'searchIndexTecnico/p1/partes/ecm'), { itens: [] }),
     )
   })
 

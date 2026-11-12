@@ -46,6 +46,24 @@ async function planoDoExemplo(publicarDireto = true) {
   })
 }
 
+type Plano = Awaited<ReturnType<typeof planoDoExemplo>>
+
+/** Ids dos artigos publicados do plano que são de um público, em ordem. */
+const idsDoPublico = (plano: Plano, publico: 'usuario' | 'tecnico') =>
+  plano.artigos
+    .filter((a) => a.status === 'published' && a.publico === publico)
+    .map((a) => a.id)
+    .sort()
+
+async function idsDoIndice(
+  db: FirebaseFirestore.Firestore,
+  colecao: string,
+  produto: string,
+): Promise<string[]> {
+  const dados = (await db.collection(colecao).doc(produto).get()).data()
+  return ((dados?.itens ?? []) as Array<{ id: string }>).map((i) => i.id).sort()
+}
+
 const opts = {
   projectId: PROJETO,
   sobrescrever: false,
@@ -111,12 +129,13 @@ describe('migração gravada no Firestore (Emulator)', () => {
           .get()
       ).size,
     ).toBe(0)
-    const indice = (
-      await db.collection('searchIndex').doc(login.productId).get()
-    ).data()
-    expect(indice?.itens.map((i: { id: string }) => i.id).sort()).toEqual(
-      [plano.artigos[0]!.id, plano.artigos[1]!.id].sort(),
+    // Índice separado por público: o técnico fica na coleção restrita.
+    expect(await idsDoIndice(db, 'searchIndex', login.productId)).toEqual(
+      idsDoPublico(plano, 'usuario'),
     )
+    expect(
+      await idsDoIndice(db, 'searchIndexTecnico', login.productId),
+    ).toEqual(idsDoPublico(plano, 'tecnico'))
     const auditoria = await db
       .collection('auditLog')
       .where('acao', '==', 'migracao.importar')
@@ -143,6 +162,7 @@ describe('migração gravada no Firestore (Emulator)', () => {
     const produto = plano.artigos[0]!.productId
     // Simula uma queda no meio da primeira gravação: artigos gravados, índice não.
     await db.collection('searchIndex').doc(produto).delete()
+    await db.collection('searchIndexTecnico').doc(produto).delete()
 
     const r = await gravar(plano, opts)
     expect(r).toMatchObject({
@@ -150,11 +170,11 @@ describe('migração gravada no Firestore (Emulator)', () => {
       artigosPulados: 3,
       indices: 1,
     })
-    const indice = (
-      await db.collection('searchIndex').doc(produto).get()
-    ).data()
-    expect(indice?.itens.map((i: { id: string }) => i.id).sort()).toEqual(
-      [plano.artigos[0]!.id, plano.artigos[1]!.id].sort(),
+    expect(await idsDoIndice(db, 'searchIndex', produto)).toEqual(
+      idsDoPublico(plano, 'usuario'),
+    )
+    expect(await idsDoIndice(db, 'searchIndexTecnico', produto)).toEqual(
+      idsDoPublico(plano, 'tecnico'),
     )
   })
 
@@ -194,10 +214,11 @@ describe('migração gravada no Firestore (Emulator)', () => {
     await gravar(plano, { ...opts, sobrescrever: true })
     const dados = (await db.collection('articles').doc(login.id).get()).data()
     expect(dados).toMatchObject({ views: 42, versao: 2 })
-    const indice = (
-      await db.collection('searchIndex').doc(login.productId).get()
-    ).data()
-    expect(indice?.itens).toHaveLength(2) // sem duplicar itens
+    // Sem duplicar itens, em nenhuma das duas coleções.
+    expect([
+      ...(await idsDoIndice(db, 'searchIndex', login.productId)),
+      ...(await idsDoIndice(db, 'searchIndexTecnico', login.productId)),
+    ]).toHaveLength(2)
   })
 
   it('o conteúdo migrado respeita as regras: leitor permitido lê, outro não', async () => {

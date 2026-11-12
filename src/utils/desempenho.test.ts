@@ -6,6 +6,8 @@ import {
   INDEX_LIMITE_BYTES,
   caberNoLimite,
   itemDoArtigo,
+  juntarColecoes,
+  separarPorColecao,
   tamanhoBytes,
 } from './searchIndex'
 
@@ -117,5 +119,33 @@ describe('caberNoLimite', () => {
     const ajustado = caberNoLimite(itens).map((i) => ({ ...i, productId: 'p' }))
     const motor = criarMotor(ajustado, true)
     expect(motor.buscar('xyzzy')[0]?.item.id).toBe('a0')
+  })
+})
+
+describe('índice separado por público', () => {
+  const de = (id: string, publico: 'usuario' | 'tecnico') => ({
+    id,
+    titulo: id,
+    resumo: '',
+    textoPlano: id,
+    blockId: 'b',
+    publico,
+  })
+
+  it('cada artigo vai para a coleção do seu público', () => {
+    const r = separarPorColecao([de('a', 'usuario'), de('t', 'tecnico')])
+    expect(r.searchIndex.map((i) => i.id)).toEqual(['a'])
+    expect(r.searchIndexTecnico.map((i) => i.id)).toEqual(['t'])
+  })
+
+  it('quem não leu a parte técnica não recebe técnico de índice antigo', () => {
+    const antigos = [de('a', 'usuario'), de('t', 'tecnico')]
+    expect(juntarColecoes(antigos, null).map((i) => i.id)).toEqual(['a'])
+  })
+
+  it('quem leu as duas não vê o mesmo artigo repetido', () => {
+    const antigos = [de('a', 'usuario'), de('t', 'tecnico')]
+    const juntos = juntarColecoes(antigos, [de('t', 'tecnico')])
+    expect(juntos.map((i) => i.id)).toEqual(['a', 't'])
   })
 })

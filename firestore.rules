@@ -139,6 +139,23 @@ service cloud.firestore {
       }
     }
 
+    // Parte técnica do índice de busca: mesmo formato, mas só para quem pode
+    // ver artigos técnicos. Sem isto o texto deles chegaria ao navegador de
+    // qualquer leitor do produto (o filtro era só na tela).
+    function canSeeTecnico(productId) {
+      return isAdmin() ||
+        (canSeeProduct(productId) && profile().get('verTecnico', false) == true);
+    }
+    match /searchIndexTecnico/{productId} {
+      allow read: if canSeeTecnico(productId);
+      allow write: if isAdmin();
+
+      match /partes/{parteId} {
+        allow read: if canSeeTecnico(productId);
+        allow write: if isAdmin();
+      }
+    }
+
     // Buscas sem resultado: contador agregado por termo. O leitor só cria
     // com 1 ou soma 1; apenas admins leem (painel da Fase 4).
     match /searchMisses/{termoId} {

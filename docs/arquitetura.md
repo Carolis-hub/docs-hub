@@ -50,7 +50,7 @@ Node.
 | Estilo            | Tailwind 3.4, com as cores como variáveis CSS (tema claro e escuro)                                                                            |
 | Ícones            | lucide-react                                                                                                                                   |
 | Editor            | TipTap 3 (títulos 1 a 3, listas, tabelas, imagens), só estilos semânticos                                                                      |
-| Busca             | MiniSearch, no navegador, sobre índices por produto                                                                                            |
+| Busca             | MiniSearch, no navegador, sobre o índice do produto em contexto (toda busca vale para um produto)                                              |
 | Arrastar e soltar | dnd-kit (reordenar produtos e seções)                                                                                                          |
 | Validação         | Zod 4                                                                                                                                          |
 | Organização       | `pages/` (telas), `components/`, `services/` (acesso ao Firestore), `hooks/`, `utils/` (funções puras, reaproveitadas pelos scripts), `types/` |
@@ -68,15 +68,15 @@ Node.
 
 ### Modelo de dados (coleções principais)
 
-| Coleção                                                                                  | Conteúdo                                                                                                         |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `unidades`                                                                               | BUs                                                                                                              |
-| `blocks`                                                                                 | Produtos (raiz) e subníveis, por `parentId`; produtos têm `unidadeId`, `descricao` e `ficha` (as 5 opções fixas) |
-| `articles` (+ `versions`, `revisoes`, `comentarios`, `suggestions`, `viewsDaily`)        | Artigos e seus bastidores                                                                                        |
-| `searchIndex/{produto}` (+ `partes`)                                                     | Índice de busca por produto, dividido por subproduto ao passar de ~800 KB (teto de 1 MiB do Firestore)           |
-| `users`                                                                                  | Perfil e permissões                                                                                              |
-| `preferenciasUsuario/{uid}`                                                              | Configurações pessoais (aside); só o dono lê e grava                                                             |
-| `auditLog`, `searchMisses`, `fontes`, `sincronizacoes`, `assistenteUso`, `assistenteLog` | Trilha, métricas e controles                                                                                     |
+| Coleção                                                                                  | Conteúdo                                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `unidades`                                                                               | BUs                                                                                                                                                                                               |
+| `blocks`                                                                                 | Produtos (raiz) e subníveis, por `parentId`; produtos têm `unidadeId`, `descricao` e `ficha` (as 5 opções fixas)                                                                                  |
+| `articles` (+ `versions`, `revisoes`, `comentarios`, `suggestions`, `viewsDaily`)        | Artigos e seus bastidores                                                                                                                                                                         |
+| `searchIndex/{produto}` e `searchIndexTecnico/{produto}` (+ `partes`)                    | Índice de busca por produto: artigos comuns numa coleção, técnicos na outra (só para quem tem `verTecnico`). Cada uma é dividida por subproduto ao passar de ~800 KB (teto de 1 MiB do Firestore) |
+| `users`                                                                                  | Perfil e permissões                                                                                                                                                                               |
+| `preferenciasUsuario/{uid}`                                                              | Configurações pessoais (aside); só o dono lê e grava                                                                                                                                              |
+| `auditLog`, `searchMisses`, `fontes`, `sincronizacoes`, `assistenteUso`, `assistenteLog` | Trilha, métricas e controles                                                                                                                                                                      |
 
 Toda coleção nova nas regras exige uma linha na matriz de permissões
 (`tests/rules/matriz-permissoes.test.ts`).

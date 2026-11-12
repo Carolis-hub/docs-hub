@@ -12,36 +12,38 @@ export type {
 } from '../utils/searchEngine'
 
 export interface SearchScope {
-  /** Produtos cujo índice será carregado. */
+  /** Produtos cujo índice será carregado (na tela, só o produto em contexto). */
   productIds: string[]
   /** Admins e leitores com `verTecnico` enxergam artigos técnicos. */
   verTecnico: boolean
 }
 
-// Os índices são carregados uma única vez por sessão (aba).
 export { criarMotor }
 
-let motor: Promise<SearchEngine> | null = null
-let chave = ''
+// Cada escopo (em geral, um produto) é carregado uma única vez por sessão
+// (aba): voltar a um produto já consultado não lê o índice de novo.
+const motores = new Map<string, Promise<SearchEngine>>()
 
 export function carregarMotor(escopo: SearchScope): Promise<SearchEngine> {
-  const nova = `${escopo.verTecnico}|${[...escopo.productIds].sort().join(',')}`
-  if (!motor || chave !== nova) {
-    chave = nova
-    motor = Promise.all(escopo.productIds.map(lerIndiceDoProduto))
+  const chave = `${escopo.verTecnico}|${[...escopo.productIds].sort().join(',')}`
+  let motor = motores.get(chave)
+  if (!motor) {
+    motor = Promise.all(
+      escopo.productIds.map((p) => lerIndiceDoProduto(p, escopo.verTecnico)),
+    )
       .then((listas) => criarMotor(listas.flat(), escopo.verTecnico))
       .catch((e: unknown) => {
-        motor = null
+        motores.delete(chave)
         throw e
       })
+    motores.set(chave, motor)
   }
   return motor
 }
 
-/** Descarta o motor em memória, para recarregar após publicar ou editar. */
+/** Descarta os motores em memória, para recarregar após publicar ou editar. */
 export function invalidarCacheBusca(): void {
-  motor = null
-  chave = ''
+  motores.clear()
 }
 
 const jaRegistradas = new Set<string>()

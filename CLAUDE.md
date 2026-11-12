@@ -83,6 +83,14 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   (`scripts/assistente/recuperar.ts`); não leia artigo por outro caminho.
 - **Coleção nova nas regras exige linha na matriz de permissões**
   (`tests/rules/matriz-permissoes.test.ts`): o último teste dele falha se faltar.
+- **O índice de busca tem duas coleções por produto**: `searchIndex` (artigos
+  comuns) e `searchIndexTecnico` (só para quem tem `verTecnico`). Quem grava
+  ou lê o índice precisa tratar as duas (`COLECOES_INDICE`, `separarPorColecao`
+  e `juntarColecoes` em `src/utils/searchIndex.ts`); nunca ponha texto de
+  artigo técnico na coleção comum.
+- **Toda busca vale para um produto**: `useSearchEngine(produto?)` carrega só
+  o índice do produto pedido ou do produto em contexto
+  (`src/hooks/useProdutoEmContexto.ts`). Não volte a carregar todos os índices.
 - **Índice de busca tem teto de 1 MiB por documento**: toda gravação de parte
   passa por `caberNoLimite` (`src/utils/searchIndex.ts`), que encurta o texto
   em vez de deixar a publicação falhar.

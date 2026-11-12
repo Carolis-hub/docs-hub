@@ -23,6 +23,8 @@ export function QuickSearch() {
     return () => window.removeEventListener('keydown', aoTeclar)
   }, [])
 
+  // As sugestões vêm só do produto em contexto (o da tela ou o último usado).
+  const produtoAtual = dados?.produtos?.find((p) => p.id === dados.produtoId)
   const sugestoes = useMemo(
     () => (dados && texto.trim() ? dados.motor.buscar(texto).slice(0, 5) : []),
     [dados, texto],
@@ -45,7 +47,11 @@ export function QuickSearch() {
         ref={inputRef}
         type="search"
         aria-label="Busca rápida"
-        placeholder="Buscar artigos por título ou conteúdo"
+        placeholder={
+          produtoAtual
+            ? `Buscar em ${produtoAtual.nome}`
+            : 'Buscar artigos por título ou conteúdo'
+        }
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value)

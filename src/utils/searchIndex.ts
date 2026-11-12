@@ -6,6 +6,49 @@ export const INDEX_LIMITE_BYTES = 800_000
 export const TEXTO_INDEX_MAX = 16_000
 export const PARTE_RAIZ = 'raiz'
 
+/**
+ * O índice de cada produto fica em duas coleções com o mesmo formato: a comum
+ * (artigos de público "usuário"), que todo leitor do produto lê, e a técnica,
+ * que as regras só liberam a quem tem `verTecnico`. Assim o texto de um artigo
+ * técnico nem chega ao navegador de quem não pode vê-lo.
+ */
+export const COLECAO_INDICE = 'searchIndex'
+export const COLECAO_INDICE_TECNICO = 'searchIndexTecnico'
+export const COLECOES_INDICE = [COLECAO_INDICE, COLECAO_INDICE_TECNICO] as const
+export type ColecaoIndice = (typeof COLECOES_INDICE)[number]
+
+export function colecaoDoPublico(
+  publico: SearchItem['publico'],
+): ColecaoIndice {
+  return publico === 'tecnico' ? COLECAO_INDICE_TECNICO : COLECAO_INDICE
+}
+
+/** Separa os itens pela coleção em que cada um deve ficar. */
+export function separarPorColecao(
+  itens: SearchItem[],
+): Record<ColecaoIndice, SearchItem[]> {
+  const saida: Record<ColecaoIndice, SearchItem[]> = {
+    [COLECAO_INDICE]: [],
+    [COLECAO_INDICE_TECNICO]: [],
+  }
+  for (const item of itens) saida[colecaoDoPublico(item.publico)].push(item)
+  return saida
+}
+
+/**
+ * Junta o que veio das duas coleções. Índices gravados antes da separação
+ * ainda podem ter itens técnicos na coleção comum: eles só valem para quem
+ * também leu a técnica, e a versão da coleção técnica prevalece.
+ */
+export function juntarColecoes(
+  comuns: SearchItem[],
+  tecnicos: SearchItem[] | null,
+): SearchItem[] {
+  if (tecnicos === null) return comuns.filter((i) => i.publico !== 'tecnico')
+  const ids = new Set(tecnicos.map((i) => i.id))
+  return [...comuns.filter((i) => !ids.has(i.id)), ...tecnicos]
+}
+
 export function tamanhoBytes(valor: unknown): number {
   return new TextEncoder().encode(JSON.stringify(valor)).length
 }

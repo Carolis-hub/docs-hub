@@ -9,6 +9,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Block, Unidade } from '../types/content'
 import type { IndexedItem } from '../types/search'
+import { definirProdutoEmContexto } from '../hooks/useProdutoEmContexto'
 import { criarMotor } from '../utils/searchEngine'
 import { SearchPage } from './SearchPage'
 
@@ -103,6 +104,7 @@ const titulos = () =>
 
 beforeEach(() => {
   vi.clearAllMocks()
+  definirProdutoEmContexto('')
   useSearchEngine.mockReturnValue({
     dados: {
       produtos,
@@ -118,10 +120,67 @@ beforeEach(() => {
 })
 
 describe('SearchPage', () => {
-  it('sem texto nem filtro, convida a buscar e aponta para as categorias', () => {
-    abrir()
+  it('sem produto definido, pede a escolha e não busca', () => {
+    abrir('/busca?q=envio')
     expect(
-      screen.getByText(/Digite para buscar em 5 artigos/),
+      screen.getByText(/Escolha um produto para buscar/),
+    ).toBeInTheDocument()
+    expect(screen.queryAllByRole('link', { name: /Configurar envio/ })).toEqual(
+      [],
+    )
+    expect(
+      within(screen.getByLabelText('Produto da busca'))
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual([
+      'Escolha um produto',
+      'SmartShare 4',
+      'SmartShare DI',
+      'Outro produto',
+    ])
+  })
+
+  it('herda o produto em contexto (o da tela de onde a pessoa veio)', () => {
+    definirProdutoEmContexto('p2')
+    abrir('/busca?q=regras')
+    expect(titulos()).toEqual(['Regras do DI'])
+    expect(
+      (screen.getByLabelText('Produto da busca') as HTMLSelectElement).value,
+    ).toBe('p2')
+  })
+
+  it('quem só tem um produto nem precisa escolher', () => {
+    useSearchEngine.mockReturnValue({
+      dados: {
+        produtos: [produtos[0]!],
+        unidades: [],
+        motor: criarMotor(itens, true),
+      },
+      erro: null,
+      carregando: false,
+    })
+    abrir('/busca?q=configurar')
+    expect(titulos()).toEqual(['Configurar envio'])
+  })
+
+  it('a busca nunca traz artigo de outro produto', () => {
+    abrir('/busca?produto=p1&q=regras')
+    expect(
+      screen.getByText('Nenhum resultado para “regras”.'),
+    ).toBeInTheDocument()
+  })
+
+  it('produto da URL que a pessoa não pode ver é ignorado', () => {
+    abrir('/busca?produto=secreto&q=envio')
+    expect(
+      screen.getByText(/Escolha um produto para buscar/),
+    ).toBeInTheDocument()
+  })
+
+  it('com produto e sem texto nem filtro, convida a buscar e aponta para as categorias', () => {
+    abrir('/busca?produto=p1')
+    expect(
+      screen.getByText(/Digite para buscar em 3\s+artigos de SmartShare 4/),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Ver por categoria' }),
@@ -129,36 +188,54 @@ describe('SearchPage', () => {
   })
 
   it('só com um filtro lista os artigos (navegação), de A a Z', () => {
-    abrir('/busca?categoria=processos')
+    abrir('/busca?produto=p1&categoria=processos')
     expect(titulos()).toEqual(['Fluxo de aprovação'])
     expect(screen.getByText('1 artigo')).toBeInTheDocument()
   })
 
   it('busca com texto e filtro de categoria juntos', () => {
-    abrir('/busca?q=relat%C3%B3rios&categoria=configuracoes')
+    abrir('/busca?produto=p1&q=relat%C3%B3rios&categoria=configuracoes')
     expect(titulos()).toEqual(['Configurar envio'])
   })
 
-  it('filtrar por unidade restringe os produtos oferecidos e os resultados', () => {
-    abrir('/busca?unidade=u1&categoria=regras-de-negocio')
+  it('filtrar por unidade restringe os produtos oferecidos', () => {
+    abrir('/busca?unidade=u1&produto=p2&categoria=regras-de-negocio')
     expect(titulos()).toEqual(['Regras do DI'])
-    const produtosSelect = screen.getByLabelText('Filtrar por produto')
     expect(
-      within(produtosSelect)
+      within(screen.getByLabelText('Produto da busca'))
         .getAllByRole('option')
         .map((o) => o.textContent),
-    ).toEqual(['Todos os produtos', 'SmartShare 4', 'SmartShare DI'])
+    ).toEqual(['SmartShare 4', 'SmartShare DI'])
   })
 
-  it('"Sem unidade" mostra só os produtos soltos', () => {
-    abrir('/busca?unidade=sem-unidade&categoria=')
-    expect(titulos()).toEqual(['Guia solto'])
+  it('trocar de unidade mantém o produto que é dela e troca o que não é', async () => {
+    abrir('/busca?produto=p1&q=guia')
+    const unidadeSelect = screen.getByLabelText(
+      'Filtrar por unidade de negócio',
+    )
+    fireEvent.change(unidadeSelect, { target: { value: 'u1' } })
+    expect(
+      (screen.getByLabelText('Produto da busca') as HTMLSelectElement).value,
+    ).toBe('p1')
+    // "Sem unidade" só tem um produto: ele passa a ser o da busca.
+    fireEvent.change(unidadeSelect, { target: { value: 'sem-unidade' } })
+    await waitFor(() => expect(titulos()).toEqual(['Guia solto']))
+  })
+
+  it('unidade com vários produtos, nenhum deles o atual: pede a escolha', () => {
+    abrir('/busca?produto=p3&q=guia')
+    fireEvent.change(screen.getByLabelText('Filtrar por unidade de negócio'), {
+      target: { value: 'u1' },
+    })
+    expect(
+      screen.getByText(/Escolha um produto para buscar/),
+    ).toBeInTheDocument()
   })
 
   it('escolher um produto libera o filtro de subproduto, que filtra pelos blocos dele', async () => {
     abrir()
     expect(screen.queryByLabelText('Filtrar por subproduto')).toBeNull()
-    fireEvent.change(screen.getByLabelText('Filtrar por produto'), {
+    fireEvent.change(screen.getByLabelText('Produto da busca'), {
       target: { value: 'p1' },
     })
     const sub = await screen.findByLabelText('Filtrar por subproduto')
@@ -167,7 +244,6 @@ describe('SearchPage', () => {
         .getAllByRole('option')
         .map((o) => o.textContent),
     ).toEqual(['Todos os subprodutos', 'Anexos', 'Dashboard'])
-    await waitFor(() => expect(titulos()).toHaveLength(3))
     fireEvent.change(sub, { target: { value: 'dash' } })
     await waitFor(() => expect(titulos()).toEqual(['Fluxo de aprovação']))
     // O caminho do resultado mostra a unidade, o produto e o subproduto.
@@ -208,18 +284,14 @@ describe('SearchPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('trocar de unidade zera produto e subproduto, e "Limpar filtros" volta ao início', async () => {
+  it('"Limpar filtros" tira os refinamentos e mantém o produto', async () => {
     abrir('/busca?produto=p1&subproduto=dash')
     await screen.findByLabelText('Filtrar por subproduto')
-    fireEvent.change(screen.getByLabelText('Filtrar por unidade de negócio'), {
-      target: { value: 'u1' },
-    })
-    expect(
-      (screen.getByLabelText('Filtrar por produto') as HTMLSelectElement).value,
-    ).toBe('')
-    expect(screen.queryByLabelText('Filtrar por subproduto')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Limpar filtros' }))
     expect(screen.getByText(/Digite para buscar/)).toBeInTheDocument()
+    expect(
+      (screen.getByLabelText('Produto da busca') as HTMLSelectElement).value,
+    ).toBe('p1')
   })
 
   it('avisa quando os filtros não encontram nada', () => {

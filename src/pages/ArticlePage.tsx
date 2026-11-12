@@ -5,6 +5,7 @@ import { ArticleContent } from '../components/ArticleContent'
 import { Breadcrumb } from '../components/Breadcrumb'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
+import { definirProdutoEmContexto } from '../hooks/useProdutoEmContexto'
 import { useSearchEngine } from '../hooks/useSearchEngine'
 import { getArticle } from '../services/articles'
 import { getAncestors, getBlock } from '../services/blocks'
@@ -38,9 +39,14 @@ export function ArticlePage() {
     void registrarVisualizacao(artigoId, uid)
   }, [artigoId, uid, isAdmin, publicado])
 
-  const motor = useSearchEngine().dados?.motor
-  const conteudoRef = useRef<HTMLDivElement>(null)
   const atual = dados?.artigo
+  // Abrir um artigo põe o produto dele em contexto: a busca passa a valer ali.
+  const produtoDoArtigo = atual?.productId
+  useEffect(() => {
+    if (produtoDoArtigo) definirProdutoEmContexto(produtoDoArtigo)
+  }, [produtoDoArtigo])
+  const motor = useSearchEngine(produtoDoArtigo).dados?.motor
+  const conteudoRef = useRef<HTMLDivElement>(null)
   const similares = useMemo(
     () => (motor && atual ? relacionados(motor, atual) : []),
     [motor, atual],

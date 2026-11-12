@@ -169,7 +169,7 @@ export async function responder(
 
   try {
     const filtrado = await aplicarFiltros(db, escopo, pedido.filtros)
-    const indice = await lerIndice(db, filtrado.produtos)
+    const indice = await lerIndice(db, filtrado.produtos, escopo.verTecnico)
 
     let fontes: Awaited<ReturnType<typeof carregarFontes>> = []
     let resposta = SEM_RESULTADO

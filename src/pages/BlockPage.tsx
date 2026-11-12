@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { FolderPlus, Layers, Pencil, Plus } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ArticleList } from '../components/ArticleList'
@@ -17,6 +17,7 @@ import {
 } from '../components/ListToolbar'
 import { PageHeader } from '../components/PageHeader'
 import { useAsync } from '../hooks/useAsync'
+import { definirProdutoEmContexto } from '../hooks/useProdutoEmContexto'
 import { useAuth } from '../hooks/useAuth'
 import { usePreferencia } from '../hooks/usePreferencia'
 import {
@@ -131,6 +132,12 @@ export function BlockPage() {
       return a.titulo.localeCompare(b.titulo, 'pt-BR')
     })
   }, [dados, filtroArtigos, filtroCategoria, ordem])
+
+  // Abrir um produto (ou algo dentro dele) o põe em contexto para a busca.
+  const produtoDoBloco = dados?.bloco.productId
+  useEffect(() => {
+    if (produtoDoBloco) definirProdutoEmContexto(produtoDoBloco)
+  }, [produtoDoBloco])
 
   if (carregando && !dados) return <Carregando />
   if (erro)

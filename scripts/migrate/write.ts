@@ -6,7 +6,12 @@ import {
 } from 'firebase-admin/firestore'
 import type { Article, Block } from '../../src/types/content.ts'
 import type { SearchItem } from '../../src/types/search.ts'
-import { itemDoArtigo, montarIndice } from '../../src/utils/searchIndex.ts'
+import {
+  COLECOES_INDICE,
+  itemDoArtigo,
+  montarIndice,
+  separarPorColecao,
+} from '../../src/utils/searchIndex.ts'
 import type { Plano } from './types.ts'
 
 export interface GravarOpts {
@@ -196,18 +201,32 @@ export async function gravar(
   })
 
   // Índice de busca: une o que já existe com os artigos recém-publicados.
+  // Cada artigo fica na coleção do seu público (comum ou técnica), e a
+  // regravação também tira da comum os técnicos de índices antigos.
   for (const [productId, novos] of itensPorProduto) {
-    const refIndice = db.collection('searchIndex').doc(productId)
-    const principal = await refIndice.get()
-    const dados = principal.data() as
-      { itens?: SearchItem[]; dividido?: boolean } | undefined
-    let itens = dados?.itens ?? []
-    if (dados?.dividido) {
-      const partes = await refIndice.collection('partes').get()
-      itens = partes.docs.flatMap((p) => (p.data().itens as SearchItem[]) ?? [])
+    const existentes: SearchItem[] = []
+    const jaExiste = new Set<string>()
+    for (const colecao of COLECOES_INDICE) {
+      const ref = db.collection(colecao).doc(productId)
+      const principal = await ref.get()
+      if (!principal.exists) continue
+      jaExiste.add(colecao)
+      const dados = principal.data() as {
+        itens?: SearchItem[]
+        dividido?: boolean
+      }
+      let itens = dados.itens ?? []
+      if (dados.dividido) {
+        const partes = await ref.collection('partes').get()
+        itens = partes.docs.flatMap(
+          (p) => (p.data().itens as SearchItem[]) ?? [],
+        )
+      }
+      existentes.push(...itens)
     }
-    const ids = new Set(novos.map((i) => i.id))
-    const uniao = [...itens.filter((i) => !ids.has(i.id)), ...novos]
+    // O mesmo artigo pode estar nas duas (índice antigo): os novos prevalecem.
+    const porId = new Map(existentes.map((i) => [i.id, i]))
+    for (const novo of novos) porId.set(novo.id, novo)
 
     const arvoreSnap = await db
       .collection('blocks')
@@ -217,12 +236,19 @@ export async function gravar(
       ...arvoreSnap.docs.map((d) => ({ id: d.id, ...d.data() }) as Block),
       ...plano.blocos.filter((b) => b.productId === productId),
     ]
-    const indice = montarIndice(uniao, arvore)
-    escrever(refIndice, indice.principal)
-    for (const [parteId, lista] of Object.entries(indice.partes)) {
-      escrever(refIndice.collection('partes').doc(parteId), {
-        itens: lista,
-      })
+    const porColecao = separarPorColecao([...porId.values()])
+    for (const colecao of COLECOES_INDICE) {
+      const itens = porColecao[colecao]
+      // Não cria um índice técnico vazio para produto sem artigo técnico.
+      if (itens.length === 0 && !jaExiste.has(colecao)) continue
+      const refIndice = db.collection(colecao).doc(productId)
+      const indice = montarIndice(itens, arvore)
+      escrever(refIndice, indice.principal)
+      for (const [parteId, lista] of Object.entries(indice.partes)) {
+        escrever(refIndice.collection('partes').doc(parteId), {
+          itens: lista,
+        })
+      }
     }
     resultado.indices++
   }

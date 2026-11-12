@@ -3,6 +3,11 @@ import { FieldValue, type Firestore } from 'firebase-admin/firestore'
 import type { Article } from '../../src/types/content.ts'
 import type { IndexedItem, SearchItem } from '../../src/types/search.ts'
 import { criarMotor } from '../../src/utils/searchEngine.ts'
+import {
+  COLECAO_INDICE,
+  COLECAO_INDICE_TECNICO,
+  juntarColecoes,
+} from '../../src/utils/searchIndex.ts'
 import type { ProvedorIA } from './ia.ts'
 import { consultaDeBusca, type Regras } from './regras.ts'
 import { gerarSugestao } from './sugestao.ts'
@@ -51,21 +56,26 @@ export function idDaSugestao(arquivo: string, hash: string): string {
     .slice(0, 20)
 }
 
+/** Lê o índice inteiro (parte comum e parte técnica) dos produtos. */
 async function lerIndice(
   db: Firestore,
   produtos: string[],
 ): Promise<IndexedItem[]> {
   const itens: IndexedItem[] = []
   for (const productId of produtos) {
-    const ref = db.collection('searchIndex').doc(productId)
-    const principal = await ref.get()
-    const dados = principal.data() as
-      { itens?: SearchItem[]; dividido?: boolean } | undefined
-    let lista = dados?.itens ?? []
-    if (dados?.dividido) {
+    const lerColecao = async (colecao: string): Promise<SearchItem[]> => {
+      const ref = db.collection(colecao).doc(productId)
+      const principal = await ref.get()
+      const dados = principal.data() as
+        { itens?: SearchItem[]; dividido?: boolean } | undefined
+      if (!dados?.dividido) return dados?.itens ?? []
       const partes = await ref.collection('partes').get()
-      lista = partes.docs.flatMap((p) => (p.data().itens as SearchItem[]) ?? [])
+      return partes.docs.flatMap((p) => (p.data().itens as SearchItem[]) ?? [])
     }
+    const lista = juntarColecoes(
+      await lerColecao(COLECAO_INDICE),
+      await lerColecao(COLECAO_INDICE_TECNICO),
+    )
     itens.push(...lista.map((i) => ({ ...i, productId })))
   }
   return itens

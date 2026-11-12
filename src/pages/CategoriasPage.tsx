@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../components/PageHeader'
+import { useProdutoEmContexto } from '../hooks/useProdutoEmContexto'
 import { useSearchEngine } from '../hooks/useSearchEngine'
 import type { CategoriaId } from '../types/content'
 import { CATEGORIAS } from '../utils/categorias'
@@ -33,6 +34,9 @@ const plural = (n: number) => `${n} ${n === 1 ? 'artigo' : 'artigos'}`
 /** Entrada por categoria: quantos artigos há em cada uma e atalho para navegá-los. */
 export function CategoriasPage() {
   const { dados, erro, carregando } = useSearchEngine()
+  const [, definirProduto] = useProdutoEmContexto()
+  const produtos = dados?.produtos ?? []
+  const produtoId = dados?.produtoId ?? ''
 
   const contagem = useMemo(() => {
     const itens = dados?.motor.listar() ?? []
@@ -59,7 +63,30 @@ export function CategoriasPage() {
           {erro}
         </p>
       )}
-      {dados && (
+      {dados && produtos.length > 1 && (
+        <label className="mb-4 flex flex-wrap items-center gap-2 text-sm text-suave">
+          Produto
+          <select
+            aria-label="Produto"
+            value={produtoId}
+            onChange={(e) => definirProduto(e.target.value)}
+            className="campo h-10"
+          >
+            {!produtoId && <option value="">Escolha um produto</option>}
+            {produtos.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {dados && produtos.length > 1 && !produtoId && (
+        <p className="text-suave">
+          Escolha um produto para ver as categorias dele.
+        </p>
+      )}
+      {dados && (produtoId || produtos.length <= 1) && (
         <>
           <ul className="grid gap-4 sm:grid-cols-2">
             {CATEGORIAS.map((c) => {

@@ -151,6 +151,75 @@ describe('atualizarIndiceTx', () => {
   })
 })
 
+describe('atualizarIndiceTx: artigos técnicos ficam em coleção própria', () => {
+  const tecnico = (id: string): SearchItem => ({
+    ...item(id),
+    publico: 'tecnico',
+  })
+
+  it('artigo técnico vai só para o índice técnico', async () => {
+    const tx = fakeTx({ 'searchIndex/p': { itens: [item('a')] } })
+    await atualizarIndiceTx(tx as never, 'p', 'bpm', 't', tecnico('t'))
+    expect(Object.keys(tx.escritas)).toEqual(['searchIndexTecnico/p'])
+    expect(tx.escritas['searchIndexTecnico/p']).toEqual({
+      itens: [tecnico('t')],
+    })
+  })
+
+  it('artigo comum não cria índice técnico', async () => {
+    const tx = fakeTx({})
+    await atualizarIndiceTx(tx as never, 'p', 'bpm', 'a', item('a'))
+    expect(Object.keys(tx.escritas)).toEqual(['searchIndex/p'])
+  })
+
+  it('ao virar técnico, sai do índice comum (e vice-versa)', async () => {
+    const tx = fakeTx({ 'searchIndex/p': { itens: [item('a'), item('b')] } })
+    await atualizarIndiceTx(tx as never, 'p', 'bpm', 'a', tecnico('a'))
+    expect(tx.escritas['searchIndex/p']).toEqual({ itens: [item('b')] })
+    expect(tx.escritas['searchIndexTecnico/p']).toEqual({
+      itens: [tecnico('a')],
+    })
+
+    const volta = fakeTx({
+      'searchIndex/p': { itens: [item('b')] },
+      'searchIndexTecnico/p': { itens: [tecnico('a')] },
+    })
+    await atualizarIndiceTx(volta as never, 'p', 'bpm', 'a', item('a'))
+    expect(volta.escritas['searchIndexTecnico/p']).toEqual({ itens: [] })
+    expect(
+      (volta.escritas['searchIndex/p'] as { itens: SearchItem[] }).itens.map(
+        (i) => i.id,
+      ),
+    ).toEqual(['b', 'a'])
+  })
+
+  it('despublicar tira o artigo de onde ele estiver', async () => {
+    const tx = fakeTx({
+      'searchIndex/p': { itens: [item('b')] },
+      'searchIndexTecnico/p': { itens: [tecnico('a')] },
+    })
+    await atualizarIndiceTx(tx as never, 'p', 'bpm', 'a', null)
+    expect(tx.escritas).toEqual({ 'searchIndexTecnico/p': { itens: [] } })
+  })
+
+  it('lê tudo antes de escrever (exigência das transações)', async () => {
+    const tx = fakeTx({ 'searchIndex/p': { itens: [item('a')] } })
+    const ordem: string[] = []
+    tx.get.mockImplementation(async (ref: string) => {
+      ordem.push(`ler ${ref}`)
+      return { data: () => undefined }
+    })
+    tx.set.mockImplementation((ref: string) => {
+      ordem.push(`gravar ${ref}`)
+    })
+    await atualizarIndiceTx(tx as never, 'p', 'bpm', 't', tecnico('t'))
+    const primeiraGravacao = ordem.findIndex((o) => o.startsWith('gravar'))
+    expect(
+      ordem.slice(primeiraGravacao).every((o) => o.startsWith('gravar')),
+    ).toBe(true)
+  })
+})
+
 describe('itemDoArtigo', () => {
   it('trunca o texto para caber no índice', () => {
     const r = itemDoArtigo({

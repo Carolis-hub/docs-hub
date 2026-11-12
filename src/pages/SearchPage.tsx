@@ -4,12 +4,14 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Highlight } from '../components/Highlight'
 import { PageHeader } from '../components/PageHeader'
 import { useAsync } from '../hooks/useAsync'
+import { useProdutoEmContexto } from '../hooks/useProdutoEmContexto'
 import { useSearchEngine } from '../hooks/useSearchEngine'
 import { listProductTree } from '../services/blocks'
 import { registrarBuscaSemResultado } from '../services/search'
 import type { ArticlePublico, CategoriaId } from '../types/content'
 import { comDescendentes } from '../utils/blocos'
 import { CATEGORIAS, nomeDaCategoria } from '../utils/categorias'
+import { produtoDaConsulta } from '../utils/produtoDaConsulta'
 import { gerarTrecho } from '../utils/search'
 import type { SearchFilters } from '../utils/searchEngine'
 import { Carregando } from '../components/Carregando'
@@ -21,12 +23,23 @@ export function SearchPage() {
   const [params, setParams] = useSearchParams()
   const q = params.get('q') ?? ''
   const unidade = params.get('unidade') ?? ''
-  const produto = params.get('produto') ?? ''
+  const produtoNaUrl = params.get('produto') ?? ''
   const subproduto = params.get('subproduto') ?? ''
   const modulo = params.get('modulo') ?? ''
   const categoria = (params.get('categoria') ?? '') as CategoriaId | ''
   const publico = (params.get('publico') ?? '') as ArticlePublico | ''
-  const { dados, erro, carregando } = useSearchEngine()
+  const [contexto, definirContexto] = useProdutoEmContexto()
+  const { dados, erro, carregando } = useSearchEngine(produtoNaUrl || undefined)
+  // Toda busca vale para um produto: o da URL, o da tela de onde a pessoa
+  // veio ou o único que ela tem. Sem nenhum, ela escolhe antes de buscar.
+  const produto = produtoDaConsulta(
+    produtoNaUrl || undefined,
+    contexto,
+    dados?.produtos ?? [],
+  )
+  useEffect(() => {
+    if (produto) definirContexto(produto)
+  }, [produto, definirContexto])
 
   // A árvore do produto escolhido dá os subprodutos e o caminho de cada resultado.
   const { dados: arvore } = useAsync(
@@ -66,7 +79,6 @@ export function SearchPage() {
   const filtros = useMemo<SearchFilters>(() => {
     const f: SearchFilters = {}
     if (produto) f.productId = produto
-    else if (unidade) f.productIds = produtosDoFiltro.map((p) => p.id)
     if (modulo && arvore) f.blockIds = comDescendentes(arvore, modulo)
     else if (subproduto && arvore)
       f.blockIds = comDescendentes(arvore, subproduto)
@@ -85,18 +97,12 @@ export function SearchPage() {
     produtos,
   ])
 
-  const temFiltro = !!(
-    unidade ||
-    produto ||
-    subproduto ||
-    modulo ||
-    categoria ||
-    publico
-  )
+  // O produto é o contexto da busca, não um filtro: só o que refina conta.
+  const temFiltro = !!(subproduto || modulo || categoria || publico)
   const navegando = !q.trim() && temFiltro
 
   const resultados = useMemo(() => {
-    if (!dados) return []
+    if (!dados || !produto) return []
     if (q.trim()) {
       return dados.motor
         .buscar(q, filtros)
@@ -107,12 +113,12 @@ export function SearchPage() {
           .listar(filtros)
           .map((item) => ({ item, termos: [] as string[] }))
       : []
-  }, [dados, q, filtros, temFiltro])
+  }, [dados, produto, q, filtros, temFiltro])
 
   const semResultado =
-    !!dados && (!!q.trim() || temFiltro) && resultados.length === 0
+    !!dados && !!produto && (!!q.trim() || temFiltro) && resultados.length === 0
   useEffect(() => {
-    // Só a busca sem filtros conta como "sem resultado" de verdade.
+    // Só a busca sem filtros (além do produto) conta como "sem resultado".
     if (semResultado && q.trim() && !temFiltro)
       void registrarBuscaSemResultado(q)
   }, [semResultado, q, temFiltro])
@@ -124,6 +130,25 @@ export function SearchPage() {
       else novo.delete(chave)
     }
     setParams(novo, { replace: true })
+  }
+
+  /** Trocar de unidade mantém o produto se ele for dela; senão, pede outro. */
+  function trocarUnidade(nova: string) {
+    const daUnidade = produtos.filter((p) =>
+      !nova
+        ? true
+        : nova === SEM_UNIDADE
+          ? semUnidade(p)
+          : p.unidadeId === nova,
+    )
+    const fica = daUnidade.some((p) => p.id === produto)
+    const unico = daUnidade.length === 1 ? daUnidade[0]!.id : ''
+    if (!fica && !unico) definirContexto('')
+    atualizar({
+      unidade: nova,
+      produto: fica ? produto : unico,
+      ...(fica ? {} : { subproduto: '', modulo: '' }),
+    })
   }
 
   const produtoPorId = new Map(produtos.map((p) => [p.id, p]))
@@ -170,14 +195,7 @@ export function SearchPage() {
             <select
               aria-label="Filtrar por unidade de negócio"
               value={unidade}
-              onChange={(e) =>
-                atualizar({
-                  unidade: e.target.value,
-                  produto: '',
-                  subproduto: '',
-                  modulo: '',
-                })
-              }
+              onChange={(e) => trocarUnidade(e.target.value)}
               className={campo}
             >
               <option value="">Todas as unidades</option>
@@ -190,14 +208,14 @@ export function SearchPage() {
             </select>
           )}
           <select
-            aria-label="Filtrar por produto"
+            aria-label="Produto da busca"
             value={produto}
             onChange={(e) =>
               atualizar({ produto: e.target.value, subproduto: '', modulo: '' })
             }
             className={campo}
           >
-            <option value="">Todos os produtos</option>
+            {!produto && <option value="">Escolha um produto</option>}
             {produtosDoFiltro.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.nome}
@@ -265,8 +283,6 @@ export function SearchPage() {
               className="botao"
               onClick={() =>
                 atualizar({
-                  unidade: '',
-                  produto: '',
                   subproduto: '',
                   modulo: '',
                   categoria: '',
@@ -286,9 +302,18 @@ export function SearchPage() {
           {erro}
         </p>
       )}
-      {dados && !q.trim() && !temFiltro && (
+      {dados && !produto && (
         <p className="text-suave ">
-          Digite para buscar em {dados.motor.total} artigos, ou escolha um
+          {produtos.length === 0
+            ? 'Você ainda não tem acesso a nenhum produto.'
+            : 'Escolha um produto para buscar: cada busca vale para um produto.'}
+        </p>
+      )}
+      {dados && produto && !q.trim() && !temFiltro && (
+        <p className="text-suave ">
+          Digite para buscar em{' '}
+          {dados.motor.listar({ productId: produto }).length} artigos de{' '}
+          {produtoPorId.get(produto)?.nome ?? 'este produto'}, ou escolha um
           filtro para navegar.{' '}
           <Link to="/categorias" className="text-bloco-icone hover:underline">
             Ver por categoria

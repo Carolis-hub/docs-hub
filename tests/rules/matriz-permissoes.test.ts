@@ -113,6 +113,9 @@ beforeAll(async () => {
     await setDoc(doc(d, 'searchIndex/p1'), { itens: [] })
     await setDoc(doc(d, 'searchIndex/p1/partes/bpm'), { itens: [] })
     await setDoc(doc(d, 'searchIndex/p2'), { itens: [] })
+    await setDoc(doc(d, 'searchIndexTecnico/p1'), { itens: [] })
+    await setDoc(doc(d, 'searchIndexTecnico/p1/partes/bpm'), { itens: [] })
+    await setDoc(doc(d, 'searchIndexTecnico/p2'), { itens: [] })
     await setDoc(doc(d, 'searchMisses/termo'), { termo: 'x', count: 1 })
     await setDoc(doc(d, 'assistenteUso/g_2026-01-01'), { perguntas: 1 })
     await setDoc(doc(d, 'assistenteLog/log'), { uid: 'leitor', feedback: null })
@@ -173,6 +176,10 @@ describe('matriz de permissões: leitura', () => {
     ['searchIndex/p1', ['leitor', 'tecnico', 'admin']],
     ['searchIndex/p1/partes/bpm', ['leitor', 'tecnico', 'admin']],
     ['searchIndex/p2', ['leitorP2', 'admin']],
+    // Parte técnica do índice: produto permitido e `verTecnico`.
+    ['searchIndexTecnico/p1', ['tecnico', 'admin']],
+    ['searchIndexTecnico/p1/partes/bpm', ['tecnico', 'admin']],
+    ['searchIndexTecnico/p2', ['admin']],
     // Painéis e registros: só admin.
     ['searchMisses/termo', SO_ADMIN],
     ['assistenteUso/g_2026-01-01', SO_ADMIN],
@@ -207,6 +214,8 @@ describe('matriz de permissões: escrita', () => {
     ['articles/pub/suggestions', SO_ADMIN, { status: 'pending' }],
     ['searchIndex', SO_ADMIN, { itens: [] }],
     ['searchIndex/p1/partes', SO_ADMIN, { itens: [] }],
+    ['searchIndexTecnico', SO_ADMIN, { itens: [] }],
+    ['searchIndexTecnico/p1/partes', SO_ADMIN, { itens: [] }],
     ['fontes', SO_ADMIN, { fonteId: 'x' }],
     // Só o servidor (Admin SDK, que ignora as regras) escreve nestas.
     ['sincronizacoes', NINGUEM, { fonteId: 'x' }],
@@ -415,6 +424,7 @@ describe('matriz de permissões: cobertura das regras', () => {
       'blocks',
       'articles',
       'searchIndex',
+      'searchIndexTecnico',
       'searchMisses',
       'assistenteUso',
       'assistenteLog',

@@ -337,9 +337,12 @@ medição pedir.
 - [x] Estudo técnico e proposta de arquitetura (2026-11-12)
 - [x] Revisão do estudo com prioridade de custo: alternativas gratuitas,
       modelos locais e comparativo (2026-11-12)
-- [ ] Etapa A1, base correta: produto obrigatório na busca; separar o conteúdo
-      técnico no índice de busca (hoje o texto técnico chega ao navegador de
-      quem não tem `verTecnico`); carregar só o índice do produto em contexto
+- [x] Etapa A1, base correta (2026-11-12): produto obrigatório na busca,
+      herdado da tela (produto, bloco ou artigo aberto) e lembrado no navegador;
+      artigos técnicos em índice próprio (`searchIndexTecnico`), que as regras só
+      liberam a quem tem `verTecnico`; a tela baixa só o índice do produto em
+      contexto. **Antes de usar no `dev`: publicar as regras** e reindexar os
+      artigos técnicos que já estavam publicados (ver `docs/estudo-consulta-kb.md`)
 - [ ] Etapa A2, busca que responde: artigos divididos em trechos, resultado
       aponta para a seção, "resposta direta", glossário de sinônimos por produto
 - [ ] Etapa A3, medir: conjunto de 30 a 50 consultas reais, teste da taxa de

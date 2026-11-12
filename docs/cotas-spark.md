@@ -7,14 +7,14 @@ de depender delas.
 
 ## Custo por ação do leitor
 
-| Ação                                 | Leituras                           | Gravações                    |
-| ------------------------------------ | ---------------------------------- | ---------------------------- |
-| Entrar (perfil `users/{uid}`)        | 1                                  | 0                            |
-| Carregar o índice de busca na sessão | produtos permitidos × (1 + partes) | 0                            |
-| Home (cards de produtos)             | 1 por produto permitido            | 0                            |
-| Página de bloco                      | 1 + ancestrais + filhos + artigos  | 0                            |
-| Abrir um artigo                      | 1 + ancestrais (≈ 4)               | 2 (`views` e `viewsDaily`)\* |
-| Busca sem resultado (novo termo)     | 0                                  | 1 (`searchMisses`)           |
+| Ação                             | Leituras                                                          | Gravações                    |
+| -------------------------------- | ----------------------------------------------------------------- | ---------------------------- |
+| Entrar (perfil `users/{uid}`)    | 1                                                                 | 0                            |
+| Carregar o índice de busca       | 1 + partes, por produto consultado (o dobro para quem vê técnico) | 0                            |
+| Home (cards de produtos)         | 1 por produto permitido                                           | 0                            |
+| Página de bloco                  | 1 + ancestrais + filhos + artigos                                 | 0                            |
+| Abrir um artigo                  | 1 + ancestrais (≈ 4)                                              | 2 (`views` e `viewsDaily`)\* |
+| Busca sem resultado (novo termo) | 0                                                                 | 1 (`searchMisses`)           |
 
 \* No máximo uma vez por leitor, artigo e dia (deduplicado no navegador).
 Admins não contam acessos. As regras de segurança também fazem leituras

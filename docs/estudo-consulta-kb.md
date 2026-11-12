@@ -77,6 +77,19 @@ evolução condicional. A comparação de custos está na Seção 2-A.
 | L7  | **Sinônimos fixos no código** (8 grupos, do vocabulário do SmartShare) e só no assistente                                                                                                                                                               | A busca comum não acha "apagar" quando o artigo diz "excluir"; não escala por produto   |
 | L8  | **Texto técnico no índice do leitor comum.** A regra de `searchIndex/{produto}` libera o documento inteiro para quem vê o produto, e o filtro de artigos técnicos é feito no navegador. Constatado pela leitura do código; não testei contra o Emulator | Quem não tem `verTecnico` não vê o artigo na tela, mas o texto chega ao navegador dele  |
 
+**Atualização (Etapa A1 implementada em 12/11/2026):** L1 foi resolvida para
+a busca (o assistente continua com o produto como filtro opcional) e L8 foi
+corrigida: os artigos técnicos passaram para `searchIndexTecnico`, com regra
+própria e testes no Emulator. Para valer num projeto que já tem dados:
+
+1. Publicar as regras (`npx firebase deploy --only firestore:rules --project <id>`).
+   Sem isso, publicar artigos falha, porque a gravação passa a ler a coleção nova.
+2. Artigos técnicos publicados **antes** da mudança continuam na coleção comum
+   até serem publicados de novo ou reimportados (`npm run migrate -- …
+--sobrescrever --publicar` regrava o índice já separado). A tela já ignora
+   esses itens para quem não vê técnico, mas o texto só sai do documento com a
+   regravação. No `dev` de hoje nenhum artigo foi marcado como técnico.
+
 L8 é um problema de controle de acesso que existe independentemente deste
 estudo e deve ser corrigido antes de qualquer conteúdo técnico real entrar.
 
