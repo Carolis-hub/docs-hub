@@ -15,6 +15,7 @@ de depender delas.
 | Página de bloco                  | 1 + ancestrais + filhos + artigos                                 | 0                            |
 | Abrir um artigo                  | 1 + ancestrais (≈ 4)                                              | 2 (`views` e `viewsDaily`)\* |
 | Busca sem resultado (novo termo) | 0                                                                 | 1 (`searchMisses`)           |
+| Responder "Esta busca ajudou?"   | 0                                                                 | 1 (`searchFeedback`)         |
 
 \* No máximo uma vez por leitor, artigo e dia (deduplicado no navegador).
 Admins não contam acessos. As regras de segurança também fazem leituras

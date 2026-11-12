@@ -106,6 +106,12 @@ na busca, de forma mais simples que a desenhada na Seção 4:
   caracteres por artigo (menos em subprodutos muito grandes); seções depois do
   corte não aparecem na busca.
 
+**Atualização (Etapa A3, ferramentas, em 12/11/2026):** a medição está
+pronta, mas **ainda não foi feita**: faltam as consultas reais. Há o comando
+`npm run busca-avaliar` (veja `scripts/busca/README.md`), o "Esta busca
+ajudou?" na tela de busca e o painel "Buscas que não ajudaram" em Métricas. As
+metas do MVP (Seção 7) passam a poder ser conferidas com esses três.
+
 L8 é um problema de controle de acesso que existe independentemente deste
 estudo e deve ser corrigido antes de qualquer conteúdo técnico real entrar.
 
