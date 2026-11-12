@@ -3,6 +3,7 @@ import { collection, doc, getDocs, writeBatch } from 'firebase/firestore'
 import type { AppUser, NewUserInput, UserPatch } from '../types/user'
 import { registrarAuditoria } from './audit'
 import { db, getSecondaryAuth } from './firebase'
+import { limparPermissoes } from '../utils/permissoes'
 
 const users = collection(db, 'users')
 
@@ -60,6 +61,7 @@ export async function createUser(
     role: dados.role,
     produtosPermitidos: dados.produtosPermitidos,
     verTecnico: dados.verTecnico,
+    permissoes: limparPermissoes(input.permissoes),
     ativo: true,
   })
   registrarAuditoria(batch, adminUid, 'usuario.criar', `users/${uid}`)
@@ -80,6 +82,9 @@ export async function updateUser(
     role: dados.role,
     produtosPermitidos: dados.produtosPermitidos,
     verTecnico: dados.verTecnico,
+    ...(patch.permissoes
+      ? { permissoes: limparPermissoes(patch.permissoes) }
+      : {}),
   })
   registrarAuditoria(batch, adminUid, 'usuario.editar', `users/${uid}`)
   await batch.commit()

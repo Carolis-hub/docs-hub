@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -10,8 +11,9 @@ import {
 } from 'firebase/firestore'
 import { registrarAuditoria } from './audit'
 import { db } from './firebase'
-import type { Block, BlockInput, Ficha } from '../types/content'
+import type { Block, BlockInput, Ficha, Rodape } from '../types/content'
 import { normalizarFicha } from '../utils/ficha'
+import { normalizarRodape } from '../utils/rodape'
 import { slugify } from '../utils/slug'
 
 const blocks = collection(db, 'blocks')
@@ -165,6 +167,24 @@ export async function salvarFicha(
   registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'ficha')
   await batch.commit()
   return limpa
+}
+
+/**
+ * Grava o rodapé do produto (herdado por subprodutos, módulos e artigos).
+ * Sem nenhuma coluna, o campo é removido e o rodapé deixa de aparecer.
+ * Devolve o rodapé como foi gravado, já limpo e dentro dos limites.
+ */
+export async function salvarRodape(
+  id: string,
+  rodape: Rodape,
+  uid: string,
+): Promise<Rodape | null> {
+  const limpo = normalizarRodape(rodape)
+  const batch = writeBatch(db)
+  batch.update(doc(blocks, id), { rodape: limpo ?? deleteField() })
+  registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'rodapé')
+  await batch.commit()
+  return limpo
 }
 
 /** Grava a nova ordem (índice na lista) de todos os irmãos de uma vez. */

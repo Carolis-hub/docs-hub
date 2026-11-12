@@ -174,6 +174,16 @@ publicação indevida. O SmartShare DI é o piloto.
 Decisão pendente: manter Firebase/Firestore (e buscar vetores noutro serviço)
 ou mudar de banco antes da Fase 5.
 
+### Usuários, rodapé e reordenação (ajustes pedidos pelo time)
+
+- [x] Reordenação corrigida: o "Organizar" agora existe também na Home (produtos sem unidade) e na página da BU; a ordem aparece na hora (volta atrás se a gravação falhar) e, com só parte da lista na tela, os irmãos de fora não mudam de posição (`ordemCompleta`).
+- [x] Configuração de usuários (Configurações › Administração): lista de usuários, seleção e edição em duas abas — **Geral** (dados cadastrais) e **Permissões** (por módulo: Navegação lateral, Administração, Governança, mais produtos e conteúdo técnico).
+- [x] Permissões da Aside (Manual de produtos, Busca/consulta com IA): controlam a exibição na aside, o acesso às rotas e o botão do assistente (`utils/permissoes.ts`, `RequirePermissao`). Contas sem `permissoes` gravadas continuam com tudo liberado.
+- [x] Rodapé por produto: editor no fim da edição do produto (colunas, itens, modal com Markdown e links); herdado por subprodutos, módulos e artigos; sem configuração, não aparece.
+- [ ] **As permissões são aplicadas na interface, não nas regras do Firestore** (só `role`, `produtosPermitidos` e `verTecnico` valem lá). Para travar também no servidor, as regras e o servidor do assistente precisam ler `users/{uid}.permissoes`.
+- [ ] Reordenar artigos de um bloco (hoje a lista é ordenada por recência, acessos ou título).
+- [ ] Conferir no Firebase `dev` com dados reais (arrastar, abas, rodapé em artigo); `npm run test:rules` não foi rodado (sem Java aqui, e as regras não mudaram).
+
 ## Pendências conhecidas
 
 ### Conteúdo (SmartShare 4)

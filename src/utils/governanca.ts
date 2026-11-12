@@ -25,8 +25,8 @@ export const MODULO_GOVERNANCA: {
 export const MODULO_ADMINISTRACAO: typeof MODULO_GOVERNANCA = [
   {
     para: '/admin/usuarios',
-    rotulo: 'Usuários',
-    descricao: 'Contas, perfis e os produtos que cada pessoa pode ver.',
+    rotulo: 'Configuração de usuários',
+    descricao: 'Contas, dados cadastrais e permissões de cada pessoa.',
   },
   {
     para: '/admin/assistente',

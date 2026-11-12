@@ -1,10 +1,19 @@
 import { ChevronRight, Settings } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
+import { permissaoDaRota, podeAcessar } from '../../utils/permissoes'
 import { ConfiguracoesDoUsuario } from '../../components/ConfiguracoesDoUsuario'
 import { PageHeader } from '../../components/PageHeader'
 import { MODULO_ADMINISTRACAO, MODULO_GOVERNANCA } from '../../utils/governanca'
 
 export function ConfiguracoesPage() {
+  const { profile } = useAuth()
+  // Cada tela de administração só aparece para quem tem a permissão dela.
+  const liberados = (itens: typeof MODULO_GOVERNANCA) =>
+    itens.filter((m) => {
+      const id = permissaoDaRota(m.para)
+      return !id || podeAcessar(profile, id)
+    })
   return (
     <div>
       <PageHeader
@@ -18,12 +27,12 @@ export function ConfiguracoesPage() {
           <ModuloDeLinks
             id="administracao"
             titulo="Administração"
-            itens={MODULO_ADMINISTRACAO}
+            itens={liberados(MODULO_ADMINISTRACAO)}
           />
           <ModuloDeLinks
             id="governanca"
             titulo="Governança"
-            itens={MODULO_GOVERNANCA}
+            itens={liberados(MODULO_GOVERNANCA)}
           />
         </div>
       </div>
@@ -40,6 +49,7 @@ function ModuloDeLinks({
   titulo: string
   itens: typeof MODULO_GOVERNANCA
 }) {
+  if (itens.length === 0) return null
   return (
     <section aria-labelledby={id} className="cartao p-5">
       <h2 id={id} className="text-lg font-bold">

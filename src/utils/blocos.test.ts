@@ -48,3 +48,39 @@ describe('tipos de nível', () => {
     expect(tipoDosFilhos(2).plural).toBe('Seções')
   })
 })
+
+describe('ordemCompleta', () => {
+  const b = (id: string, ordem: number): Block => ({
+    id,
+    nome: id,
+    slug: id,
+    descricao: '',
+    icone: '',
+    ordem,
+    parentId: null,
+    productId: id,
+  })
+
+  it('com a lista inteira, devolve a nova ordem', async () => {
+    const { ordemCompleta } = await import('./blocos')
+    const todos = [b('a', 0), b('b', 1), b('c', 2)]
+    expect(ordemCompleta(todos, [todos[2]!, todos[0]!, todos[1]!])).toEqual([
+      'c',
+      'a',
+      'b',
+    ])
+  })
+
+  it('com um subconjunto, quem ficou de fora não sai do lugar', async () => {
+    const { ordemCompleta } = await import('./blocos')
+    const todos = [b('a', 0), b('x', 1), b('b', 2), b('y', 3), b('c', 4)]
+    // a, b e c trocam entre si; x e y continuam nas posições 1 e 3.
+    expect(ordemCompleta(todos, [todos[4]!, todos[2]!, todos[0]!])).toEqual([
+      'c',
+      'x',
+      'b',
+      'y',
+      'a',
+    ])
+  })
+})

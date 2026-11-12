@@ -2,6 +2,7 @@ import { BookOpen, Sparkles } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { usePreferencias } from '../hooks/usePreferencias'
+import { podeAcessar } from '../utils/permissoes'
 import { entradasDaAside } from '../utils/preferencias'
 
 const ENTRADAS = {
@@ -19,9 +20,10 @@ const ENTRADAS = {
 
 /** Aside esquerda: vale para qualquer usuário (cada pessoa escolhe o que ela mostra em Minhas configurações). */
 export function Aside() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const { aside } = usePreferencias(user?.uid)
-  const entradas = entradasDaAside(aside)
+  // O que o administrador bloqueou para a conta some, valha o que a pessoa escolheu.
+  const entradas = entradasDaAside(aside).filter((e) => podeAcessar(profile, e))
   if (entradas.length === 0) return null
   return (
     <aside

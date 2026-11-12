@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { FolderPlus, Layers, Pencil, Plus } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ArticleList } from '../components/ArticleList'
+import { EditorDoRodape } from '../components/EditorDoRodape'
+import { RodapeDoProduto } from '../components/RodapeDoProduto'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
 import { DescricaoDoProduto } from '../components/DescricaoDoProduto'
@@ -35,7 +37,12 @@ import { listArticlesByBlock } from '../services/articles'
 import { getUnidade, listUnidades } from '../services/unidades'
 import { contarArtigosPorBlocos } from '../services/visaoGeral'
 import type { Block } from '../types/content'
-import { comDescendentes, tipoDoNivel, tipoDosFilhos } from '../utils/blocos'
+import {
+  comDescendentes,
+  ordemCompleta,
+  tipoDoNivel,
+  tipoDosFilhos,
+} from '../utils/blocos'
 import { completarFicha } from '../utils/ficha'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
@@ -256,6 +263,9 @@ export function BlockPage() {
           }}
         />
       )}
+      {modo === 'editar' && ehProduto && (
+        <EditorDoRodape produto={bloco} uid={uid} aoSalvar={recarregar} />
+      )}
       {editandoFilho && (
         <BlockForm
           titulo={`Editar ${tipoFilho.singular.toLowerCase()}`}
@@ -310,9 +320,20 @@ export function BlockPage() {
             resumos={resumos}
             editavel={isAdmin}
             organizar={isAdmin && organizar && filtroSecoes.trim() === ''}
-            onReorder={(o) =>
-              void reorderBlocks(o.map((b) => b.id)).then(recarregar)
-            }
+            onReorder={async (o) => {
+              try {
+                await reorderBlocks(ordemCompleta(filhos, o))
+                setAviso(null)
+                recarregar()
+              } catch (e) {
+                setAviso(
+                  e instanceof Error
+                    ? e.message
+                    : 'Não foi possível gravar a nova ordem.',
+                )
+                throw e
+              }
+            }}
             onEdit={setEditandoFilho}
             onDelete={(b) => void excluirFilho(b)}
             onNovo={isAdmin ? () => setModo('novo') : undefined}
@@ -432,6 +453,7 @@ export function BlockPage() {
           )}
         </section>
       )}
+      <RodapeDoProduto produto={cadeia[0]} />
     </div>
   )
 }

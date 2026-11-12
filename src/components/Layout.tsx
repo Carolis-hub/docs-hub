@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { usePreferencias } from '../hooks/usePreferencias'
 import { estaEmConfiguracoes } from '../utils/governanca'
+import { podeAcessar } from '../utils/permissoes'
 import { iniciais } from '../utils/iniciais'
 import { Aside } from './Aside'
 import { PainelAssistente } from './PainelAssistente'
@@ -45,7 +46,11 @@ export function Layout({ children }: { children: ReactNode }) {
               aria-label="Administração"
               className="flex gap-1 self-stretch text-sm"
             >
-              {LINKS_ADMIN.map((l) => (
+              {LINKS_ADMIN.filter(
+                (l) =>
+                  l.para !== '/admin/metricas' ||
+                  podeAcessar(profile, 'metricas'),
+              ).map((l) => (
                 <NavLink
                   key={l.para}
                   to={l.para}
@@ -113,7 +118,7 @@ export function Layout({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
-      {pathname !== '/assistente' && (
+      {pathname !== '/assistente' && podeAcessar(profile, 'busca') && (
         <>
           <PainelAssistente aberto={painelAberto} aoFechar={fecharPainel} />
           {!painelAberto && (

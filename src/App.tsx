@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { RequireAuth } from './components/RequireAuth'
 import { Login } from './pages/Login'
 import { RequireAdmin } from './components/RequireAdmin'
+import { RequirePermissao } from './components/RequirePermissao'
 import { BlockPage } from './pages/BlockPage'
 import { Home } from './pages/Home'
 import { Carregando } from './components/Carregando'
@@ -94,14 +95,63 @@ function App() {
             <Layout>
               <Suspense fallback={<Carregando />}>
                 <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/u/:unidadeId" element={<UnidadePage />} />
-                  <Route path="/busca" element={<SearchPage />} />
-                  <Route path="/categorias" element={<CategoriasPage />} />
-                  <Route path="/assistente" element={<AssistentePage />} />
+                  <Route
+                    path="/"
+                    element={
+                      <RequirePermissao id="manual">
+                        <Home />
+                      </RequirePermissao>
+                    }
+                  />
+                  <Route
+                    path="/u/:unidadeId"
+                    element={
+                      <RequirePermissao id="manual">
+                        <UnidadePage />
+                      </RequirePermissao>
+                    }
+                  />
+                  <Route
+                    path="/busca"
+                    element={
+                      <RequirePermissao id="manual">
+                        <SearchPage />
+                      </RequirePermissao>
+                    }
+                  />
+                  <Route
+                    path="/categorias"
+                    element={
+                      <RequirePermissao id="manual">
+                        <CategoriasPage />
+                      </RequirePermissao>
+                    }
+                  />
+                  <Route
+                    path="/assistente"
+                    element={
+                      <RequirePermissao id="busca">
+                        <AssistentePage />
+                      </RequirePermissao>
+                    }
+                  />
                   <Route path="/preferencias" element={<PreferenciasPage />} />
-                  <Route path="/b/:blockId" element={<BlockPage />} />
-                  <Route path="/a/:articleId" element={<ArticlePage />} />
+                  <Route
+                    path="/b/:blockId"
+                    element={
+                      <RequirePermissao id="manual">
+                        <BlockPage />
+                      </RequirePermissao>
+                    }
+                  />
+                  <Route
+                    path="/a/:articleId"
+                    element={
+                      <RequirePermissao id="manual">
+                        <ArticlePage />
+                      </RequirePermissao>
+                    }
+                  />
                   <Route
                     path="/admin/sugestoes"
                     element={
@@ -122,7 +172,9 @@ function App() {
                     path="/admin/metricas"
                     element={
                       <RequireAdmin>
-                        <MetricsPage />
+                        <RequirePermissao id="metricas">
+                          <MetricsPage />
+                        </RequirePermissao>
                       </RequireAdmin>
                     }
                   />
@@ -130,7 +182,9 @@ function App() {
                     path="/admin/revisao"
                     element={
                       <RequireAdmin>
-                        <RevisaoPage />
+                        <RequirePermissao id="revisao">
+                          <RevisaoPage />
+                        </RequirePermissao>
                       </RequireAdmin>
                     }
                   />
@@ -138,7 +192,9 @@ function App() {
                     path="/admin/sincronizacao"
                     element={
                       <RequireAdmin>
-                        <SincronizacaoPage />
+                        <RequirePermissao id="sincronizacao">
+                          <SincronizacaoPage />
+                        </RequirePermissao>
                       </RequireAdmin>
                     }
                   />
@@ -146,7 +202,9 @@ function App() {
                     path="/admin/assistente"
                     element={
                       <RequireAdmin>
-                        <AssistenteUsoPage />
+                        <RequirePermissao id="usoIA">
+                          <AssistenteUsoPage />
+                        </RequirePermissao>
                       </RequireAdmin>
                     }
                   />
@@ -154,7 +212,9 @@ function App() {
                     path="/admin/auditoria"
                     element={
                       <RequireAdmin>
-                        <AuditoriaPage />
+                        <RequirePermissao id="auditoria">
+                          <AuditoriaPage />
+                        </RequirePermissao>
                       </RequireAdmin>
                     }
                   />
@@ -178,7 +238,9 @@ function App() {
                     path="/admin/usuarios"
                     element={
                       <RequireAdmin>
-                        <UsersPage />
+                        <RequirePermissao id="usuarios">
+                          <UsersPage />
+                        </RequirePermissao>
                       </RequireAdmin>
                     }
                   />

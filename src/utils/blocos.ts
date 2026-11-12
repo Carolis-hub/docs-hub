@@ -40,3 +40,23 @@ export function tipoDosFilhos(profundidade: number): {
     artigoNovo: `Novo ${singular.toLowerCase()}`,
   }
 }
+
+/**
+ * Ids de todos os irmãos na nova ordem, quando só uma parte deles está na tela
+ * (ex.: os produtos de uma unidade). Os itens de `subconjuntoNovo` ocupam, na
+ * ordem nova, as mesmas posições que ocupavam na lista completa; os demais
+ * não saem do lugar. Assim a ordem gravada nunca bate com a de quem ficou de
+ * fora, que era o que embaralhava a lista.
+ */
+export function ordemCompleta(
+  todos: Block[],
+  subconjuntoNovo: Block[],
+): string[] {
+  const ids = [...todos]
+    .sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome))
+    .map((b) => b.id)
+  const noGrupo = new Set(subconjuntoNovo.map((b) => b.id))
+  const novos = subconjuntoNovo.map((b) => b.id)
+  let i = 0
+  return ids.map((id) => (noGrupo.has(id) ? (novos[i++] as string) : id))
+}

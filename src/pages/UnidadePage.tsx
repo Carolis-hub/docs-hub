@@ -2,10 +2,18 @@ import { useState } from 'react'
 import { Building2, Plus } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { BlockCards } from '../components/BlockCards'
+import { EditorDoRodape } from '../components/EditorDoRodape'
 import { BlockForm } from '../components/BlockForm'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
-import { createBlock, deleteBlock, updateBlock } from '../services/blocks'
+import {
+  createBlock,
+  deleteBlock,
+  reorderBlocks,
+  updateBlock,
+} from '../services/blocks'
+import { Interruptor } from '../components/ListToolbar'
+import { ordemCompleta } from '../utils/blocos'
 import { carregarVisaoGeral } from '../services/visaoGeral'
 import type { Block } from '../types/content'
 import { pluralizar, resumirUnidade } from '../utils/resumoUnidade'
@@ -26,6 +34,7 @@ export function UnidadePage() {
   const [criando, setCriando] = useState(false)
   const [editando, setEditando] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [organizar, setOrganizar] = useState(false)
 
   const unidade = dados?.unidades.find((u) => u.id === unidadeId)
   const produtos = (dados?.produtos ?? []).filter(
@@ -51,7 +60,7 @@ export function UnidadePage() {
     }
   }
 
-  if (carregando) return <Carregando />
+  if (carregando && !dados) return <Carregando />
   if (erro) {
     return (
       <p role="alert" className="text-perigo">
@@ -164,6 +173,14 @@ export function UnidadePage() {
             }}
           />
         )}
+        {editando && (
+          <EditorDoRodape
+            key={editando.id}
+            produto={editando}
+            uid={uid}
+            aoSalvar={recarregar}
+          />
+        )}
         {aviso && (
           <p role="alert" className="mb-4 text-sm text-perigo">
             {aviso}
@@ -174,15 +191,41 @@ export function UnidadePage() {
             Nenhum produto nesta unidade ainda.
           </p>
         ) : (
-          <BlockCards
-            blocos={produtos}
-            variante="produto"
-            editavel={isAdmin}
-            subprodutos={subprodutos}
-            resumos={resumos}
-            onEdit={setEditando}
-            onDelete={(b) => void excluir(b)}
-          />
+          <>
+            {isAdmin && produtos.length > 1 && (
+              <div className="mb-4 flex justify-end">
+                <Interruptor
+                  ligado={organizar}
+                  aoMudar={setOrganizar}
+                  rotulo="Organizar"
+                />
+              </div>
+            )}
+            <BlockCards
+              blocos={produtos}
+              variante="produto"
+              editavel={isAdmin}
+              organizar={isAdmin && organizar}
+              onReorder={async (o) => {
+                try {
+                  await reorderBlocks(ordemCompleta(dados?.produtos ?? [], o))
+                  setAviso(null)
+                  recarregar()
+                } catch (e) {
+                  setAviso(
+                    e instanceof Error
+                      ? e.message
+                      : 'Não foi possível gravar a nova ordem.',
+                  )
+                  throw e
+                }
+              }}
+              subprodutos={subprodutos}
+              resumos={resumos}
+              onEdit={setEditando}
+              onDelete={(b) => void excluir(b)}
+            />
+          </>
         )}
       </div>
     </div>
