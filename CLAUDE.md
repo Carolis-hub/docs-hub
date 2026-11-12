@@ -13,8 +13,8 @@ Interface e documentação em **português do Brasil**.
 - `docs/roadmap.md`: o que falta e o que vem a seguir. **Atualize ao terminar
   uma tarefa** (marque o item e faça commit).
 - `README.md`: como rodar, checklist de configuração dos workflows do GitHub.
-- `scripts/<pasta>/README.md`: cada ferramenta (migrate, doc-sync, alt-texto,
-  backup, cloudinary-limpeza, verificar-links, estrutura, ingestao, assistente)
+- `scripts/<pasta>/README.md`: cada ferramenta (migrate, doc-sync, padronizar,
+  alt-texto, backup, cloudinary-limpeza, verificar-links, estrutura, ingestao, assistente)
   tem o seu.
 
 ## Comandos
@@ -33,6 +33,7 @@ Interface e documentação em **português do Brasil**.
 | `npm run assistente-avaliar -- --casos …`               | Mede a qualidade do assistente com perguntas suas (gasta com a IA; sem `--executar` só confere)    |
 | `npm run alt-texto -- …`                                | Sugere textos alternativos de imagens (IA)                                                         |
 | `npm run doc-sync -- …`                                 | Sugere atualizações de artigos a partir de `.md` de regras                                         |
+| `npm run padronizar -- --produto …`                     | Confere artigos com o padrão de manual (`docs/padrao-de-manual.md`); `--ia` propõe a reescrita     |
 
 Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 `test:rules` devem passar. Há 2 avisos de lint antigos (`useAuth`, `useTheme`).

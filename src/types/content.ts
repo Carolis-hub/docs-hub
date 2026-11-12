@@ -229,7 +229,7 @@ export interface Suggestion {
   automatico: boolean
   status: SuggestionStatus
   origem: {
-    tipo: 'regras-md' | 'alt-texto' | 'ingestao'
+    tipo: 'regras-md' | 'alt-texto' | 'ingestao' | 'padronizacao'
     arquivo: string
     hash: string
     repo?: string

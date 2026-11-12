@@ -123,6 +123,13 @@ export function SuggestionReview() {
           nas duas colunas é igual; confira as descrições na lista abaixo.
         </p>
       )}
+      {sugestao.origem.tipo === 'padronizacao' && (
+        <p className="mt-4 rounded-md bg-bloco p-3 text-sm ">
+          Esta sugestão só reorganiza e reescreve o texto para o padrão de
+          manual de usuário, sem mudar o que o artigo diz. Confira se nenhum
+          fato mudou e resolva os trechos marcados com [Confirmar: …].
+        </p>
+      )}
       {sugestao.automatico && (
         <p className="mt-4 rounded-md bg-bloco p-3 text-sm ">
           Este artigo foi escolhido por busca, não indicado nas regras. Descarte

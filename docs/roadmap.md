@@ -180,6 +180,8 @@ ou mudar de banco antes da Fase 5.
 - [x] Configuração de usuários (Configurações › Administração): lista de usuários, seleção e edição em duas abas — **Geral** (dados cadastrais) e **Permissões** (por módulo: Navegação lateral, Administração, Governança, mais produtos e conteúdo técnico).
 - [x] Permissões da Aside (Manual de produtos, Busca/consulta com IA): controlam a exibição na aside, o acesso às rotas e o botão do assistente (`utils/permissoes.ts`, `RequirePermissao`). Contas sem `permissoes` gravadas continuam com tudo liberado.
 - [x] Rodapé por produto: editor no fim da edição do produto (colunas, itens, modal com Markdown e links); herdado por subprodutos, módulos e artigos; sem configuração, não aparece.
+- [x] Padrão de manual de usuário (`docs/padrao-de-manual.md`) e `npm run padronizar`: conferência local sem custo e, com `--ia`, sugestão de reescrita (nunca publica). Origem `padronizacao` na tela "Sugestões".
+- [ ] Rodar `padronizar --ia` em um artigo real do `dev` e ajustar o padrão e o prompt com o que o time achar da primeira sugestão (a IA não foi exercitada de verdade).
 - [ ] **As permissões são aplicadas na interface, não nas regras do Firestore** (só `role`, `produtosPermitidos` e `verTecnico` valem lá). Para travar também no servidor, as regras e o servidor do assistente precisam ler `users/{uid}.permissoes`.
 - [ ] Reordenar artigos de um bloco (hoje a lista é ordenada por recência, acessos ou título).
 - [ ] Conferir no Firebase `dev` com dados reais (arrastar, abas, rodapé em artigo); `npm run test:rules` não foi rodado (sem Java aqui, e as regras não mudaram).
