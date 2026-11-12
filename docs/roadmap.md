@@ -357,6 +357,10 @@ medição pedir.
       "Esta busca ajudou?" abaixo dos resultados (voto anônimo por termo e
       produto); painel "Buscas que não ajudaram" em Métricas; buscas sem
       resultado agora registradas por produto. **Publicar as regras antes de usar**
+- [x] Busca não fica sem resposta para frases (2026-11-12): se nenhum artigo tem
+      todas as palavras, tenta sem as palavras comuns ("de", "uma") e depois
+      mostra os que têm pelo menos metade delas, com aviso. Saiu do primeiro
+      teste com 20 consultas no `dev` (15 de 20; as 5 falhas eram busca vazia)
 - [ ] Etapa A3, medir de verdade: montar as 30 a 50 consultas reais do suporte
       (com o artigo esperado), rodar o `busca-avaliar` na base real e fazer o
       piloto de duas semanas. O resultado decide as Etapas B e C

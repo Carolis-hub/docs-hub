@@ -71,3 +71,70 @@ describe('busca com plural e singular', () => {
     expect(formasDoRadical('fluxo')).toEqual(['fluxo'])
   })
 })
+
+describe('busca que não deixa a frase sem resposta', () => {
+  const item = (id: string, titulo: string, texto: string): IndexedItem => ({
+    id,
+    titulo,
+    resumo: '',
+    textoPlano: texto,
+    blockId: 'b',
+    publico: 'usuario',
+    productId: 'p',
+  })
+  const motor = criarMotor(
+    [
+      item(
+        'lote',
+        'Como baixar anexos em lote',
+        'Selecione os anexos e baixe.',
+      ),
+      item(
+        'versoes',
+        'Histórico de versões do anexo',
+        'Cada versão fica guardada.',
+      ),
+      item(
+        'idioma',
+        'Como alterar o idioma',
+        'Escolha o idioma nas preferências.',
+      ),
+    ],
+    true,
+  )
+
+  it('com todas as palavras, nada muda e o resultado não é aproximado', () => {
+    const [achado] = motor.buscar('baixar anexos')
+    expect(achado?.item.id).toBe('lote')
+    expect(achado?.parcial).toBeUndefined()
+  })
+
+  it('palavras comuns ("de", "uma") deixam de zerar a busca', () => {
+    const achados = motor.buscar('idioma de uma')
+    expect(achados.map((r) => r.item.id)).toEqual(['idioma'])
+    expect(achados[0]?.parcial).toBeUndefined()
+  })
+
+  it('frase com palavra que o artigo não tem acha pela maior parte das palavras', () => {
+    const achados = motor.buscar('baixar vários anexos de uma vez')
+    expect(achados[0]?.item.id).toBe('lote')
+    expect(achados.every((r) => r.parcial)).toBe(true)
+    expect(
+      motor.buscar('versões anteriores do anexo').map((r) => r.item.id),
+    ).toContain('versoes')
+  })
+
+  it('exige pelo menos metade das palavras: uma só em quatro não basta', () => {
+    expect(motor.buscar('idioma boleto fatura cobrança')).toEqual([])
+  })
+
+  it('uma palavra só, que não existe, continua sem resultado', () => {
+    expect(motor.buscar('boleto')).toEqual([])
+  })
+
+  it('quem pede AND ou OR explicitamente não ganha a segunda tentativa', () => {
+    expect(
+      motor.buscar('baixar vários anexos de uma vez', { combinar: 'AND' }),
+    ).toEqual([])
+  })
+})

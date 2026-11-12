@@ -98,7 +98,9 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
   `conteudo`**: passe-o sempre. Os sinônimos ficam em `blocks/{produto}.sinonimos`
   (um grupo por item, termos separados por vírgula) e o motor os recebe em
   `criarMotor(itens, verTecnico, { sinonimos })`. O índice guarda o radical das
-  palavras (`radical` em `src/utils/search.ts`, só plural).
+  palavras (`radical` em `src/utils/search.ts`, só plural). Sem `combinar`, a
+  busca tenta todas as palavras e depois a maior parte delas (`parcial` no
+  resultado); quem precisa do comportamento estrito passa `combinar: 'AND'`.
 - **Índice de busca tem teto de 1 MiB por documento**: toda gravação de parte
   passa por `caberNoLimite` (`src/utils/searchIndex.ts`), que encurta o texto
   em vez de deixar a publicação falhar.

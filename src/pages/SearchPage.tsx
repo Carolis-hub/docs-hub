@@ -107,26 +107,32 @@ export function SearchPage() {
   const resultados = useMemo(() => {
     if (!dados || !produto) return []
     if (q.trim()) {
-      return dados.motor
-        .buscar(q, filtros)
-        .map((h) => ({ item: h.item, termos: h.termos, secao: h.secao }))
+      return dados.motor.buscar(q, filtros).map((h) => ({
+        item: h.item,
+        termos: h.termos,
+        secao: h.secao,
+        parcial: !!h.parcial,
+      }))
     }
     return temFiltro
       ? dados.motor.listar(filtros).map((item) => ({
           item,
           termos: [] as string[],
           secao: undefined as Secao | undefined,
+          parcial: false,
         }))
       : []
   }, [dados, produto, q, filtros, temFiltro])
 
+  const aproximado = resultados.length > 0 && resultados[0]!.parcial
   const semResultado =
     !!dados && !!produto && (!!q.trim() || temFiltro) && resultados.length === 0
   useEffect(() => {
     // Só a busca sem filtros (além do produto) conta como "sem resultado".
-    if (semResultado && q.trim() && !temFiltro)
+    // Resultado aproximado também conta: nenhum artigo tinha todas as palavras.
+    if ((semResultado || aproximado) && q.trim() && !temFiltro)
       void registrarBuscaSemResultado(q, produto)
-  }, [semResultado, q, temFiltro, produto])
+  }, [semResultado, aproximado, q, temFiltro, produto])
 
   function atualizar(mudancas: Record<string, string>) {
     const novo = new URLSearchParams(params)
@@ -346,11 +352,17 @@ export function SearchPage() {
                 : 'resultado'}
             {q.trim() ? ` para “${q.trim()}”, ordenados por relevância` : ''}
           </p>
+          {aproximado && (
+            <p className="mb-3 text-sm text-suave">
+              Nenhum artigo tem todas as palavras da busca. Estes têm a maior
+              parte delas.
+            </p>
+          )}
           <ul className="space-y-3">
             {resultados.map(({ item, termos, secao }, posicao) => {
               // O primeiro resultado com seção vira a "resposta direta":
               // mostra o trecho do artigo que casou, com mais texto.
-              const direta = posicao === 0 && !!secao
+              const direta = posicao === 0 && !!secao && !aproximado
               return (
                 <li
                   key={item.id}

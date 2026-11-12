@@ -1,7 +1,7 @@
 import MiniSearch from 'minisearch'
 import type { ArticlePublico, CategoriaId } from '../types/content'
 import type { IndexedItem } from '../types/search'
-import { variantesComSinonimos } from './consulta.ts'
+import { limparPergunta, variantesComSinonimos } from './consulta.ts'
 import { formasDoRadical, normalizar, radical } from './search.ts'
 import { melhorSecao, type Secao } from './secoes.ts'
 
@@ -13,7 +13,11 @@ export interface SearchFilters {
   blockIds?: ReadonlySet<string>
   categoria?: CategoriaId
   publico?: ArticlePublico
-  /** Padrão `AND`; `OR` serve para consultas longas (ex.: casar um texto com artigos). */
+  /**
+   * Padrão: todas as palavras (`AND`) e, se nada casar, a maior parte delas.
+   * Informar `AND` ou `OR` desliga essa segunda tentativa; `OR` serve para
+   * consultas longas (ex.: casar um texto com artigos).
+   */
   combinar?: 'AND' | 'OR'
 }
 
@@ -24,6 +28,11 @@ export interface SearchHit {
   termos: string[]
   /** Seção do artigo que melhor responde à busca, quando o índice tem seções. */
   secao?: Secao
+  /**
+   * `true` quando nenhum artigo tinha todas as palavras da busca e este veio
+   * por ter a maior parte delas.
+   */
+  parcial?: boolean
 }
 
 export interface OpcoesDoMotor {
@@ -85,9 +94,9 @@ export function criarMotor(
     },
     buscar(consulta, filtros = {}) {
       if (!consulta.trim()) return []
-      const rodar = (texto: string) =>
+      const rodar = (texto: string, combinar: 'AND' | 'OR') =>
         mini.search(texto, {
-          combineWith: filtros.combinar ?? 'AND',
+          combineWith: combinar,
           filter: (r) => {
             const item = porId.get(r.id as string)
             return !!item && passa(item, filtros)
@@ -97,24 +106,55 @@ export function criarMotor(
         string,
         { score: number; termos: Set<string>; direto: boolean }
       >()
-      const somar = (texto: string, peso: number) => {
-        for (const r of rodar(texto)) {
+      const somar = (
+        resultados: ReturnType<typeof rodar>,
+        peso: number,
+        direto: boolean,
+      ) => {
+        for (const r of resultados) {
           const id = r.id as string
           const atual = achados.get(id) ?? {
             score: 0,
             termos: new Set<string>(),
             direto: false,
           }
-          if (peso === 1) atual.direto = true
+          if (direto) atual.direto = true
           atual.score = Math.max(atual.score, r.score * peso)
           Object.keys(r.match).forEach((t) => atual.termos.add(t))
           achados.set(id, atual)
         }
       }
-      somar(consulta, 1)
+      const combinar = filtros.combinar ?? 'AND'
+      somar(rodar(consulta, combinar), 1, true)
       if (sinonimos.length > 0) {
         for (const variante of variantesComSinonimos(consulta, 6, sinonimos)) {
-          somar(variante, PESO_SINONIMO)
+          somar(rodar(variante, combinar), PESO_SINONIMO, false)
+        }
+      }
+
+      // Quem escreve uma frase ("baixar vários anexos de uma vez") não pode
+      // ficar sem resposta por causa de uma palavra a mais. Se nada casou com
+      // todas as palavras, tenta sem as palavras comuns ("de", "uma") e, por
+      // fim, aceita os artigos que têm a maior parte das que sobraram.
+      let parcial = false
+      if (achados.size === 0 && filtros.combinar === undefined) {
+        const limpa = limparPergunta(consulta)
+        if (normalizar(limpa) !== normalizar(consulta.trim())) {
+          somar(rodar(limpa, 'AND'), 1, true)
+        }
+        const palavras = new Set(
+          limpa.split(/\s+/).map(termoDeBusca).filter(Boolean),
+        )
+        if (achados.size === 0 && palavras.size >= 2) {
+          const minimo = Math.ceil(palavras.size / 2)
+          somar(
+            rodar(limpa, 'OR').filter(
+              (r) => new Set(r.queryTerms).size >= minimo,
+            ),
+            1,
+            true,
+          )
+          parcial = achados.size > 0
         }
       }
       return (
@@ -135,6 +175,7 @@ export function criarMotor(
               score: achado.score,
               termos,
               ...(secao ? { secao } : {}),
+              ...(parcial ? { parcial: true } : {}),
             }
           })
       )

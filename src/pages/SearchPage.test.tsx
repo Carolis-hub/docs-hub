@@ -362,6 +362,18 @@ describe('SearchPage', () => {
     expect(registrarBuscaSemResultado).toHaveBeenCalledWith('inexistente', 'p1')
   })
 
+  it('frase sem artigo com todas as palavras: mostra os mais próximos, avisa e registra', () => {
+    abrir('/busca?produto=p1&q=configurar%20boleto')
+    expect(titulos()).toEqual(['Configurar envio'])
+    expect(
+      screen.getByText(/Nenhum artigo tem todas as palavras da busca/),
+    ).toBeInTheDocument()
+    expect(registrarBuscaSemResultado).toHaveBeenCalledWith(
+      'configurar boleto',
+      'p1',
+    )
+  })
+
   it('avisa quando os filtros não encontram nada', () => {
     abrir('/busca?produto=p2&categoria=processos')
     expect(

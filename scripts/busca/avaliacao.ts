@@ -52,6 +52,8 @@ export interface ResultadoBusca {
   /** Os primeiros resultados, para entender o que a busca trouxe no lugar. */
   primeiros: Array<{ id: string; titulo: string; secao?: string }>
   totalDeResultados: number
+  /** Nenhum artigo tinha todas as palavras: os resultados vieram por aproximação. */
+  aproximado?: boolean
   /** Preenchido quando o caso nem pôde rodar (produto não encontrado, por exemplo). */
   erro?: string
 }
@@ -78,6 +80,7 @@ export function avaliarCaso(
       ...(h.secao ? { secao: h.secao.titulo } : {}),
     })),
     totalDeResultados: achados.length,
+    ...(achados[0]?.parcial ? { aproximado: true } : {}),
   }
 }
 
@@ -94,6 +97,8 @@ export interface ResumoBusca {
   taxaEmPrimeiro: number
   /** Casos em que a busca não trouxe nada. */
   semResultado: number
+  /** Casos achados só porque a busca aceitou parte das palavras. */
+  achadosPorAproximacao: number
   comErro: number
 }
 
@@ -108,6 +113,8 @@ export function resumirBusca(resultados: ResultadoBusca[]): ResumoBusca {
     emPrimeiro,
     taxaEmPrimeiro: total ? emPrimeiro / total : 0,
     semResultado: resultados.filter((r) => !r.erro && r.totalDeResultados === 0)
+      .length,
+    achadosPorAproximacao: resultados.filter((r) => achou(r) && r.aproximado)
       .length,
     comErro: resultados.filter((r) => r.erro).length,
   }
@@ -125,6 +132,7 @@ export function relatorioDaBusca(resultados: ResultadoBusca[]): string {
     `- Artigo certo entre os ${POSICOES} primeiros: ${r.achados} (${pct(r.taxa)})`,
     `- Artigo certo em primeiro lugar: ${r.emPrimeiro} (${pct(r.taxaEmPrimeiro)})`,
     `- Buscas sem nenhum resultado: ${r.semResultado}`,
+    `- Achados só por aproximação (nenhum artigo tinha todas as palavras): ${r.achadosPorAproximacao}`,
     ...(r.comErro > 0 ? [`- Casos que não puderam rodar: ${r.comErro}`] : []),
     '',
   ]

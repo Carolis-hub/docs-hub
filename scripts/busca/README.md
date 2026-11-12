@@ -37,6 +37,9 @@ do produto) e mostra onde o artigo ficou.
 - Quantos casos tiveram o artigo certo **entre os 5 primeiros** (a taxa que o
   comando compara com `--minimo`, 85% por padrão) e quantos **em primeiro lugar**.
 - Quantas buscas não trouxeram nada.
+- Quantos casos só foram achados **por aproximação**: nenhum artigo tinha
+  todas as palavras e a busca mostrou os que tinham a maior parte. Muitos
+  casos assim indicam palavras que valem um sinônimo.
 - Para cada caso que falhou: o que veio no lugar, com a seção que a busca
   escolheu.
 
