@@ -329,29 +329,32 @@ e confere o login de admin).
 ### Consulta inteligente à KB (estudo de nov/2026)
 
 Estudo completo em `docs/estudo-consulta-kb.md` (diagnóstico, alternativas,
-arquitetura, MVP e riscos). Resumo: manter a busca por palavras como padrão e a
-pergunta com IA sob demanda, as duas presas a um produto; embeddings só se a
+comparativo de custos, arquitetura, MVP e riscos). Com o custo como critério
+principal, a ordem é: começar sem IA e sem gasto (busca por palavras
+aprimorada, presa a um produto); busca semântica e resposta por IA só se a
 medição pedir.
 
 - [x] Estudo técnico e proposta de arquitetura (2026-11-12)
-- [ ] Fase 0, medir: conjunto de 30 a 50 perguntas reais e primeira execução
-      do `assistente-avaliar` com chave real (latência e custo por etapa)
-- [ ] Fase 1, base correta: produto obrigatório na busca e no assistente;
-      separar o conteúdo técnico no índice de busca (hoje o texto técnico chega
-      ao navegador de quem não tem `verTecnico`); recuperação por trecho
-- [ ] Fase 2, produção: plano Blaze, assistente no Cloud Run, cache do índice
-      no servidor, resposta transmitida aos poucos, modelo por etapa
-- [ ] Fase 3, experiência: caixa única, glossário de sinônimos por produto,
-      relatório de lacunas
-- [ ] Fase 4, busca híbrida (vetores): só se a avaliação mostrar falha de
-      recuperação por vocabulário
-- [ ] Fase 5, evolução: contexto do artigo aberto, resumo, `.docx` e `.pdf`
+- [x] Revisão do estudo com prioridade de custo: alternativas gratuitas,
+      modelos locais e comparativo (2026-11-12)
+- [ ] Etapa A1, base correta: produto obrigatório na busca; separar o conteúdo
+      técnico no índice de busca (hoje o texto técnico chega ao navegador de
+      quem não tem `verTecnico`); carregar só o índice do produto em contexto
+- [ ] Etapa A2, busca que responde: artigos divididos em trechos, resultado
+      aponta para a seção, "resposta direta", glossário de sinônimos por produto
+- [ ] Etapa A3, medir: conjunto de 30 a 50 consultas reais, teste da taxa de
+      acerto da busca (sem IA), "isto ajudou?", piloto com o suporte
+- [ ] Etapa B, semântica no navegador (modelo de código aberto, sem servidor):
+      só se a A3 mostrar falha por vocabulário
+- [ ] Etapa C, resposta por IA: modelo local em máquina que a empresa já tenha
+      ou API com teto baixo; só se a A3 mostrar necessidade
+- [ ] Etapa D, evolução: contexto do artigo aberto, resumo, `.docx` e `.pdf`
 
 ### Backlog (do `PLAN.md`)
 
 - [ ] Versões por versão do produto
 - [ ] Botão "Este artigo foi útil?"
-- [ ] Busca semântica (ver Fase 4 de "Consulta inteligente à KB")
+- [ ] Busca semântica (ver Etapa B de "Consulta inteligente à KB")
 - [ ] Exportação em PDF
 
 ## Como atualizar este arquivo

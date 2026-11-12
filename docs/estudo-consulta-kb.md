@@ -11,22 +11,30 @@ resposta é hipótese até a avaliação rodar.
 
 ## Resumo da recomendação
 
-1. **Não trocar de arquitetura.** O sistema já tem as duas peças certas: busca
-   por palavras no navegador e um assistente que responde só com base nos
-   artigos, com citação. Falta ajustá-las, medi-las e colocá-las em produção.
-2. **Duas formas de consulta, com papéis diferentes.** A busca por palavras é
-   o caminho padrão (instantânea, sem custo, sem risco de invenção). A
-   pergunta em linguagem natural é o segundo passo, para quando a pessoa não
-   sabe o termo ou quer um passo a passo montado.
-3. **Produto obrigatório na consulta.** Hoje o produto é um filtro opcional;
-   deve passar a ser o contexto da consulta, herdado da tela em que a pessoa
-   está.
-4. **Recuperar por trecho, não por artigo inteiro.** É a mudança que mais
-   deve melhorar a resposta e não depende de embeddings.
-5. **Embeddings e banco vetorial: só se a medição pedir.** Com o volume atual
-   (57 artigos) e o previsto (centenas a poucos milhares por produto), não há
-   evidência de que sejam necessários. O gatilho e o caminho de adoção estão
-   descritos abaixo, e a troca fica isolada em um arquivo.
+**Revisão de 12/11/2026:** o custo passou a ser o critério principal. A
+recomendação foi reordenada para começar sem IA e sem gasto, e a IA virou
+evolução condicional. A comparação de custos está na Seção 2-A.
+
+1. **Começar sem IA, com custo zero.** Melhorar a busca por palavras que já
+   existe (código aberto, roda no navegador, cabe no plano gratuito do
+   Firebase): produto obrigatório, resultado por trecho do artigo, sinônimos
+   por produto e o trecho mais relevante mostrado como "resposta direta". Não
+   exige servidor, plano pago nem serviço de IA.
+2. **Não trocar de arquitetura nem adotar banco novo.** No volume previsto
+   (centenas a poucos milhares de artigos por produto), mecanismos de busca
+   com servidor (Meilisearch, Typesense, OpenSearch, Postgres) e bancos
+   vetoriais não trazem ganho que justifique mantê-los.
+3. **Busca semântica só se a medição pedir, e também sem custo variável:** um
+   modelo de embeddings de código aberto rodando no navegador de cada pessoa.
+4. **IA que escreve a resposta fica como evolução futura.** O assistente já
+   está implementado e continua desligado em produção. Se um dia for ligado, a
+   ordem de preferência por custo é: modelo local em máquina que a empresa já
+   tenha; depois API paga com teto fixo e baixo; comprar equipamento só para
+   isso não se justifica.
+5. **"Modelo local" não é sinônimo de gratuito.** O programa é gratuito, mas
+   exige máquina (de preferência com placa de vídeo), energia e alguém que
+   cuide. Para volume baixo, uma API com o modelo mais barato pode custar
+   menos que a energia de um servidor ligado o mês inteiro.
 
 ## 1. Diagnóstico
 
@@ -109,44 +117,141 @@ estudo e deve ser corrigido antes de qualquer conteúdo técnico real entrar.
 - Eles trazem um fornecedor novo, um servidor obrigatório até para a busca
   comum e um passo de reindexação a cada publicação.
 
-Isso é uma hipótese a confirmar com a avaliação da Fase 1, não uma certeza.
+Isso é uma hipótese a confirmar com a medição da Etapa A3, não uma certeza.
+
+## 2-A. Custo: alternativas gratuitas e comparativo
+
+Os valores em reais e as velocidades de modelos locais são **ordens de
+grandeza para orientar a decisão**, não cotações nem medições. Antes de
+decidir por qualquer opção com equipamento, medir na máquina real.
+
+### Dá para fazer sem serviço pago de IA?
+
+**Sim, em três níveis**, do mais simples ao mais complexo:
+
+| Nível                                    | O que entrega                                                                                         | IA paga? | Servidor?                |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------- | -------- | ------------------------ |
+| **1. Busca por palavras aprimorada**     | Artigos e trechos do produto escolhido, com destaque, sinônimos e a seção mais relevante em evidência | Não      | Não                      |
+| **2. Busca semântica no navegador**      | Acha por significado mesmo quando a pessoa usa outras palavras                                        | Não      | Não                      |
+| **3. Resposta escrita por modelo local** | Texto em linguagem natural com citações, gerado por modelo de código aberto                           | Não      | Sim (máquina da empresa) |
+
+Os níveis 1 e 2 atendem o requisito central (consulta relevante, por produto,
+para técnico e leigo) sem custo. O nível 3 só acrescenta a redação da resposta.
+
+### Ferramentas gratuitas e de código aberto avaliadas
+
+| Necessidade                  | Opção                                                                                                 | Avaliação para este cenário                                                                                                                                                                                   |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Busca por palavras           | **MiniSearch** (já em uso), Lunr, FlexSearch, Orama                                                   | MiniSearch atende e já está integrado. Trocar não traz ganho                                                                                                                                                  |
+| Busca com servidor           | Meilisearch, Typesense, OpenSearch, busca textual do Postgres                                         | Gratuitos, mas exigem máquina ligada, atualização, cópia de segurança e uma segunda implementação do controle de acesso. Fazem sentido a partir de dezenas de milhares de artigos. **Não recomendados agora** |
+| Embeddings (semântica)       | Modelos multilíngues pequenos de código aberto, rodando no navegador (Transformers.js) ou em servidor | Viável sem servidor. A qualidade em português dos modelos pequenos precisa ser medida com as perguntas reais antes de adotar                                                                                  |
+| Banco vetorial               | Qdrant, Chroma, pgvector, ou vetores em memória                                                       | Para poucos milhares de trechos, comparar vetores em memória leva milissegundos. Banco vetorial é complexidade sem retorno aqui                                                                               |
+| Modelo que escreve respostas | Ollama ou llama.cpp com modelos abertos (famílias Llama, Qwen, Gemma, Mistral, Phi)                   | Funciona e não tem custo por pergunta, mas depende de equipamento (ver abaixo). Modelos pequenos erram e inventam mais que os grandes, sobretudo em português                                                 |
+| Hospedagem do site e dados   | Firebase no plano gratuito (já em uso)                                                                | Os níveis 1 e 2 cabem nele. Estimativa de `docs/cotas-spark.md`: o limite de leituras aparece perto de 500 leitores por dia                                                                                   |
+
+### O que um modelo local realmente exige
+
+| Equipamento                                          | Comportamento esperado (ordem de grandeza)                                                                                         | Serve para                       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| Servidor ou computador comum, **sem placa de vídeo** | Só modelos pequenos. Ler os trechos e escrever a resposta pode levar de dezenas de segundos a minutos; atende uma pergunta por vez | Teste interno com poucas pessoas |
+| Máquina **com placa de vídeo** (12 a 24 GB)          | Resposta em poucos segundos com modelos médios; algumas perguntas ao mesmo tempo                                                   | Uso real por dezenas de pessoas  |
+| Computador de cada usuário                           | Inviável como padrão: exige baixar gigabytes e máquina forte em cada mesa                                                          | Não recomendado                  |
+
+Para o nível 2 (só embeddings no navegador) o peso é bem menor: o modelo tem
+dezenas a pouco mais de cem megabytes, baixados uma vez e guardados pelo
+navegador, e vetorizar uma pergunta leva frações de segundo a poucos segundos
+num computador comum.
+
+### Comparativo de custos
+
+Esforço em semanas de uma pessoa desenvolvedora, estimado pelo que já existe
+no código. Câmbio e tarifas variam: tratar os valores como faixas.
+
+| Alternativa                                                            | Implantação                                                                            | Operação mensal                                                | Cresce com o uso?                                   | Custos ocultos e limites                                                                                                                                                                     |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A. Busca por palavras aprimorada** (nível 1)                         | 2 a 4 semanas                                                                          | **Zero**                                                       | Não (roda no navegador de cada pessoa)              | Manter o glossário de sinônimos por produto; não entende perguntas longas; cota de leituras do plano gratuito com muitos leitores                                                            |
+| **B. A + semântica no navegador** (nível 2)                            | Mais 3 a 5 semanas                                                                     | **Zero**                                                       | Não                                                 | Download do modelo na primeira consulta; lento em máquinas fracas; reindexar ao trocar de modelo; índice maior a baixar; qualidade em português a medir                                      |
+| **C. Mecanismo de busca com servidor** (Meilisearch e similares)       | 3 a 5 semanas                                                                          | Zero se houver máquina da empresa; senão, hospedagem           | Pouco                                               | Operar um serviço (atualização, cópia de segurança, disponibilidade); segunda cópia do controle de acesso; sem ganho no volume atual                                                         |
+| **D. Resposta por modelo local, máquina existente sem placa de vídeo** | 2 a 3 semanas (adaptador do provedor e instalação)                                     | Energia da máquina (dezenas de reais)                          | Não em dinheiro; **sim em fila de espera**          | Lento; uma pergunta por vez; qualidade inferior; acesso só pela rede da empresa ou VPN; precisa de certificado HTTPS interno; alguém para cuidar                                             |
+| **E. Resposta por modelo local, máquina com placa de vídeo**           | 2 a 3 semanas, mais o equipamento se não existir (dezena de milhares de reais ou mais) | Energia (ordem de R$ 100 a 300 ligada o mês todo) e manutenção | Não, até o limite da máquina                        | Compra e depreciação; ponto único de falha; atualização de modelos; mesma questão de rede e certificado; qualidade abaixo dos modelos pagos de ponta                                         |
+| **F. API paga, modelo mais barato, com teto** (Claude Haiku 5.5)       | 1 a 2 semanas (já implementado; falta hospedar)                                        | Cerca de US$ 0,002 por pergunta: US$ 2 por mil perguntas       | **Sim**, mas limitado pelo teto diário já existente | Depende de fornecedor externo e de cartão internacional; variação do dólar; as perguntas saem da empresa; precisa de um lugar para o servidor (máquina da empresa ou plano pago do Firebase) |
+| **G. API paga, modelo de ponta** (Claude Opus 5.5)                     | Igual a F                                                                              | Cerca de US$ 0,06 por pergunta: US$ 60 por mil                 | **Sim**                                             | O mesmo de F, com custo 30 vezes maior                                                                                                                                                       |
+
+Leituras do quadro:
+
+- **A e B são as únicas alternativas de custo zero de verdade**, inclusive
+  com muitos usuários, porque o processamento fica na máquina de quem busca.
+- **D e E não têm custo por pergunta, mas não são gratuitas.** Só valem a
+  pena se a empresa já tiver a máquina ociosa. Comprar equipamento para isso
+  perde para a opção F em qualquer volume plausível deste projeto: mil
+  perguntas por mês na opção F custam cerca de US$ 2.
+- **O servidor do assistente (D, E, F ou G) precisa ficar em algum lugar.**
+  Uma máquina da empresa evita o plano pago do Firebase, mas traz a exigência
+  de rede interna e certificado.
+- **O esforço de desenvolvimento é o maior custo de todas as opções.** Por
+  isso a ordem recomendada começa pelo que reaproveita mais código.
+
+### Limitações de ficar só nas alternativas gratuitas
+
+- Sem IA generativa, a pessoa recebe **trechos do artigo, não uma resposta
+  redigida**. Para perguntas que juntam informações de vários artigos, ela
+  precisa ler mais de um resultado.
+- A busca por palavras depende do **glossário de sinônimos**, que é trabalho
+  de curadoria contínuo de quem conhece cada produto.
+- A semântica no navegador tem **qualidade limitada pelo tamanho do modelo**
+  e pesa em computadores antigos.
+- O plano gratuito do Firebase **tem teto diário**; ao passar dele o sistema
+  para de responder até o dia seguinte. Reduzir leituras (índice só do
+  produto em contexto) adia esse ponto.
 
 ## 3. Recomendação
 
-**Busca por palavras como padrão e pergunta com IA sob demanda, as duas
-presas a um produto, com recuperação por trecho; busca híbrida como evolução
-condicionada à medição.**
+**Etapa A agora: busca por palavras aprimorada, presa a um produto, sem IA e
+sem custo. Etapas B (semântica no navegador) e C (resposta por IA) só se a
+medição mostrar que a etapa anterior não basta.**
 
 Justificativa:
 
-- **Atende os dois públicos.** O técnico resolve na busca; o leigo, na
-  pergunta. Oferecer a busca primeiro evita gastar IA com o que um título
-  resolve.
-- **Escala onde precisa.** A busca roda na máquina de cada pessoa: mil
-  usuários simultâneos não custam nada ao servidor. Só as perguntas com IA
-  passam pelo servidor, e elas têm cota.
-- **Confiável.** A busca não inventa. A IA só recebe artigos publicados e
-  permitidos, é instruída a recusar quando não acha e tem as citações
-  conferidas.
-- **Evolui sem refazer.** A recuperação está isolada em
-  `scripts/assistente/recuperar.ts` e a fusão por posição já aceita uma
-  segunda lista. Acrescentar vetores é somar uma fonte de candidatos, não
-  trocar a arquitetura.
+- **É a alternativa mais simples que atende o requisito.** A necessidade
+  declarada é consulta relevante e segmentada por produto para técnicos e
+  leigos. Produto obrigatório, resultado por trecho e sinônimos atacam isso
+  diretamente. A IA melhora a forma da resposta, não a segmentação.
+- **Custo zero de operação e sem custo variável.** Tudo roda no navegador,
+  sobre bibliotecas de código aberto já usadas no projeto.
+- **Escala sem servidor.** Mil pessoas buscando ao mesmo tempo não custam
+  nada além das leituras do índice.
+- **Sem risco de resposta inventada.** O que aparece é o texto do artigo.
+- **Não descarta nada.** O assistente de IA já está no código. A divisão em
+  trechos e o produto obrigatório, feitos na Etapa A, são exatamente a base
+  que as Etapas B e C precisam. Nenhum trabalho é perdido se a IA entrar
+  depois.
 
-**Critério para adotar a busca híbrida (Fase 4):** depois da divisão em
-trechos, se mais de cerca de 15% das perguntas do conjunto de avaliação
-falharem porque a fonte esperada não ficou entre os candidatos, e a causa for
-vocabulário (não conteúdo ausente), vale implementar. O número é um ponto de
-partida a calibrar com o time.
+**Critérios para avançar** (pontos de partida, a calibrar com o time):
 
-**Modelo de IA:** a escolha deve sair da avaliação, não de preferência. O
-padrão do código é o Claude Opus 5.5 nas três etapas. As duas etapas de busca
-(reformular e escolher) são tarefas simples e são as candidatas naturais a um
-modelo menor (`ASSISTENTE_MODELO_BUSCA`, já existe). Para a etapa de resposta,
-rodar o mesmo conjunto com Opus 5.5, Sonnet 5.5 e Haiku 5.5 e decidir pelo mais
-barato que mantiver a taxa de acerto e de recusa correta.
+| De → para | Avançar se                                                                                                                                                                                 |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A → B     | Depois de sinônimos e trechos, mais de cerca de 15% das consultas do conjunto de teste não trouxerem o artigo certo entre os 5 primeiros, e a causa for vocabulário (não conteúdo ausente) |
+| A/B → C   | A busca acha o artigo certo, mas as pessoas continuam abrindo chamado sobre o que está documentado, ou o piloto pedir resposta redigida; **e** houver máquina ou orçamento definido        |
+
+**Se a Etapa C for ligada, ordem de preferência por custo:**
+
+1. Modelo local em máquina **que a empresa já tenha** com placa de vídeo.
+2. API paga com o modelo mais barato e teto diário fixo (o controle já
+   existe; com teto de US$ 1 por dia o gasto máximo é de cerca de US$ 30 por
+   mês).
+3. Modelo local em máquina sem placa de vídeo: só para teste interno.
+4. Comprar equipamento: não recomendado para este volume.
+
+Em qualquer caso, a escolha do modelo deve ser confirmada com o mesmo conjunto
+de perguntas (`assistente-avaliar`), comparando taxa de acerto e de recusa
+correta. Um modelo que inventa passos sai mais caro que nenhum modelo.
 
 ## 4. Arquitetura proposta
+
+**Na Etapa A só existe a metade de cima do desenho (o navegador):** não há
+servidor nem IA. O servidor do assistente e tudo o que está abaixo dele
+descrevem a Etapa C e só entram se ela for aprovada. Na Etapa A, a divisão em
+trechos é gravada no próprio índice que o navegador baixa.
 
 ```
  Navegador (React)
@@ -178,16 +283,16 @@ barato que mantiver a taxa de acerto e de recusa correta.
 
 ### Componentes e mudanças
 
-| Componente            | Mudança                                                                                                                                                                                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Contexto de produto   | Busca e assistente abrem já no produto da tela atual; fora de um produto, a pessoa escolhe antes de consultar (quem só tem um produto permitido nem vê a escolha). Subproduto e módulo continuam como refinamento opcional                                  |
-| Índice de trechos     | Ao publicar, o artigo é dividido pelos títulos (1 a 3) em trechos de até cerca de 2.000 caracteres, cada um com o caminho ("Artigo › Seção"). Gravado por produto, fora do índice que o navegador baixa. Feito dentro de `transitar()`, como o índice atual |
-| Separação por público | Trechos e itens de artigos técnicos em documentos separados, com regra que exige `verTecnico` (corrige L8)                                                                                                                                                  |
-| Cache no servidor     | O índice de cada produto fica em memória; a cada pergunta lê-se só um carimbo de versão (1 leitura) para saber se mudou                                                                                                                                     |
-| Resposta transmitida  | O texto aparece enquanto é escrito. Exige trocar a saída estruturada da etapa de resposta por texto com marcadores `[n]` (a validação das citações continua igual)                                                                                          |
-| Sinônimos             | Saem do código e viram um glossário por produto, editável por admin, usado também na busca comum                                                                                                                                                            |
-| Hospedagem            | Cloud Run no mesmo projeto do Firebase (região `southamerica-east1`), com a chave da Anthropic no gerenciador de segredos. Exige o plano Blaze. O servidor já não guarda estado, então pode ter várias instâncias                                           |
-| Evolução (vetores)    | Se o critério da Seção 3 for atingido: um vetor por trecho, gravado junto do trecho; a consulta por vetores entra como mais uma lista na fusão que já existe                                                                                                |
+| Componente              | Mudança                                                                                                                                                                                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contexto de produto     | Busca e assistente abrem já no produto da tela atual; fora de um produto, a pessoa escolhe antes de consultar (quem só tem um produto permitido nem vê a escolha). Subproduto e módulo continuam como refinamento opcional                                  |
+| Índice de trechos       | Ao publicar, o artigo é dividido pelos títulos (1 a 3) em trechos de até cerca de 2.000 caracteres, cada um com o caminho ("Artigo › Seção"). Gravado por produto, fora do índice que o navegador baixa. Feito dentro de `transitar()`, como o índice atual |
+| Separação por público   | Trechos e itens de artigos técnicos em documentos separados, com regra que exige `verTecnico` (corrige L8)                                                                                                                                                  |
+| Cache no servidor       | O índice de cada produto fica em memória; a cada pergunta lê-se só um carimbo de versão (1 leitura) para saber se mudou                                                                                                                                     |
+| Resposta transmitida    | O texto aparece enquanto é escrito. Exige trocar a saída estruturada da etapa de resposta por texto com marcadores `[n]` (a validação das citações continua igual)                                                                                          |
+| Sinônimos               | Saem do código e viram um glossário por produto, editável por admin, usado também na busca comum                                                                                                                                                            |
+| Hospedagem (só Etapa C) | Primeira opção: máquina que a empresa já tenha, acessível pela rede interna com HTTPS (evita o plano pago do Firebase). Alternativa: Cloud Run no plano Blaze, pago por uso. O servidor não guarda estado, então pode ter várias instâncias                 |
+| Evolução (vetores)      | Se o critério da Seção 3 for atingido: um vetor por trecho, gravado junto do trecho; a consulta por vetores entra como mais uma lista na fusão que já existe                                                                                                |
 
 ### Segmentação por produto e hierarquia
 
@@ -231,7 +336,10 @@ Pontos de concorrência a observar:
 - **Memória do servidor.** O índice em memória cresce com o número de
   produtos; descartar os menos usados.
 
-### Custos (estimativas)
+### Custos da resposta por IA paga (estimativas; só Etapa C)
+
+O comparativo entre todas as alternativas, incluindo as gratuitas, está na
+Seção 2-A. Os valores abaixo detalham só a opção de API paga.
 
 Preços por milhão de tokens (entrada / saída): Opus 5.5 US$ 4 / 20; Sonnet 5.5
 US$ 2 / 10; Haiku 5.5 US$ 0,10 / 0,50. Uma resposta consome cerca de 10 mil
@@ -279,6 +387,10 @@ no Opus 5.5 significa perto de 150 perguntas por dia para todos.
 
 ## 5. Fluxo de utilização
 
+Na Etapa A o fluxo vai do passo 1 ao 3: o passo 3 já mostra o trecho mais
+relevante em destaque, com link para a seção, e um "isto ajudou?". Os passos 4
+a 8 descrevem o assistente e só valem se a Etapa C for ligada.
+
 1. **Contexto.** A pessoa está na tela de um produto, subproduto, módulo ou
    artigo: a consulta já vale para aquele produto, mostrado como etiqueta
    ("Buscando em: SmartShare 4") que pode ser trocada. Na Home, a caixa de
@@ -300,53 +412,61 @@ no Opus 5.5 significa perto de 150 perguntas por dia para todos.
 
 ## 6. Roadmap
 
-| Fase                | Entregáveis                                                                                                                                                                                                    | Depende de                                                   | Prioridade                          |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------- |
-| **0. Medir**        | Conjunto de 30 a 50 perguntas reais do suporte (com cerca de 20% sem resposta na documentação); primeira execução do `assistente-avaliar` com chave real; latência e custo medidos por etapa                   | Chave da Anthropic; artigos conceituais e imagens importados | Alta: desbloqueia todas as decisões |
-| **1. Base correta** | Produto obrigatório na busca e no assistente; separação do conteúdo técnico no índice (L8); recuperação por trecho com link para a seção; nova rodada de avaliação para comparar                               | Fase 0                                                       | Alta                                |
-| **2. Produção**     | Projeto de produção e plano Blaze; assistente no Cloud Run; cache do índice no servidor; resposta transmitida aos poucos; modelo por etapa definido pela avaliação; mensagens de limite e de indisponibilidade | Fase 1; decisão de orçamento                                 | Alta                                |
-| **3. Experiência**  | Caixa única (busca que oferece a pergunta); glossário de sinônimos por produto; relatório de lacunas juntando buscas sem resultado e perguntas sem resposta; data de revisão nas fontes                        | Fase 2                                                       | Média                               |
-| **4. Híbrida**      | Vetores por trecho e segunda lista na fusão; escolha do fornecedor de embeddings; comando de reindexação. **Só se o critério da Seção 3 for atingido**                                                         | Fases 1 e 2; medição que justifique                          | Condicional                         |
-| **5. Evolução**     | Perguntas seguindo o contexto do artigo aberto; resumo de artigo; ingestão de `.docx` e `.pdf`; citação com o trecho exato destacado no artigo                                                                 | Uso real                                                     | Baixa                               |
+| Etapa                         | Entregáveis                                                                                                                                                                                                                                   | Depende de                                             | Custo de operação        | Prioridade         |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------ | ------------------ |
+| **A1. Base correta**          | Produto obrigatório na busca (herdado da tela); separação do conteúdo técnico no índice (L8); carregar só o índice do produto em contexto                                                                                                     | Nada                                                   | Zero                     | Alta               |
+| **A2. Busca que responde**    | Divisão dos artigos em trechos por título; resultado aponta para a seção; o trecho mais relevante aparece em destaque como "resposta direta"; glossário de sinônimos por produto, editável por admin; redução de palavras à raiz em português | A1                                                     | Zero                     | Alta               |
+| **A3. Medir**                 | Conjunto de 30 a 50 consultas reais do suporte com o artigo esperado; teste automático da taxa de acerto da busca (sem IA, sem gasto); "isto ajudou?" nos resultados; relatório das buscas sem resultado                                      | A2; artigos conceituais e imagens importados           | Zero                     | Alta: decide B e C |
+| **B. Semântica no navegador** | Vetor por trecho, gerado na publicação; modelo de embeddings de código aberto carregado sob demanda; fusão com a busca por palavras (a fusão por posição já existe no código)                                                                 | A3 indicar falha por vocabulário                       | Zero                     | Condicional        |
+| **C. Resposta por IA**        | Adaptador do provedor para modelo local (o roadmap já previa outro fornecedor); servidor do assistente em máquina da empresa; cache do índice; avaliação com `assistente-avaliar`; resposta transmitida aos poucos                            | A3 indicar necessidade; máquina existente ou orçamento | Energia, ou API com teto | Condicional        |
+| **D. Evolução**               | Perguntas seguindo o contexto do artigo aberto; resumo de artigo; ingestão de `.docx` e `.pdf`                                                                                                                                                | Uso real                                               | Conforme a etapa C       | Baixa              |
 
 ## 7. MVP
 
-**Objetivo:** provar, com um produto e um grupo pequeno, que a consulta por
-produto responde bem e a um custo aceitável, antes de investir em produção.
+**Objetivo:** provar, sem gastar, que a busca por produto resolve a maior
+parte das consultas, e descobrir com dados se algo mais é necessário.
 
-Dentro do MVP:
+Dentro do MVP (etapas A1 a A3, **custo de operação zero**):
 
 - Um produto (SmartShare 4), com os artigos conceituais e as imagens importados.
-- Produto obrigatório na busca e no assistente.
-- Recuperação por trecho.
-- Conjunto de avaliação e duas execuções (antes e depois dos trechos).
-- Assistente hospedado de forma simples para 5 a 10 pessoas do suporte, por
-  duas semanas, com a cota e o teto atuais.
+- Produto obrigatório na busca.
+- Resultado por trecho, com a seção mais relevante em destaque.
+- Glossário de sinônimos do produto.
+- Correção do acesso ao conteúdo técnico no índice (L8).
+- Conjunto de consultas reais e medição da taxa de acerto.
+- Piloto de duas semanas com 5 a 10 pessoas do suporte.
 
-Fora do MVP: embeddings, banco vetorial, caixa única, glossário editável,
-resposta transmitida aos poucos, vários produtos, ingestão de `.docx` e `.pdf`.
+Fora do MVP: qualquer IA (generativa ou embeddings), servidor, plano pago do
+Firebase, banco vetorial, mecanismo de busca com servidor, vários produtos,
+ingestão de `.docx` e `.pdf`.
 
 Critérios de aprovação (pontos de partida, a ajustar com o time):
 
-| Medida                                           | Meta                         |
-| ------------------------------------------------ | ---------------------------- |
-| Casos aprovados no conjunto de avaliação         | 80% ou mais                  |
-| Perguntas sem resposta na documentação recusadas | 95% ou mais                  |
-| Respostas com citação apontando para fonte real  | 100%                         |
-| Avaliações "útil" no piloto                      | 70% ou mais                  |
-| Custo médio por pergunta                         | Dentro do orçamento definido |
-| Tempo até a resposta completa (mediana)          | Medir; referência de 15 s    |
+| Medida                                                        | Meta                                                     |
+| ------------------------------------------------------------- | -------------------------------------------------------- |
+| Consultas do conjunto com o artigo certo entre os 5 primeiros | 85% ou mais                                              |
+| Consultas com o artigo certo em primeiro lugar                | 60% ou mais                                              |
+| "Isto ajudou?" positivo no piloto                             | 70% ou mais                                              |
+| Buscas sem nenhum resultado no piloto                         | Menos de 10%                                             |
+| Tempo de resposta da busca                                    | Instantâneo (menos de 100 ms depois do índice carregado) |
+| Custo de operação                                             | Zero                                                     |
 
-Se a taxa de acerto ficar abaixo da meta por falha de recuperação causada por
-vocabulário, a Fase 4 sobe de prioridade. Se ficar abaixo por falta de
-conteúdo, o trabalho é de documentação, não de tecnologia.
+Como ler o resultado:
+
+- **Metas atingidas:** a Etapa A basta por enquanto; B e C ficam no roadmap.
+- **Falha por vocabulário** (o artigo existe, mas a pessoa usou outras
+  palavras e o glossário não deu conta): avaliar a Etapa B.
+- **Falha por conteúdo** (não há artigo que responda): o trabalho é de
+  documentação, não de tecnologia.
+- **A busca acha, mas as pessoas pedem a resposta pronta:** avaliar a Etapa C
+  pela ordem de custo da Seção 3.
 
 ## 8. Riscos e pontos de atenção
 
 | Risco                                                                                               | Mitigação                                                                                                                                                        |
 | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Conteúdo é o gargalo, não a tecnologia.** Sem artigo conceitual, a IA só pode dizer que não achou | Relatório de lacunas alimenta a pauta de documentação; importar o que falta antes do piloto                                                                      |
-| Nada da IA foi exercitado com chave real                                                            | Fase 0 antes de qualquer outra decisão                                                                                                                           |
+| Nada da IA foi exercitado com chave real                                                            | Só importa se a Etapa C for aprovada; nesse caso, avaliar antes de liberar                                                                                       |
 | Imagens não migradas (211 marcadores) e tabelas achatadas nos 57 artigos                            | Reimportar com imagens antes do piloto; a IA não lê imagem, então passos que só existem em captura de tela ficam invisíveis para ela (o texto alternativo ajuda) |
 | Divisão em trechos ruim (corta um passo a passo ao meio)                                            | Dividir por título, nunca no meio de lista ou tabela; incluir o título do artigo e da seção em cada trecho; conferir com a avaliação                             |
 | Vazamento de conteúdo técnico (L8) ou entre produtos                                                | Corrigir antes de conteúdo técnico real; testes de regras e de `carregarFontes` para as coleções novas                                                           |
@@ -354,14 +474,21 @@ conteúdo, o trabalho é de documentação, não de tecnologia.
 | Dependência de um fornecedor de IA                                                                  | A busca funciona sem IA; a interface do provedor já é isolada (`ia.ts`); modelo é configuração                                                                   |
 | Limite do documento do Firestore (1 MiB) com trechos                                                | Mesma divisão por subproduto do índice atual; trechos em documentos próprios                                                                                     |
 | Confiança excessiva na resposta                                                                     | Fontes sempre visíveis; aviso de que a resposta é gerada e deve ser conferida no artigo; avaliação por clique                                                    |
-| Plano Blaze e projeto de produção ainda não existem                                                 | Decisão de orçamento no início da Fase 2; alertas de gasto no Google Cloud                                                                                       |
+| Plano Blaze e projeto de produção ainda não existem                                                 | Não são necessários nas Etapas A e B; na C, só se não houver máquina da empresa                                                                                  |
 | Privacidade das perguntas (LGPD)                                                                    | Prazo de retenção do registro; aviso na tela; não registrar a chave pessoal (já é assim)                                                                         |
+| Busca sem IA não satisfazer o usuário leigo                                                         | "Resposta direta" por trecho e sinônimos reduzem a distância; o piloto mede; as Etapas B e C estão desenhadas e reaproveitam a base                              |
+| Glossário de sinônimos sem dono                                                                     | Definir responsável por produto; alimentar com o relatório de buscas sem resultado                                                                               |
+| Tratar modelo local como gratuito e descobrir o custo depois                                        | Comparativo da Seção 2-A; só adotar com máquina já existente e depois de medir velocidade e qualidade nela                                                       |
+| Qualidade baixa de modelos abertos pequenos em português                                            | Avaliar com o mesmo conjunto de perguntas antes de liberar; exigir a mesma taxa de recusa correta                                                                |
+| Servidor interno fora do ar ou inacessível fora da rede da empresa                                  | A busca não depende dele; a tela esconde o assistente quando o servidor não responde                                                                             |
 
 ## Decisões que dependem do time
 
-1. Quem monta o conjunto de perguntas reais e quando a chave da Anthropic fica
-   disponível para a Fase 0.
-2. Orçamento mensal de IA e de hospedagem (define modelo e cota).
-3. Se o produto obrigatório vale também para admins (sugestão: sim, com a
+1. Quem monta o conjunto de consultas reais (com o artigo esperado) e quem
+   mantém o glossário de sinônimos de cada produto.
+2. Se a empresa tem uma máquina com placa de vídeo ociosa e quem a
+   administraria. Isso define se a Etapa C por modelo local é uma opção real.
+3. Se existe algum orçamento mensal para IA (mesmo de US$ 20 a 30), caso a
+   Etapa C seja necessária e não haja máquina.
+4. Se o produto obrigatório vale também para admins (sugestão: sim, com a
    opção "todos os produtos" só para eles).
-4. Prazo de retenção do texto das perguntas.
