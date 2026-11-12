@@ -11,6 +11,7 @@ describe('CLIs rodam no Node puro', () => {
   it.each([
     ['scripts/migrate/index.ts', /Uso: node scripts\/migrate/],
     ['scripts/doc-sync/index.ts', /Uso: node scripts\/doc-sync/],
+    ['scripts/padronizar/index.ts', /Uso: node scripts\/padronizar/],
     ['scripts/backup/index.ts', /Uso: node scripts\/backup/],
     ['scripts/backup/restaurar.ts', /Uso: node scripts\/backup\/restaurar/],
     [

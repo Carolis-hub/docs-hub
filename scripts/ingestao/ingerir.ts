@@ -102,7 +102,7 @@ async function lerTodos(refs: DocumentReference[]) {
   return mapa
 }
 
-async function acharProduto(db: Firestore, ref: string) {
+export async function acharProduto(db: Firestore, ref: string) {
   const raiz = await db.collection('blocks').where('parentId', '==', null).get()
   const alvo = raiz.docs.find(
     (d) =>
@@ -127,7 +127,7 @@ async function acharProduto(db: Firestore, ref: string) {
  * Subproduto (bloco) de destino: id, nome ou slug, dentro do produto. Quando
  * não acha, a mensagem lista os blocos do produto com seus ids.
  */
-async function acharBloco(
+export async function acharBloco(
   db: Firestore,
   produto: { id: string; nome: string },
   ref: string,

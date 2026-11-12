@@ -17,6 +17,7 @@
     "test:rules": "firebase emulators:exec --only firestore \"vitest run --config vitest.rules.config.ts\"",
     "migrate": "node scripts/migrate/index.ts",
     "doc-sync": "node scripts/doc-sync/index.ts",
+    "padronizar": "node scripts/padronizar/index.ts",
     "alt-texto": "node scripts/alt-texto/index.ts",
     "estrutura": "node scripts/estrutura/index.ts",
     "ingestao": "node scripts/ingestao/index.ts",
