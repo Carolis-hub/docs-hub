@@ -2,13 +2,20 @@ import { useState, type FormEvent } from 'react'
 import { Building2, Plus, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BlockCards } from '../components/BlockCards'
+import { EditorDoRodape } from '../components/EditorDoRodape'
 import { BlockForm } from '../components/BlockForm'
-import { TituloDeSecao } from '../components/ListToolbar'
+import { Interruptor, TituloDeSecao } from '../components/ListToolbar'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
-import { createBlock, deleteBlock, updateBlock } from '../services/blocks'
+import {
+  createBlock,
+  deleteBlock,
+  reorderBlocks,
+  updateBlock,
+} from '../services/blocks'
 import { carregarVisaoGeral } from '../services/visaoGeral'
 import type { Block, Unidade } from '../types/content'
+import { ordemCompleta } from '../utils/blocos'
 import { pluralizar, resumirUnidade } from '../utils/resumoUnidade'
 import { agruparPorUnidade } from '../utils/unidades'
 import { Carregando } from '../components/Carregando'
@@ -69,6 +76,7 @@ export function Home() {
   const [criando, setCriando] = useState(false)
   const [editando, setEditando] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
+  const [organizar, setOrganizar] = useState(false)
 
   const produtos = dados?.produtos ?? []
   const unidades = dados?.unidades ?? []
@@ -159,6 +167,14 @@ export function Home() {
           }}
         />
       )}
+      {editando && (
+        <EditorDoRodape
+          key={editando.id}
+          produto={editando}
+          uid={uid}
+          aoSalvar={recarregar}
+        />
+      )}
       {aviso && (
         <p role="alert" className="text-sm text-perigo">
           {aviso}
@@ -228,13 +244,39 @@ export function Home() {
 
       {(unidades.length === 0 || soltos.length > 0) && produtos.length > 0 && (
         <section aria-label="Produtos" className="space-y-4">
-          {unidades.length > 0 && (
-            <TituloDeSecao titulo="Sem unidade" total={soltos.length} />
-          )}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {unidades.length > 0 ? (
+              <TituloDeSecao titulo="Sem unidade" total={soltos.length} />
+            ) : (
+              <span />
+            )}
+            {isAdmin && soltos.length > 1 && (
+              <Interruptor
+                ligado={organizar}
+                aoMudar={setOrganizar}
+                rotulo="Organizar"
+              />
+            )}
+          </div>
           <BlockCards
             blocos={unidades.length === 0 ? produtos : soltos}
             variante="produto"
             editavel={isAdmin}
+            organizar={isAdmin && organizar}
+            onReorder={async (o) => {
+              try {
+                await reorderBlocks(ordemCompleta(produtos, o))
+                setAviso(null)
+                recarregar()
+              } catch (e) {
+                setAviso(
+                  e instanceof Error
+                    ? e.message
+                    : 'Não foi possível gravar a nova ordem.',
+                )
+                throw e
+              }
+            }}
             subprodutos={subprodutos}
             resumos={resumos}
             onEdit={setEditando}

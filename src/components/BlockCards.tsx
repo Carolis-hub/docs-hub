@@ -23,6 +23,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Block } from '../types/content'
 
@@ -34,7 +35,8 @@ interface Props {
   editavel?: boolean
   /** Admin: liga o arrastar para reordenar (só funciona com a lista inteira, sem filtro). */
   organizar?: boolean
-  onReorder?: (ordenados: Block[]) => void
+  /** Recebe a lista na nova ordem; se a gravação falhar (promessa rejeitada), a ordem anterior volta. */
+  onReorder?: (ordenados: Block[]) => void | Promise<void>
   onEdit?: (bloco: Block) => void
   onDelete?: (bloco: Block) => void
   /** Quando informado, o último cartão é o "+ Novo …" tracejado. */
@@ -260,11 +262,20 @@ export function BlockCards({
     }),
   )
 
+  // A lista nova aparece na hora; sem isso o cartão voltava ao lugar até a
+  // gravação terminar e a tela recarregar.
+  const [itens, setItens] = useState(blocos)
+  useEffect(() => setItens(blocos), [blocos])
+
   function handleDragEnd({ active, over }: DragEndEvent) {
     if (!onReorder || !over || active.id === over.id) return
-    const de = blocos.findIndex((b) => b.id === active.id)
-    const para = blocos.findIndex((b) => b.id === over.id)
-    onReorder(arrayMove(blocos, de, para))
+    const de = itens.findIndex((b) => b.id === active.id)
+    const para = itens.findIndex((b) => b.id === over.id)
+    if (de < 0 || para < 0) return
+    const antes = itens
+    const novos = arrayMove(itens, de, para)
+    setItens(novos)
+    Promise.resolve(onReorder(novos)).catch(() => setItens(antes))
   }
 
   return (
@@ -274,7 +285,7 @@ export function BlockCards({
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={blocos.map((b) => b.id)}
+        items={itens.map((b) => b.id)}
         strategy={rectSortingStrategy}
       >
         <ul
@@ -284,7 +295,7 @@ export function BlockCards({
               : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-3'
           }
         >
-          {blocos.map((b) => (
+          {itens.map((b) => (
             <Cartao
               key={b.id}
               bloco={b}

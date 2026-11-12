@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { ConfiguracoesPage } from './ConfiguracoesPage'
 
 vi.mock('../../hooks/useAuth', () => ({
-  useAuth: () => ({ user: { uid: 'a' }, isAdmin: true }),
+  useAuth: () => ({
+    user: { uid: 'a' },
+    profile: { uid: 'a', role: 'admin' },
+    isAdmin: true,
+  }),
 }))
 vi.mock('../../services/preferencias', () => ({
   lerPreferencias: vi.fn(async () => null),

@@ -15,6 +15,28 @@ export interface Block {
   unidadeId?: string | null
   /** Informações editáveis do produto (compatibilidade, instaladores…); só em produtos. */
   ficha?: Ficha
+  /** Rodapé do produto; subprodutos, módulos e artigos herdam o do seu produto. Só em produtos. */
+  rodape?: Rodape
+}
+
+/** Um item de uma coluna do rodapé: título (com link opcional) e texto em Markdown. */
+export interface ItemRodape {
+  id: string
+  titulo: string
+  /** Endereço do título: http(s), mailto ou caminho do próprio sistema (`/b/…`). */
+  url: string
+  /** Markdown (aceita escapes com `\`), com links, listas e ênfase. */
+  conteudo: string
+}
+
+export interface ColunaRodape {
+  id: string
+  titulo: string
+  itens: ItemRodape[]
+}
+
+export interface Rodape {
+  colunas: ColunaRodape[]
 }
 
 /** Uma seção da ficha do produto. `texto` aceita **negrito** e links. */

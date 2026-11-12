@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { Pencil } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ArticleContent } from '../components/ArticleContent'
+import { RodapeDoProduto } from '../components/RodapeDoProduto'
 import { Breadcrumb } from '../components/Breadcrumb'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
@@ -174,6 +175,7 @@ export function ArticlePage() {
           )}
         </aside>
       </div>
+      <RodapeDoProduto produto={cadeia[0]} />
     </div>
   )
 }
