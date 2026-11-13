@@ -1,7 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod'
-import type { z } from 'zod'
+import { z } from 'zod'
 import type { MensagemHistorico } from '../../src/types/assistente.ts'
+import type { ConfigAssistente, ProvedorDeIA } from './config.ts'
 import type { UsoIA } from './custo.ts'
 import {
   EscolhaSchema,
@@ -103,6 +104,23 @@ export function criarProvedorAnthropic(opcoes: {
     }
   }
 
+  return montarProvedor(chamar, opcoes)
+}
+
+type ChamarIA = <S extends z.ZodType>(
+  modelo: string,
+  sistema: string,
+  usuario: string,
+  schema: S,
+  effort: 'low' | 'medium',
+  maxTokens: number,
+) => Promise<{ dados: z.infer<S>; uso: UsoIA }>
+
+/** As três etapas do assistente, iguais para qualquer provedor de IA. */
+function montarProvedor(
+  chamar: ChamarIA,
+  opcoes: { modelo: string; modeloBusca: string },
+): ProvedorAssistente {
   return {
     async planejar(pergunta, historico) {
       const { dados, uso } = await chamar(
@@ -143,6 +161,142 @@ export function criarProvedorAnthropic(opcoes: {
       return { resposta: dados, uso }
     },
   }
+}
+
+const URL_GROQ = 'https://api.groq.com/openai/v1/chat/completions'
+
+interface RespostaGroq {
+  model?: string
+  choices?: Array<{
+    finish_reason?: string
+    message?: { content?: string | null }
+  }>
+  usage?: { prompt_tokens?: number; completion_tokens?: number }
+}
+
+/**
+ * Provedor da Groq (API compatível com a da OpenAI). Roda no plano gratuito,
+ * sujeito aos limites por minuto e por dia da conta. Não usa SDK: é um POST.
+ * O formato da resposta é pedido no texto (esquema JSON) e conferido com zod.
+ */
+export function criarProvedorGroq(opcoes: {
+  modelo: string
+  modeloBusca: string
+  apiKey?: string
+  /** Só para testes. */
+  fetchFn?: typeof fetch
+}): ProvedorAssistente {
+  const chave = opcoes.apiKey || process.env.GROQ_API_KEY
+  const buscar = opcoes.fetchFn ?? fetch
+
+  const chamar: ChamarIA = async (
+    modelo,
+    sistema,
+    usuario,
+    schema,
+    _effort,
+    maxTokens,
+  ) => {
+    if (!chave) {
+      throw new ErroIA('O assistente não tem a chave da Groq configurada.')
+    }
+    const esquema = JSON.stringify(z.toJSONSchema(schema))
+    const instrucao =
+      `${sistema}\n\nResponda SOMENTE com um objeto JSON que siga este esquema, ` +
+      `sem texto antes ou depois e sem blocos de código:\n${esquema}`
+
+    let r: Response
+    try {
+      r = await buscar(URL_GROQ, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${chave}`,
+        },
+        body: JSON.stringify({
+          model: modelo,
+          max_completion_tokens: maxTokens,
+          temperature: 0.2,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: instrucao },
+            { role: 'user', content: usuario },
+          ],
+        }),
+        signal: AbortSignal.timeout(90_000),
+      })
+    } catch {
+      throw new ErroIA(
+        'Não foi possível falar com a IA agora. Verifique a conexão e tente de novo.',
+      )
+    }
+    if (r.status === 429) {
+      throw new ErroIA(
+        'O limite de uso gratuito da IA foi atingido. Tente de novo em alguns minutos.',
+      )
+    }
+    if (r.status === 401 || r.status === 403) {
+      throw new ErroIA(
+        'A chave da Groq está inválida. Confira GROQ_API_KEY no servidor do assistente.',
+      )
+    }
+    if (!r.ok) {
+      throw new ErroIA(`A IA respondeu com erro (HTTP ${r.status}).`)
+    }
+    const corpo = (await r.json()) as RespostaGroq
+    const escolha = corpo.choices?.[0]
+    if (escolha?.finish_reason === 'length') {
+      throw new ErroIA(
+        'A resposta da IA foi cortada por tamanho. Tente uma pergunta mais específica.',
+      )
+    }
+    const texto = escolha?.message?.content
+    if (!texto) throw new ErroIA('A IA não devolveu texto.')
+    let dados: z.infer<typeof schema>
+    try {
+      dados = schema.parse(JSON.parse(texto))
+    } catch {
+      throw new ErroIA(
+        'A IA devolveu uma resposta fora do formato esperado. Tente de novo.',
+      )
+    }
+    return {
+      dados,
+      uso: {
+        modelo: corpo.model ?? modelo,
+        entrada: corpo.usage?.prompt_tokens ?? 0,
+        saida: corpo.usage?.completion_tokens ?? 0,
+        cacheLeitura: 0,
+        cacheEscrita: 0,
+        gratis: true,
+      },
+    }
+  }
+
+  return montarProvedor(chamar, opcoes)
+}
+
+/** Cria o provedor escolhido em ASSISTENTE_PROVEDOR. */
+export function criarProvedorDaConfig(
+  config: Pick<ConfigAssistente, 'provedor' | 'modelo' | 'modeloBusca'>,
+  apiKey?: string,
+): ProvedorAssistente {
+  const base = {
+    modelo: config.modelo,
+    modeloBusca: config.modeloBusca,
+    ...(apiKey ? { apiKey } : {}),
+  }
+  return config.provedor === 'groq'
+    ? criarProvedorGroq(base)
+    : criarProvedorAnthropic(base)
+}
+
+/** Há chave de IA no ambiente do servidor para o provedor escolhido? */
+export function temChaveNoAmbiente(
+  provedor: ProvedorDeIA,
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return Boolean(provedor === 'groq' ? env.GROQ_API_KEY : env.ANTHROPIC_API_KEY)
 }
 
 /** Provedor usado quando o servidor não tem chave: cada usuário precisa levar a sua. */

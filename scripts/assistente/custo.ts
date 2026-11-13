@@ -5,6 +5,8 @@ export interface UsoIA {
   saida: number
   cacheLeitura: number
   cacheEscrita: number
+  /** Plano gratuito do provedor: não entra no teto de gasto em dólares. */
+  gratis?: boolean
 }
 
 /** Preço em dólares por milhão de tokens. Confira em docs.claude.com antes de depender. */
@@ -34,6 +36,7 @@ const PRECO_DESCONHECIDO: Preco = { entrada: 10, saida: 50 }
  * 125%. É uma estimativa para o controle de gasto, não a fatura.
  */
 export function custoEstimado(uso: UsoIA): number {
+  if (uso.gratis) return 0
   const p = PRECOS[uso.modelo] ?? PRECO_DESCONHECIDO
   const total =
     uso.entrada * p.entrada +

@@ -32,6 +32,39 @@ Firebase), lê o conteúdo permitido, chama a IA e controla o gasto.
 A tela **Uso da IA** (menu admin) mostra perguntas, gasto estimado, avaliações e
 as perguntas que a documentação não respondeu.
 
+## Usar a Groq (plano gratuito)
+
+O assistente também roda com a Groq, que tem plano gratuito sem cartão. A
+escolha é por variável de ambiente; sem ela, continua a Anthropic.
+
+```
+set ASSISTENTE_PROVEDOR=groq
+set GROQ_API_KEY=sua-chave-aqui
+set GOOGLE_APPLICATION_CREDENTIALS=C:\projetos\service-account-dev.json
+npm run assistente -- --projeto docs-hub-dev-16c1f
+```
+
+- O modelo padrão é `openai/gpt-oss-120b`; troque com `ASSISTENTE_MODELO`
+  (e `ASSISTENTE_MODELO_BUSCA` para a etapa de busca). Confira em
+  console.groq.com/docs/models se o modelo ainda está no plano gratuito.
+- O gasto da Groq é registrado como US$ 0: o teto em dólares não vale para ela.
+  Valem a cota de perguntas por pessoa (`ASSISTENTE_PERGUNTAS_POR_DIA`) e os
+  limites da própria conta Groq (pedidos e tokens por minuto e por dia). Ao
+  estourar, a pessoa vê "O limite de uso gratuito da IA foi atingido".
+- Cada pergunta faz até 3 chamadas. Com limites diários baixos, baixe
+  `ASSISTENTE_MAX_FONTES` e `ASSISTENTE_MAX_CARACTERES_FONTE` para gastar menos
+  tokens por pergunta.
+- O formato da resposta é pedido no texto (JSON) e conferido no servidor; se o
+  modelo devolver fora do formato, a pessoa recebe um aviso e pode repetir.
+- **Privacidade:** o texto dos artigos publicados vai à Groq a cada pergunta.
+  Confira a política de dados do plano gratuito antes de usar com conteúdo que
+  não possa sair da empresa.
+- A chave de cada pessoa em "Minhas preferências" passa a valer para o provedor
+  escolhido (uma chave Groq, neste caso).
+- `padronizar`, `doc-sync` e `alt-texto` continuam só com a Anthropic.
+- Não foi exercitado contra a API real da Groq: os testes usam uma resposta
+  simulada. Rode as perguntas do passo 5 acima e confira antes de depender.
+
 ## Como a resposta é montada
 
 1. **Perfil e cota:** a conta precisa ter perfil ativo; há um limite de perguntas

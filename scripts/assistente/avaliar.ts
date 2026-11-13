@@ -4,7 +4,7 @@ import { parseArgs } from 'node:util'
 import { getApps, initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { configDoAmbiente } from './config.ts'
-import { criarProvedorAnthropic } from './ia.ts'
+import { criarProvedorDaConfig, temChaveNoAmbiente } from './ia.ts'
 import {
   lerCasos,
   relatorioDaAvaliacao,
@@ -24,7 +24,7 @@ arquivo e diz quantas chamadas faria.
   --como <uid>        Usuário em nome de quem perguntar (obrigatório com --executar): vale o
                       acesso dele, ou seja, os produtos permitidos e o conteúdo técnico
   --projeto <id>      Projeto Firebase (ou FIREBASE_PROJECT_ID)
-  --executar          Roda de verdade (pede ANTHROPIC_API_KEY e gasta)
+  --executar          Roda de verdade (pede a chave do provedor e gasta cota)
   --minimo <0 a 1>    Taxa mínima de casos aprovados; abaixo disso sai com código 1 (padrão 0.8)
   --saida <pasta>     Onde salvar o relatório (padrão ./.avaliacao)
 
@@ -85,18 +85,20 @@ async function main(): Promise<number> {
     return erro(
       'Informe com --como <uid> quem vai "perguntar" (vale o acesso dele).',
     )
-  if (!process.env.ANTHROPIC_API_KEY) return erro('Defina ANTHROPIC_API_KEY.')
-
   const config = configDoAmbiente()
+  if (!temChaveNoAmbiente(config.provedor)) {
+    return erro(
+      config.provedor === 'groq'
+        ? 'Defina GROQ_API_KEY.'
+        : 'Defina ANTHROPIC_API_KEY.',
+    )
+  }
   const db = getFirestore(getApps()[0] ?? initializeApp({ projectId: projeto }))
   const resultados = await rodarAvaliacao(
     {
       db,
       config,
-      ia: criarProvedorAnthropic({
-        modelo: config.modelo,
-        modeloBusca: config.modeloBusca,
-      }),
+      ia: criarProvedorDaConfig(config),
     },
     values.como,
     casos,

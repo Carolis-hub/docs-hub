@@ -1,5 +1,9 @@
+export type ProvedorDeIA = 'anthropic' | 'groq'
+
 /** Ajustes do assistente. Cada limite pode ser trocado por variável de ambiente. */
 export interface ConfigAssistente {
+  /** Quem fornece a IA (ASSISTENTE_PROVEDOR). */
+  provedor: ProvedorDeIA
   /** Modelo que escreve a resposta. */
   modelo: string
   /** Modelo que reformula a pergunta e escolhe os artigos (pode ser mais barato). */
@@ -17,6 +21,8 @@ export interface ConfigAssistente {
 }
 
 export const MODELO_PADRAO = 'claude-opus-5-5'
+/** Confira se o modelo ainda existe no plano gratuito (console.groq.com/docs/models). */
+export const MODELO_PADRAO_GROQ = 'openai/gpt-oss-120b'
 
 const numero = (v: string | undefined, padrao: number) => {
   const n = Number(v)
@@ -26,8 +32,15 @@ const numero = (v: string | undefined, padrao: number) => {
 export function configDoAmbiente(
   env: Record<string, string | undefined> = process.env,
 ): ConfigAssistente {
-  const modelo = env.ASSISTENTE_MODELO || MODELO_PADRAO
+  const provedor: ProvedorDeIA =
+    env.ASSISTENTE_PROVEDOR?.trim().toLowerCase() === 'groq'
+      ? 'groq'
+      : 'anthropic'
+  const modelo =
+    env.ASSISTENTE_MODELO ||
+    (provedor === 'groq' ? MODELO_PADRAO_GROQ : MODELO_PADRAO)
   return {
+    provedor,
     modelo,
     modeloBusca: env.ASSISTENTE_MODELO_BUSCA || modelo,
     perguntasPorUsuarioDia: numero(env.ASSISTENTE_PERGUNTAS_POR_DIA, 30),

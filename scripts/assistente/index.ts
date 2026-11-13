@@ -5,7 +5,11 @@ import { getAuth } from 'firebase-admin/auth'
 import { getFirestore } from 'firebase-admin/firestore'
 import { configDoAmbiente } from './config.ts'
 import { tratarRequisicao } from './http.ts'
-import { criarProvedorAnthropic, criarProvedorSemChave } from './ia.ts'
+import {
+  criarProvedorDaConfig,
+  criarProvedorSemChave,
+  temChaveNoAmbiente,
+} from './ia.ts'
 
 const AJUDA = `Uso: node scripts/assistente/index.ts --projeto <id> [opções]
 
@@ -19,8 +23,9 @@ chama a IA e controla o gasto.
   --origem <url>    Endereço do sistema autorizado a chamar (padrão http://localhost:5173);
                     repita a opção para liberar mais de um
 
-Variáveis: ANTHROPIC_API_KEY (opcional: sem ela, cada usuário informa a sua em
-Minhas preferências), GOOGLE_APPLICATION_CREDENTIALS (ou o
+Variáveis: ASSISTENTE_PROVEDOR (anthropic, o padrão, ou groq), ANTHROPIC_API_KEY
+ou GROQ_API_KEY conforme o provedor (opcional: sem ela, cada usuário informa a
+sua em Minhas preferências), GOOGLE_APPLICATION_CREDENTIALS (ou o
 Emulator: FIRESTORE_EMULATOR_HOST e FIREBASE_AUTH_EMULATOR_HOST).
 Limites e modelos: ASSISTENTE_MODELO, ASSISTENTE_MODELO_BUSCA,
 ASSISTENTE_PERGUNTAS_POR_DIA, ASSISTENTE_ORCAMENTO_DIARIO_USD,
@@ -62,10 +67,13 @@ async function main(): Promise<number> {
     console.error('Informe o projeto com --projeto <id>.')
     return 2
   }
-  const chaveDoServidor = Boolean(process.env.ANTHROPIC_API_KEY)
+  const config = configDoAmbiente()
+  const nomeDaChave =
+    config.provedor === 'groq' ? 'GROQ_API_KEY' : 'ANTHROPIC_API_KEY'
+  const chaveDoServidor = temChaveNoAmbiente(config.provedor)
   if (!chaveDoServidor) {
     console.warn(
-      'ANTHROPIC_API_KEY não definida: cada usuário precisará informar a sua chave em Minhas preferências.',
+      `${nomeDaChave} não definida: cada usuário precisará informar a sua chave em Minhas preferências.`,
     )
   }
   const porta = Number(values.porta ?? process.env.PORT ?? 8787)
@@ -74,22 +82,13 @@ async function main(): Promise<number> {
   )
 
   const app = getApps()[0] ?? initializeApp({ projectId: projeto })
-  const config = configDoAmbiente()
   const deps = {
     db: getFirestore(app),
     config,
     ia: chaveDoServidor
-      ? criarProvedorAnthropic({
-          modelo: config.modelo,
-          modeloBusca: config.modeloBusca,
-        })
+      ? criarProvedorDaConfig(config)
       : criarProvedorSemChave(),
-    criarProvedor: (apiKey: string) =>
-      criarProvedorAnthropic({
-        modelo: config.modelo,
-        modeloBusca: config.modeloBusca,
-        apiKey,
-      }),
+    criarProvedor: (apiKey: string) => criarProvedorDaConfig(config, apiKey),
     verificarToken: async (t: string) =>
       (await getAuth(app).verifyIdToken(t)).uid,
   }
@@ -135,7 +134,7 @@ async function main(): Promise<number> {
     )
     console.log(`Origens liberadas: ${[...origens].join(', ')}`)
     console.log(
-      `Modelo: ${config.modelo} (busca: ${config.modeloBusca}) · ${config.perguntasPorUsuarioDia} perguntas/dia por pessoa · teto US$ ${config.orcamentoDiarioUsd}/dia`,
+      `Provedor: ${config.provedor} · Modelo: ${config.modelo} (busca: ${config.modeloBusca}) · ${config.perguntasPorUsuarioDia} perguntas/dia por pessoa · teto US$ ${config.orcamentoDiarioUsd}/dia`,
     )
   })
   return -1
