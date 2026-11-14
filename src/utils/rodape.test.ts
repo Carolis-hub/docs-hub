@@ -53,7 +53,7 @@ describe('normalizarRodape', () => {
       ],
     })
     expect(r?.colunas[0]?.titulo).toHaveLength(80)
-    expect(r?.colunas[0]?.itens[0]?.conteudo).toHaveLength(2000)
+    expect(r?.colunas[0]?.itens[0]?.conteudo).toHaveLength(8000)
   })
 })
 

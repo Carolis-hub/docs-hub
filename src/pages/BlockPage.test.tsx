@@ -312,14 +312,17 @@ describe('BlockPage', () => {
     expect(screen.queryByText(/novo subproduto/i)).toBeNull()
   })
 
-  it('admin acha o rodapé na página do produto, no cabeçalho e no fim da página', async () => {
+  it('admin configura o rodapé no fim da página do produto, onde o rodapé fica', async () => {
     await abrir('p')
     await screen.findByText('Dashboard')
     // Produto sem rodapé: o convite aparece no fim da página.
     expect(
       screen.getByRole('button', { name: /ainda não tem rodapé/i }),
     ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Rodapé' }))
+    expect(screen.queryByRole('button', { name: 'Rodapé' })).toBeNull()
+    fireEvent.click(
+      screen.getByRole('button', { name: /ainda não tem rodapé/i }),
+    )
     expect(
       screen.getByRole('heading', { name: 'Rodapé do produto' }),
     ).toBeInTheDocument()
@@ -330,15 +333,20 @@ describe('BlockPage', () => {
     expect(
       screen.queryByRole('heading', { name: 'Rodapé do produto' }),
     ).toBeNull()
+    // Editar o produto não traz mais o editor do rodapé junto.
+    fireEvent.click(screen.getByRole('button', { name: /editar produto/i }))
+    expect(
+      screen.queryByRole('heading', { name: 'Rodapé do produto' }),
+    ).toBeNull()
   })
 
   it('subproduto não tem configuração de rodapé; leitor também não', async () => {
     await abrir('anexos')
     await screen.findByText('Como excluir anexos?')
-    expect(screen.queryByRole('button', { name: 'Rodapé' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /rodapé/i })).toBeNull()
     useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
     await abrir('p')
     await screen.findByText('Dashboard')
-    expect(screen.queryByRole('button', { name: 'Rodapé' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /rodapé/i })).toBeNull()
   })
 })

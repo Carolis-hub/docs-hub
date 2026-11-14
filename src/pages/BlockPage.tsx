@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react'
-import { FolderPlus, Layers, Pencil, PanelBottom, Plus } from 'lucide-react'
+import { FolderPlus, Layers, Pencil, Plus } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ArticleList } from '../components/ArticleList'
-import { EditorDoRodape } from '../components/EditorDoRodape'
 import { RodapeDoProduto } from '../components/RodapeDoProduto'
-import { temRodape } from '../utils/rodape'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
 import { DescricaoDoProduto } from '../components/DescricaoDoProduto'
@@ -102,7 +100,7 @@ export function BlockPage() {
     }
   }, [blockId, isAdmin])
 
-  const [modo, setModo] = useState<'novo' | 'editar' | 'rodape' | null>(null)
+  const [modo, setModo] = useState<'novo' | 'editar' | null>(null)
   const [editandoFilho, setEditandoFilho] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
   const [editandoFicha, setEditandoFicha] = useState(false)
@@ -220,16 +218,6 @@ export function BlockPage() {
                 <Pencil className="size-4" aria-hidden />
                 Editar {tipo.toLowerCase()}
               </button>
-              {ehProduto && (
-                <button
-                  type="button"
-                  onClick={() => setModo('rodape')}
-                  className="botao"
-                >
-                  <PanelBottom className="size-4" aria-hidden />
-                  Rodapé
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => setModo('novo')}
@@ -272,15 +260,6 @@ export function BlockPage() {
             setModo(null)
             recarregar()
           }}
-        />
-      )}
-      {((modo === 'editar' && ehProduto) ||
-        (modo === 'rodape' && ehProduto)) && (
-        <EditorDoRodape
-          produto={bloco}
-          uid={uid}
-          aoSalvar={recarregar}
-          aoFechar={modo === 'rodape' ? () => setModo(null) : undefined}
         />
       )}
       {editandoFilho && (
@@ -470,23 +449,13 @@ export function BlockPage() {
           )}
         </section>
       )}
-      <RodapeDoProduto produto={cadeia[0]} />
-      {isAdmin &&
-        ehProduto &&
-        !temRodape(bloco.rodape) &&
-        modo !== 'rodape' && (
-          <button
-            type="button"
-            onClick={() => {
-              setModo('rodape')
-              window.scrollTo?.({ top: 0, behavior: 'smooth' })
-            }}
-            className="mt-16 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-borda p-4 text-sm text-suave transition hover:border-destaque/60 hover:text-texto"
-          >
-            <PanelBottom className="size-4" aria-hidden />
-            Este produto ainda não tem rodapé. Configurar rodapé
-          </button>
-        )}
+      {/* A configuração do rodapé fica no próprio rodapé (admin, na página do produto). */}
+      <RodapeDoProduto
+        produto={cadeia[0]}
+        configuracao={
+          isAdmin && ehProduto ? { uid, aoSalvar: recarregar } : undefined
+        }
+      />
     </div>
   )
 }

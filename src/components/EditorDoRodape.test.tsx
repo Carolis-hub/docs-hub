@@ -87,7 +87,7 @@ describe('EditorDoRodape', () => {
     fireEvent.change(screen.getByLabelText('Nome do item'), {
       target: { value: 'X' },
     })
-    fireEvent.change(screen.getByLabelText(/link do título/i), {
+    fireEvent.change(screen.getByLabelText(/^link \(opcional\)/i), {
       target: { value: 'javascript:alert(1)' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Salvar item' }))

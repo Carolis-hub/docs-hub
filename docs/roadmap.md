@@ -277,6 +277,17 @@ excluir um, excluir em lote, entrar como a leitora criada). Fica em aberto:
 - [ ] Contas antigas (só com `produtosPermitidos`) passam ao acesso por BU na
       primeira vez que forem salvas na tela nova
 
+### Rodapé: configuração no lugar do rodapé, janela e tabelas (pedido do time)
+
+- [x] A configuração saiu da edição do produto e do cabeçalho: fica no fim da
+      página do produto, onde o rodapé aparece (botão "Configurar rodapé" dentro
+      do rodapé; sem rodapé, o convite para configurar)
+- [x] Na tela ficam só o nome da coluna e o título das opções; clicar no título
+      abre uma janela com o conteúdo (opção sem conteúdo e com link abre o link)
+- [x] Tabelas no conteúdo (linhas com "|"), com o botão "Tabela" no editor do
+      item e prévia; limite do conteúdo subiu de 2.000 para 8.000 caracteres
+- [ ] Conferir no Firebase `dev` com o rodapé real do SmartShare 4
+
 ### Aside e menus de administrador
 
 - [x] Aside esquerda (Manual de produtos, Busca/consulta com IA), disponível

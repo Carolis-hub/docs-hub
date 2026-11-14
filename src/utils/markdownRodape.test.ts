@@ -69,3 +69,37 @@ describe('lerMarkdown', () => {
     ])
   })
 })
+
+describe('tabelas', () => {
+  it('lê cabeçalho, linhas e formatação dentro das células', () => {
+    const [t] = lerMarkdown(
+      '| Sistema | Versão |\n| --- | :---: |\n| **Windows** | 11 |\n| Linux | a \\| b |',
+    )
+    expect(t).toMatchObject({
+      tipo: 'tabela',
+      cabecalho: [
+        [{ tipo: 'texto', texto: 'Sistema' }],
+        [{ tipo: 'texto', texto: 'Versão' }],
+      ],
+    })
+    if (t?.tipo !== 'tabela') throw new Error('não é tabela')
+    expect(t.linhas).toHaveLength(2)
+    expect(t.linhas[0]?.[0]?.[0]).toMatchObject({ tipo: 'negrito' })
+    expect(t.linhas[1]?.[1]).toEqual([{ tipo: 'texto', texto: 'a | b' }])
+  })
+
+  it('sem a linha de traços não há cabeçalho; linhas curtas são completadas', () => {
+    const [t] = lerMarkdown('| a | b | c |\n| d |')
+    if (t?.tipo !== 'tabela') throw new Error('não é tabela')
+    expect(t.cabecalho).toEqual([])
+    expect(t.linhas.map((l) => l.length)).toEqual([3, 3])
+  })
+
+  it('convive com parágrafos e listas em volta', () => {
+    expect(
+      lerMarkdown('Antes\n| a | b |\n| - | - |\n| 1 | 2 |\nDepois\n- item').map(
+        (b) => b.tipo,
+      ),
+    ).toEqual(['paragrafo', 'tabela', 'paragrafo', 'lista'])
+  })
+})

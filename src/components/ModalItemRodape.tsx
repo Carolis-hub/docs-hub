@@ -20,6 +20,7 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
   const [inserindo, setInserindo] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const area = useRef<HTMLTextAreaElement>(null)
+  const tocou = useRef(false)
 
   useEffect(() => {
     const fechar = (e: KeyboardEvent) => e.key === 'Escape' && aoCancelar()
@@ -35,6 +36,29 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
     const meio = conteudo.slice(ini, fim) || exemplo
     setConteudo(
       conteudo.slice(0, ini) + antes + meio + depois + conteudo.slice(fim),
+    )
+    el?.focus()
+  }
+
+  /** Insere uma tabela de exemplo em linhas próprias, na posição do cursor. */
+  function inserirTabela() {
+    const el = area.current
+    // Sem ter clicado no texto ainda, a tabela vai para o fim (não para o começo).
+    const pos = el && tocou.current ? el.selectionEnd : conteudo.length
+    const antes = conteudo.slice(0, pos)
+    const depois = conteudo.slice(pos)
+    const modelo = [
+      '| Coluna 1 | Coluna 2 | Coluna 3 |',
+      '| --- | --- | --- |',
+      '| valor | valor | valor |',
+      '| valor | valor | valor |',
+    ].join('\n')
+    setConteudo(
+      antes +
+        (antes && !antes.endsWith('\n') ? '\n' : '') +
+        modelo +
+        (depois.startsWith('\n') ? '' : '\n') +
+        depois,
     )
     el?.focus()
   }
@@ -89,7 +113,7 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
         aria-modal="true"
         aria-label={item ? 'Editar item do rodapé' : 'Novo item do rodapé'}
         onSubmit={enviar}
-        className="cartao max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto p-6"
+        className="cartao max-h-[90vh] w-full max-w-3xl space-y-4 overflow-y-auto p-6"
       >
         <h3 className="text-lg font-bold">
           {item ? 'Editar item do rodapé' : 'Novo item do rodapé'}
@@ -105,7 +129,7 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
           />
         </label>
         <label className="block text-sm">
-          Link do título (opcional)
+          Link (opcional)
           <input
             className="campo mt-1"
             value={url}
@@ -114,7 +138,8 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
           />
           <span className="mt-1 block text-xs text-suave">
             Para levar a um conteúdo do sistema, use o caminho, por exemplo
-            /a/identificador-do-artigo.
+            /a/identificador-do-artigo. Sem conteúdo, o título abre o link
+            direto; com conteúdo, o link aparece no fim da janela.
           </span>
         </label>
 
@@ -143,6 +168,13 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
               onClick={() => envolver('\n- ', '', 'item da lista')}
             >
               Lista
+            </button>
+            <button
+              type="button"
+              className="botao h-8 px-2.5"
+              onClick={inserirTabela}
+            >
+              Tabela
             </button>
             <button
               type="button"
@@ -191,15 +223,18 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
           <textarea
             id="conteudo-item"
             ref={area}
-            rows={7}
+            onFocus={() => (tocou.current = true)}
+            rows={10}
             maxLength={LIMITES_RODAPE.conteudo}
             className="campo mt-2 font-mono text-[13px]"
             value={conteudo}
             onChange={(e) => setConteudo(e.target.value)}
           />
           <p className="mt-1 text-xs text-suave">
-            Aceita **negrito**, *itálico*, listas com “-”, [texto](link) e
-            escape com barra invertida (\*, \[, \]).
+            Aceita **negrito**, *itálico*, listas com “-”, [texto](link),
+            tabelas e escape com barra invertida (\*, \[, \]). Na tabela, cada
+            linha começa e termina com “|”, e as células são separadas por “|”;
+            para mais colunas ou linhas, repita o padrão.
           </p>
         </div>
 

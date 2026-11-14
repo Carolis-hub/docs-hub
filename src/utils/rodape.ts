@@ -5,7 +5,8 @@ export const LIMITES_RODAPE = {
   itens: 12,
   titulo: 80,
   url: 500,
-  conteudo: 2000,
+  // Cabe uma tabela de bom tamanho (compatibilidade, instaladores…).
+  conteudo: 8000,
 } as const
 
 export function novoIdDoRodape(): string {
