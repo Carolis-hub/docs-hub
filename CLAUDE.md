@@ -96,7 +96,8 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 - **Seções e sinônimos da busca**: o item do índice leva `secoes` (título e
   posição em `textoPlano`), calculadas por `itemDoArtigo` **quando recebe o
   `conteudo`**: passe-o sempre. Os sinônimos ficam em `blocks/{produto}.sinonimos`
-  (um grupo por item, termos separados por vírgula) e o motor os recebe em
+  (um grupo por item, termos separados por vírgula; sem o campo, vale a
+  sugestão padrão: use sempre `sinonimosDoProduto`) e o motor os recebe em
   `criarMotor(itens, verTecnico, { sinonimos })`. O índice guarda o radical das
   palavras (`radical` em `src/utils/search.ts`, só plural). Sem `combinar`, a
   busca tenta todas as palavras e depois a maior parte delas (`parcial` no

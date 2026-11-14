@@ -3,6 +3,8 @@ import { variantesComSinonimos } from './consulta'
 import { criarMotor } from './searchEngine'
 import {
   MAX_GRUPOS_SINONIMOS,
+  SINONIMOS_PADRAO,
+  sinonimosDoProduto,
   gruposDeSinonimos,
   limparSinonimos,
 } from './sinonimos'
@@ -88,5 +90,51 @@ describe('motor de busca com sinônimos do produto', () => {
     // O termo que casou pelo sinônimo entra no destaque.
     const a1 = motor.buscar('apagar documento').find((r) => r.item.id === 'a1')
     expect(a1?.termos).toContain('excluir')
+  })
+})
+
+describe('sugestão padrão de sinônimos', () => {
+  it('produto que nunca salvou usa a padrão; depois de salvar, vale a dele', () => {
+    expect(sinonimosDoProduto(undefined)).toBe(SINONIMOS_PADRAO)
+    expect(sinonimosDoProduto(['a, b'])).toEqual(['a, b'])
+    // Lista vazia salva é uma escolha: desliga os sinônimos do produto.
+    expect(sinonimosDoProduto([])).toEqual([])
+  })
+
+  it('a lista padrão já está limpa e dentro dos limites', () => {
+    expect(limparSinonimos(SINONIMOS_PADRAO)).toEqual([...SINONIMOS_PADRAO])
+  })
+
+  it('nenhum termo padrão está em dois grupos (evita trocas em cadeia)', () => {
+    const termos = gruposDeSinonimos(SINONIMOS_PADRAO).flat()
+    expect(new Set(termos).size).toBe(termos.length)
+  })
+
+  it('com a padrão, "apagar anexo" acha o artigo que diz "excluir"', () => {
+    const motor = criarMotor(
+      [
+        {
+          id: 'a1',
+          titulo: 'Como excluir anexos no fluxo',
+          resumo: '',
+          textoPlano: 'Passos para excluir um anexo.',
+          blockId: 'b',
+          publico: 'usuario',
+          productId: 'p',
+        },
+        {
+          id: 'a2',
+          titulo: 'Como compartilhar anexos',
+          resumo: '',
+          textoPlano: 'Envie o anexo a outra pessoa.',
+          blockId: 'b',
+          publico: 'usuario',
+          productId: 'p',
+        },
+      ],
+      true,
+      { sinonimos: gruposDeSinonimos(sinonimosDoProduto(undefined)) },
+    )
+    expect(motor.buscar('apagar anexo')[0]?.item.id).toBe('a1')
   })
 })

@@ -5,7 +5,7 @@ import { listProducts } from '../services/blocks'
 import { listUnidades } from '../services/unidades'
 import { carregarMotor } from '../services/search'
 import { produtoDaConsulta } from '../utils/produtoDaConsulta'
-import { gruposDeSinonimos } from '../utils/sinonimos'
+import { gruposDeSinonimos, sinonimosDoProduto } from '../utils/sinonimos'
 
 /**
  * Produtos acessíveis e o motor de busca de **um** produto: o pedido em
@@ -28,7 +28,9 @@ export function useSearchEngine(produtoPedido?: string) {
         productIds: produtoId ? [produtoId] : [],
         verTecnico: isAdmin || profile.verTecnico,
         sinonimos: gruposDeSinonimos(
-          produtos.find((p) => p.id === produtoId)?.sinonimos,
+          sinonimosDoProduto(
+            produtos.find((p) => p.id === produtoId)?.sinonimos,
+          ),
         ),
       }),
       // As unidades só ajudam a filtrar: se não carregarem, a busca segue sem elas.

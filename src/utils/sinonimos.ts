@@ -28,6 +28,49 @@ export function limparSinonimos(linhas: readonly string[]): string[] {
   return saida
 }
 
+/**
+ * Sugestão padrão: grupos genéricos, que valem para qualquer sistema (verbos
+ * e termos comuns de tela). Um produto que nunca teve os sinônimos salvos
+ * começa com eles; depois de salvar, vale só a lista do produto (inclusive
+ * vazia). Termos próprios de um produto ficam no cadastro dele, não aqui.
+ */
+export const SINONIMOS_PADRAO: readonly string[] = [
+  'excluir, apagar, remover, deletar, eliminar',
+  'alterar, trocar, mudar, modificar, editar',
+  'encontrar, pesquisar, procurar, localizar, buscar, achar',
+  'adicionar, incluir, inserir, anexar, colocar',
+  'visualizar, ver, exibir, consultar, abrir',
+  'baixar, download, exportar, salvar',
+  'compartilhar, enviar, encaminhar',
+  'cancelar, interromper, abortar, parar',
+  'revisar, conferir, validar, checar',
+  'configurar, parametrizar, ajustar, definir',
+  'instalar, instalação, implantar, setup',
+  'login, entrar, logar, autenticar, acessar',
+  'sair, logout, deslogar, desconectar',
+  'esqueci minha senha, recuperar senha, redefinir senha, resetar senha, nova senha',
+  'duplo fator, dois fatores, 2fa, mfa, verificação em duas etapas',
+  'alerta, aviso, notificação, lembrete',
+  'comentário, observação, anotação, nota',
+  'template, modelo',
+  'lote, massa, vários, múltiplos',
+  'prioridade, urgência, urgente',
+  'idioma, língua, linguagem, tradução',
+  'permissão, autorização, direito, acesso',
+  'requisito, pré-requisito, exigência, necessário',
+  'finalizado, concluído, encerrado, terminado',
+]
+
+/**
+ * As linhas que valem para um produto: as dele, se já foram salvas alguma
+ * vez; senão, a sugestão padrão.
+ */
+export function sinonimosDoProduto(
+  salvos: readonly string[] | undefined,
+): readonly string[] {
+  return salvos ?? SINONIMOS_PADRAO
+}
+
 /** Grupos prontos para a busca: minúsculas, sem acento. */
 export function gruposDeSinonimos(
   linhas: readonly string[] | undefined,

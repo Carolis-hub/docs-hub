@@ -58,6 +58,8 @@ do produto) e mostra onde o artigo ficou.
   o título do artigo: use as palavras de quem perguntou.
 - Rode antes e depois de mexer nos sinônimos ou nos artigos, para ver se
   melhorou.
+- Produto que nunca teve os sinônimos salvos é avaliado com a sugestão padrão
+  do sistema, igual à tela.
 - `--sem-tecnico` roda como um leitor que não vê artigos técnicos.
 - Os artigos publicados antes das seções só as ganham ao serem publicados de
   novo ou reimportados; sem elas a busca funciona, só não aponta a seção.

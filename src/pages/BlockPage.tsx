@@ -379,7 +379,7 @@ export function BlockPage() {
 
       {ehProduto && isAdmin && (
         <SinonimosDoProduto
-          sinonimos={bloco.sinonimos ?? []}
+          salvos={bloco.sinonimos}
           aoSalvar={async (linhas) => {
             await salvarSinonimos(bloco.id, linhas, uid)
             // A busca deste produto passa a usar os novos grupos.

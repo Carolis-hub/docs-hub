@@ -4,7 +4,10 @@ import type { Block } from '../../src/types/content.ts'
 import type { IndexedItem } from '../../src/types/search.ts'
 import { normalizar } from '../../src/utils/search.ts'
 import { criarMotor, type SearchEngine } from '../../src/utils/searchEngine.ts'
-import { gruposDeSinonimos } from '../../src/utils/sinonimos.ts'
+import {
+  gruposDeSinonimos,
+  sinonimosDoProduto,
+} from '../../src/utils/sinonimos.ts'
 import { lerIndice } from '../assistente/recuperar.ts'
 
 /** Até que posição o artigo certo conta como "achado". */
@@ -237,7 +240,9 @@ export async function rodarAvaliacaoDaBusca(
       motor = criarMotor(
         await lerIndice(db, [produto.id], opcoes.verTecnico),
         opcoes.verTecnico,
-        { sinonimos: gruposDeSinonimos(produto.sinonimos) },
+        {
+          sinonimos: gruposDeSinonimos(sinonimosDoProduto(produto.sinonimos)),
+        },
       )
       motores.set(produto.id, motor)
     }

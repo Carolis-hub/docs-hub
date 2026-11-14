@@ -232,6 +232,13 @@ describe('BlockPage', () => {
     expect(invalidarCacheBusca).toHaveBeenCalled()
   })
 
+  it('produto sem sinônimos salvos mostra que usa a sugestão padrão', async () => {
+    await abrir('p')
+    expect(
+      await screen.findByText(/Usando a sugestão padrão do sistema/),
+    ).toBeInTheDocument()
+  })
+
   it('leitor não vê os sinônimos da busca', async () => {
     useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
     await abrir('p')
