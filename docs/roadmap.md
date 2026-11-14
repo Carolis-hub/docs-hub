@@ -239,6 +239,44 @@ ou mudar de banco antes da Fase 5.
       `fase-1` a `fase-4` têm commits próprios: **conferir antes**)
 - [ ] Decidir se a branch padrão passa a se chamar `principal`
 
+### Menu Configurações: usuários e governança (pedido do time)
+
+Roadmap desta melhoria. A tela Configurações passa a ter dois grandes blocos:
+**Configuração de usuário** e **Governança**.
+
+- [x] Etapa 1 — Tela Configurações em dois blocos: "Configuração de usuário"
+      (lista de todos os usuários) e "Governança" (Revisão, Sincronização,
+      Auditoria e Uso da IA). "Minhas configurações" fica só em Minhas
+      preferências (avatar no topo)
+- [x] Etapa 2 — Ações da lista: botões "Novo usuário" e lixeira (excluir em
+      lote, com seleção por caixas) no início; em cada linha, lápis (editar) e
+      lixeira (excluir)
+- [x] Etapa 3 — Criar e editar em uma tela própria (`/admin/usuarios/novo` e
+      `/admin/usuarios/:uid/editar`) com os módulos **Geral** (nome, e-mail de
+      login, senha, confirmar senha, tipo de usuário) e **Permissões**
+- [x] Etapa 4 — Módulo Permissões: "Aside lateral" (Mostrar a aside → Manual de
+      produtos, Busca/consulta com IA) e "BUs" (Selecionar todos → cada BU)
+- [x] Etapa 5 — Acesso por BU valendo nas regras: a escolha fica em
+      `users/{uid}.unidadesPermitidas` e vira `produtosPermitidos` (o que as
+      regras do Firestore leem); recalculado quando um produto entra ou muda de BU
+      (pela tela e pelo `npm run estrutura`)
+- [x] Etapa 6 — Exclusão de usuário (uma conta ou em lote), com auditoria
+- [x] Etapa 7 — Testes, conferências do CI e atualização da documentação
+
+Feito em 14/11/2026. Conferido no navegador contra o Emulator (criar, editar,
+excluir um, excluir em lote, entrar como a leitora criada). Fica em aberto:
+
+- [ ] Conferir no Firebase `dev` com as contas reais
+- [ ] **Excluir não apaga a conta de login** do Firebase Authentication (o
+      navegador não pode): a pessoa perde o acesso na hora, mas o e-mail só pode
+      ser cadastrado de novo depois de apagar a conta no console do Firebase.
+      Resolver de vez pede um servidor com Admin SDK (o mesmo caso do assistente)
+- [ ] **Senha de outra pessoa**: o admin não define; a tela envia o e-mail de
+      redefinição do Firebase (não exercitado de verdade: o Emulator não envia
+      e-mail). Na própria conta, a troca é direta
+- [ ] Contas antigas (só com `produtosPermitidos`) passam ao acesso por BU na
+      primeira vez que forem salvas na tela nova
+
 ### Aside e menus de administrador
 
 - [x] Aside esquerda (Manual de produtos, Busca/consulta com IA), disponível

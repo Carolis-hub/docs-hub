@@ -85,6 +85,11 @@ Antes de abrir PR: `lint`, `typecheck`, `test`, `build`, `format:check` e
 - **Índice de busca tem teto de 1 MiB por documento**: toda gravação de parte
   passa por `caberNoLimite` (`src/utils/searchIndex.ts`), que encurta o texto
   em vez de deixar a publicação falhar.
+- **Acesso de leitor é por BU, mas as regras leem produtos**: a tela grava
+  `users/{uid}.unidadesPermitidas` e calcula `produtosPermitidos`
+  (`src/utils/acessoPorUnidade.ts`). Quem cria produto ou muda a BU dele por
+  outro caminho precisa recalcular (`recalcularAcessosPorUnidade`, em
+  `src/services/acessos.ts`; o `npm run estrutura` já faz).
 - **Gravação no Firestore** pode dar `DEADLINE_EXCEEDED` em redes com
   proxy/VPN: o importador tenta de novo e aceita `--rest`. Rodar de novo é
   seguro (idempotente).

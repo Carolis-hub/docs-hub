@@ -2,39 +2,31 @@ import { ChevronRight, Settings } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { permissaoDaRota, podeAcessar } from '../../utils/permissoes'
-import { ConfiguracoesDoUsuario } from '../../components/ConfiguracoesDoUsuario'
+import { ListaDeUsuarios } from '../../components/ListaDeUsuarios'
 import { PageHeader } from '../../components/PageHeader'
-import { MODULO_ADMINISTRACAO, MODULO_GOVERNANCA } from '../../utils/governanca'
+import { MODULO_GOVERNANCA } from '../../utils/governanca'
 
+/** Configurações: dois grandes blocos, "Configuração de usuário" e "Governança". */
 export function ConfiguracoesPage() {
   const { profile } = useAuth()
   // Cada tela de administração só aparece para quem tem a permissão dela.
-  const liberados = (itens: typeof MODULO_GOVERNANCA) =>
-    itens.filter((m) => {
-      const id = permissaoDaRota(m.para)
-      return !id || podeAcessar(profile, id)
-    })
+  const governanca = MODULO_GOVERNANCA.filter((m) => {
+    const id = permissaoDaRota(m.para)
+    return !id || podeAcessar(profile, id)
+  })
+  const usuarios = podeAcessar(profile, 'usuarios')
   return (
     <div>
       <PageHeader
         icone={Settings}
         titulo="Configurações"
-        subtitulo="Suas configurações pessoais e os módulos de administração do sistema."
+        subtitulo="Usuários do sistema e governança do conteúdo."
       />
-      <div className="grid items-start gap-6 lg:grid-cols-2">
-        <ConfiguracoesDoUsuario />
-        <div className="space-y-6">
-          <ModuloDeLinks
-            id="administracao"
-            titulo="Administração"
-            itens={liberados(MODULO_ADMINISTRACAO)}
-          />
-          <ModuloDeLinks
-            id="governanca"
-            titulo="Governança"
-            itens={liberados(MODULO_GOVERNANCA)}
-          />
-        </div>
+      <div
+        className={`grid items-start gap-6 ${usuarios ? 'lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]' : ''}`}
+      >
+        {usuarios && <ListaDeUsuarios />}
+        <ModuloDeLinks id="governanca" titulo="Governança" itens={governanca} />
       </div>
     </div>
   )

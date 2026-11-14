@@ -62,6 +62,11 @@ async function main(): Promise<number> {
   r.produtos.forEach((p) =>
     console.log(`  • ${p.nome ?? p.referencia}: ${ROTULO[p.status]}`),
   )
+  if (r.usuariosAtualizados > 0) {
+    console.log(
+      `  • ${r.usuariosAtualizados} usuário(s) com acesso por BU ${values.gravar ? 'tiveram' : 'terão'} os produtos permitidos recalculados`,
+    )
+  }
   const problemas = r.produtos.filter((p) => p.status === 'nao-encontrado')
   console.log(
     values.gravar

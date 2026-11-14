@@ -1,4 +1,8 @@
 import type { Firestore } from 'firebase-admin/firestore'
+import {
+  mesmosIds,
+  produtosDasUnidades,
+} from '../../src/utils/acessoPorUnidade.ts'
 import { slugify } from '../../src/utils/slug.ts'
 
 export interface OpcoesOrganizar {
@@ -22,6 +26,8 @@ export interface ResultadoOrganizar {
   unidadeId: string
   unidadeCriada: boolean
   produtos: ResultadoProduto[]
+  /** Leitores com acesso por BU que passam a ver os produtos ligados. */
+  usuariosAtualizados: number
 }
 
 const sem = (t: string) => slugify(t)
@@ -90,6 +96,28 @@ export async function organizarUnidade(
     }
   }
 
+  // Quem tem acesso por BU (`unidadesPermitidas`) ganha os produtos ligados:
+  // as regras leem `produtosPermitidos`, que precisa acompanhar a BU.
+  const usuarios = await db.collection('users').get()
+  const depois = produtosRaiz.map((p) => ({
+    id: p.id,
+    unidadeId: ligar.has(p.id) ? unidadeId : p.unidadeId,
+  }))
+  const idsDasUnidades = [
+    ...new Set([...todas.docs.map((d) => d.id), unidadeId]),
+  ]
+  const acessos = usuarios.docs.flatMap((d) => {
+    const liberadas = d.get('unidadesPermitidas') as unknown
+    if (d.get('role') === 'admin' || !Array.isArray(liberadas)) return []
+    const novos = produtosDasUnidades(
+      liberadas as string[],
+      depois,
+      idsDasUnidades,
+    )
+    const atuais = d.get('produtosPermitidos') as string[] | undefined
+    return mesmosIds(atuais, novos) ? [] : [{ ref: d.ref, novos }]
+  })
+
   if (opcoes.gravar) {
     const batch = db.batch()
     if (!unidadeAtual.exists) {
@@ -104,6 +132,9 @@ export async function organizarUnidade(
     for (const id of ligar) {
       batch.update(db.collection('blocks').doc(id), { unidadeId })
     }
+    for (const a of acessos) {
+      batch.update(a.ref, { produtosPermitidos: a.novos })
+    }
     await batch.commit()
   }
 
@@ -111,5 +142,6 @@ export async function organizarUnidade(
     unidadeId,
     unidadeCriada: !unidadeAtual.exists,
     produtos: resultados,
+    usuariosAtualizados: acessos.length,
   }
 }

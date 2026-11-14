@@ -24,7 +24,8 @@ export function Aside() {
   const { aside } = usePreferencias(user?.uid)
   // O que o administrador bloqueou para a conta some, valha o que a pessoa escolheu.
   const entradas = entradasDaAside(aside).filter((e) => podeAcessar(profile, e))
-  if (entradas.length === 0) return null
+  // "Mostrar a aside" desmarcado pelo administrador esconde o menu inteiro.
+  if (!podeAcessar(profile, 'aside') || entradas.length === 0) return null
   return (
     <aside
       aria-label="Visualizações"

@@ -1,4 +1,5 @@
 import type { Block, Unidade } from '../types/content'
+import { SEM_UNIDADE } from './acessoPorUnidade'
 
 export interface Grupo {
   chave: string
@@ -20,7 +21,7 @@ export function agruparPorUnidade(
   const ids = new Set(unidades.map((u) => u.id))
   const soltos = produtos.filter((p) => !p.unidadeId || !ids.has(p.unidadeId))
   if (soltos.length > 0) {
-    grupos.push({ chave: 'sem-unidade', unidade: null, produtos: soltos })
+    grupos.push({ chave: SEM_UNIDADE, unidade: null, produtos: soltos })
   }
   return grupos.filter((g) => incluirVazias || g.produtos.length > 0)
 }

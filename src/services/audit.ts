@@ -41,6 +41,7 @@ export type AuditAction =
   | 'usuario.editar'
   | 'usuario.desativar'
   | 'usuario.reativar'
+  | 'usuario.excluir'
 
 /** Inclui o registro de auditoria no mesmo batch da ação. */
 export function registrarAuditoria(

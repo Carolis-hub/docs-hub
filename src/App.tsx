@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { RequireAuth } from './components/RequireAuth'
 import { Login } from './pages/Login'
@@ -62,8 +62,8 @@ const UnidadesPage = lazy(() =>
     default: m.UnidadesPage,
   })),
 )
-const UsersPage = lazy(() =>
-  import('./pages/admin/UsersPage').then((m) => ({ default: m.UsersPage })),
+const UsuarioPage = lazy(() =>
+  import('./pages/admin/UsuarioPage').then((m) => ({ default: m.UsuarioPage })),
 )
 const UnidadePage = lazy(() =>
   import('./pages/UnidadePage').then((m) => ({ default: m.UnidadePage })),
@@ -234,12 +234,27 @@ function App() {
                       </RequireAdmin>
                     }
                   />
+                  {/* A lista de usuários fica na tela Configurações. */}
                   <Route
                     path="/admin/usuarios"
+                    element={<Navigate to="/admin/configuracoes" replace />}
+                  />
+                  <Route
+                    path="/admin/usuarios/novo"
                     element={
                       <RequireAdmin>
                         <RequirePermissao id="usuarios">
-                          <UsersPage />
+                          <UsuarioPage />
+                        </RequirePermissao>
+                      </RequireAdmin>
+                    }
+                  />
+                  <Route
+                    path="/admin/usuarios/:uid/editar"
+                    element={
+                      <RequireAdmin>
+                        <RequirePermissao id="usuarios">
+                          <UsuarioPage />
                         </RequirePermissao>
                       </RequireAdmin>
                     }
