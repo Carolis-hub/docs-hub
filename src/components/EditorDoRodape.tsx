@@ -23,6 +23,8 @@ interface Props {
   uid: string
   /** Chamado depois de gravar, para a tela recarregar. */
   aoSalvar: () => void
+  /** Quando informado, mostra o botão "Fechar" (editor aberto sozinho, fora da edição do produto). */
+  aoFechar?: () => void
 }
 
 type Modal = { coluna: string; item?: ItemRodape } | null
@@ -31,7 +33,7 @@ type Modal = { coluna: string; item?: ItemRodape } | null
  * Configura o rodapé do produto: colunas lado a lado, cada uma com seus itens.
  * Fica no fim da edição do produto; subprodutos, módulos e artigos herdam.
  */
-export function EditorDoRodape({ produto, uid, aoSalvar }: Props) {
+export function EditorDoRodape({ produto, uid, aoSalvar, aoFechar }: Props) {
   const [colunas, setColunas] = useState<ColunaRodape[]>(
     () => produto.rodape?.colunas ?? [],
   )
@@ -244,6 +246,11 @@ export function EditorDoRodape({ produto, uid, aoSalvar }: Props) {
         >
           {salvando ? 'Salvando…' : 'Salvar rodapé'}
         </button>
+        {aoFechar && (
+          <button type="button" className="botao" onClick={aoFechar}>
+            Fechar
+          </button>
+        )}
         {vazio && colunas.length > 0 && (
           <span className="text-xs text-suave">
             Colunas sem título e sem itens são descartadas ao salvar.

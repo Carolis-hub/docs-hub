@@ -20,7 +20,10 @@ export function RodapeDoProduto({ produto }: { produto?: Block | null }) {
         {rodape.colunas.map((c) => (
           <section key={c.id} aria-label={c.titulo || 'Coluna'}>
             {c.titulo && (
-              <h2 className="mb-3 text-[13px] font-bold uppercase tracking-wide text-suave">
+              <h2 className="mb-4 text-[14px] font-semibold text-suave">
+                <span aria-hidden className="mr-1 text-destaque">
+                  //
+                </span>
                 {c.titulo}
               </h2>
             )}
@@ -30,12 +33,12 @@ export function RodapeDoProduto({ produto }: { produto?: Block | null }) {
                   {i.url ? (
                     <LinkDoRodape
                       url={i.url}
-                      className="font-semibold text-texto transition hover:text-destaque hover:underline"
+                      className="font-medium text-texto transition hover:text-destaque hover:underline"
                     >
                       {i.titulo}
                     </LinkDoRodape>
                   ) : (
-                    <span className="font-semibold text-texto">{i.titulo}</span>
+                    <span className="font-medium text-texto">{i.titulo}</span>
                   )}
                   {i.conteudo && (
                     <div className="mt-1 text-suave">
