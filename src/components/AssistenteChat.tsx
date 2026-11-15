@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type FormEvent } from 'react'
-import { Send, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { Search, Send, ThumbsDown, ThumbsUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAsync } from '../hooks/useAsync'
 import { useSearchEngine } from '../hooks/useSearchEngine'
@@ -17,7 +17,9 @@ import type {
 } from '../types/assistente'
 import type { CategoriaId } from '../types/content'
 import { CATEGORIAS } from '../utils/categorias'
+import { consultarSemIA, type ResultadoSemIA } from '../utils/consultaSemIA'
 import { lerResposta, type Trecho } from '../utils/markdownSimples'
+import { Highlight } from './Highlight'
 
 type Mensagem =
   | { id: number; papel: 'usuario'; texto: string }
@@ -28,6 +30,8 @@ type Mensagem =
       resposta: RespostaAssistente
       avaliacao?: AvaliacaoResposta
     }
+  /** Consulta sem a IA: os artigos que a busca achou para a pergunta. */
+  | { id: number; papel: 'busca'; resultados: ResultadoSemIA[] }
 
 const campo = 'campo h-10'
 const SEM_UNIDADE = 'sem-unidade'
@@ -125,6 +129,9 @@ export function AssistenteChat({ compacto = false }: { compacto?: boolean }) {
   const [erro, setErro] = useState<string | null>(null)
   const [restantes, setRestantes] = useState<number | null>(null)
   const proximoId = useRef(1)
+  /** O servidor não respondeu nesta sessão: avisa que a consulta está sem IA. */
+  const [semServidor, setSemServidor] = useState(false)
+  const comIA = assistenteConfigurado()
 
   const produtos = useMemo(() => dados?.produtos ?? [], [dados])
   const unidades = useMemo(() => dados?.unidades ?? [], [dados])
@@ -158,19 +165,65 @@ export function AssistenteChat({ compacto = false }: { compacto?: boolean }) {
     ...(categoria ? { categoria } : {}),
   })
 
+  /** Consulta sem a IA: lista os artigos achados pela busca. `false` se a busca ainda não carregou. */
+  function consultarLocal(pergunta: string): boolean {
+    if (!dados?.motor) {
+      setErro('A busca ainda está carregando. Tente de novo em instantes.')
+      return false
+    }
+    const descendentes = new Set<string>()
+    if (subproduto) {
+      descendentes.add(subproduto)
+      let cresceu = true
+      while (cresceu) {
+        cresceu = false
+        for (const b of arvore ?? []) {
+          if (
+            b.parentId &&
+            descendentes.has(b.parentId) &&
+            !descendentes.has(b.id)
+          ) {
+            descendentes.add(b.id)
+            cresceu = true
+          }
+        }
+      }
+    }
+    const resultados = consultarSemIA(dados.motor, pergunta, {
+      ...(produto ? { productId: produto } : {}),
+      ...(!produto && unidade
+        ? { productIds: produtosDoFiltro.map((p) => p.id) }
+        : {}),
+      ...(subproduto ? { blockIds: descendentes } : {}),
+      ...(categoria ? { categoria } : {}),
+    })
+    setMensagens((atual) => [
+      ...atual,
+      { id: proximoId.current++, papel: 'busca', resultados },
+    ])
+    return true
+  }
+
   async function enviar(e: FormEvent) {
     e.preventDefault()
     const pergunta = texto.trim()
     if (pergunta.length < 3 || enviando) return
     const historico = mensagens
+      .flatMap((m) =>
+        m.papel === 'busca' ? [] : [{ papel: m.papel, texto: m.texto }],
+      )
       .slice(-6)
-      .map((m) => ({ papel: m.papel, texto: m.texto }))
     setMensagens((atual) => [
       ...atual,
       { id: proximoId.current++, papel: 'usuario', texto: pergunta },
     ])
     setTexto('')
     setErro(null)
+    // Sem o servidor do assistente, a consulta é feita direto na busca.
+    if (!comIA) {
+      consultarLocal(pergunta)
+      return
+    }
     setEnviando(true)
     try {
       const resposta = await perguntar({
@@ -189,9 +242,17 @@ export function AssistenteChat({ compacto = false }: { compacto?: boolean }) {
         },
       ])
     } catch (e) {
-      setErro(
-        e instanceof Error ? e.message : 'Não foi possível responder agora.',
-      )
+      // Servidor fora do ar: em vez de só avisar, mostra o que a busca achou.
+      if (
+        (e as { codigo?: string }).codigo === 'rede' &&
+        consultarLocal(pergunta)
+      ) {
+        setSemServidor(true)
+      } else {
+        setErro(
+          e instanceof Error ? e.message : 'Não foi possível responder agora.',
+        )
+      }
     } finally {
       setEnviando(false)
     }
@@ -210,15 +271,6 @@ export function AssistenteChat({ compacto = false }: { compacto?: boolean }) {
     } catch {
       // A avaliação é opcional: se falhar, a conversa segue.
     }
-  }
-
-  if (!assistenteConfigurado()) {
-    return (
-      <p role="status" className="cartao p-4 text-sm">
-        O assistente ainda não foi configurado neste ambiente. Fale com um
-        administrador.
-      </p>
-    )
   }
 
   const filtrosUi = (
@@ -307,6 +359,14 @@ export function AssistenteChat({ compacto = false }: { compacto?: boolean }) {
         filtrosUi
       )}
 
+      {(!comIA || semServidor) && (
+        <p role="status" className="mb-4 rounded-xl bg-fundo p-3 text-sm">
+          {comIA
+            ? 'Não consegui falar com o assistente de IA. Enquanto isso, a consulta mostra os artigos encontrados pela busca.'
+            : 'Consulta sem IA: o assistente não está configurado neste ambiente, então a pergunta é procurada direto na documentação.'}
+        </p>
+      )}
+
       <ul className="mb-4 space-y-3" aria-live="polite" aria-label="Conversa">
         {mensagens.length === 0 && (
           <li className="text-sm text-suave">
@@ -320,6 +380,40 @@ export function AssistenteChat({ compacto = false }: { compacto?: boolean }) {
               className="ml-auto max-w-[85%] rounded-lg bg-bloco p-3 text-sm"
             >
               {m.texto}
+            </li>
+          ) : m.papel === 'busca' ? (
+            <li key={m.id} className="cartao max-w-[95%] p-4">
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-suave">
+                <Search className="size-3.5" aria-hidden />
+                Consulta sem IA: artigos encontrados na documentação
+              </p>
+              {m.resultados.length === 0 ? (
+                <p className="text-sm">
+                  Não encontrei artigos sobre isso. Tente outras palavras ou
+                  tire os filtros.
+                </p>
+              ) : (
+                <ol className="space-y-3 text-sm">
+                  {m.resultados.map((r) => (
+                    <li key={r.item.id}>
+                      <Link
+                        to={`/a/${r.item.id}`}
+                        className="font-semibold text-bloco-icone hover:underline"
+                      >
+                        {r.item.titulo}
+                      </Link>
+                      <span className="text-xs text-suave">
+                        {' · '}
+                        {produtos.find((p) => p.id === r.item.productId)
+                          ?.nome ?? 'Produto'}
+                      </span>
+                      <p className="mt-0.5 text-suave">
+                        <Highlight partes={r.trecho} />
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </li>
           ) : (
             <li key={m.id} className="cartao max-w-[95%] p-4">
@@ -414,7 +508,9 @@ export function AssistenteChat({ compacto = false }: { compacto?: boolean }) {
           <p className="text-xs text-suave">
             {restantes !== null &&
               `${restantes} pergunta${restantes === 1 ? '' : 's'} restante${restantes === 1 ? '' : 's'} hoje. `}
-            A IA pode errar: confira nas fontes.
+            {comIA && !semServidor
+              ? 'A IA pode errar: confira nas fontes.'
+              : 'Sem IA: a consulta lista os artigos, sem escrever uma resposta.'}
           </p>
           <button
             type="submit"

@@ -292,6 +292,16 @@ excluir um, excluir em lote, entrar como a leitora criada). Fica em aberto:
       `ficha` que já estiver gravado em `blocks` fica no banco, sem uso
 - [ ] Conferir no Firebase `dev` com o rodapé real do SmartShare 4
 
+### Consulta sem a IA (pedido do time)
+
+- [x] "Busca/consulta com IA" funciona sem o servidor do assistente: sem
+      servidor configurado, ou com ele fora do ar, a pergunta é procurada direto
+      no índice de busca (sem palavras comuns, com sinônimos) e a tela lista os
+      artigos encontrados com um trecho (`src/utils/consultaSemIA.ts`). Não
+      escreve resposta, não gasta com a API e respeita os filtros e o acesso
+- [ ] Conferir no Firebase `dev` com os artigos reais (ex.: "como digitalizo um
+      documento")
+
 ### Aside e menus de administrador
 
 - [x] Aside esquerda (Manual de produtos, Busca/consulta com IA), disponível
