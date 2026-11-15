@@ -100,6 +100,43 @@ export function MarkdownRodape({ texto }: { texto: string }) {
             </Lista>
           )
         }
+        if (b.tipo === 'tabela') {
+          return (
+            <div key={i} className="overflow-x-auto py-1">
+              <table className="w-full border-collapse text-left">
+                {b.cabecalho.length > 0 && (
+                  <thead>
+                    <tr>
+                      {b.cabecalho.map((c, j) => (
+                        <th
+                          key={j}
+                          scope="col"
+                          className="border border-borda bg-bloco px-3 py-2 font-semibold text-texto"
+                        >
+                          <Trechos trechos={c} />
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                )}
+                <tbody>
+                  {b.linhas.map((linha, j) => (
+                    <tr key={j}>
+                      {linha.map((c, k) => (
+                        <td
+                          key={k}
+                          className="border border-borda px-3 py-2 align-top"
+                        >
+                          <Trechos trechos={c} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
         return (
           <p key={i}>
             <Trechos trechos={b.trechos} />

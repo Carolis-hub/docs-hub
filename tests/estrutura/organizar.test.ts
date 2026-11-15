@@ -99,4 +99,26 @@ describe('organizarUnidade', () => {
       (await db().doc('blocks/filho').get()).get('unidadeId'),
     ).toBeUndefined()
   })
+
+  it('quem tem acesso pela BU passa a ver o produto ligado', async () => {
+    const d = db()
+    await d.doc('users/leitor').set({
+      role: 'reader',
+      unidadesPermitidas: ['u-process-solution'],
+      produtosPermitidos: [],
+    })
+    await d.doc('users/antigo').set({
+      role: 'reader',
+      produtosPermitidos: ['outro'],
+    })
+    const r = await organizarUnidade(d, { ...base, produtos: ['ss4'] })
+    expect(r.usuariosAtualizados).toBe(1)
+    expect(
+      (await d.doc('users/leitor').get()).get('produtosPermitidos'),
+    ).toEqual(['ss4'])
+    // Conta sem acesso por BU (lista de produtos antiga) não é tocada.
+    expect(
+      (await d.doc('users/antigo').get()).get('produtosPermitidos'),
+    ).toEqual(['outro'])
+  })
 })

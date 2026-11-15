@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react'
 import { Building2, Plus, Search } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BlockCards } from '../components/BlockCards'
-import { EditorDoRodape } from '../components/EditorDoRodape'
 import { BlockForm } from '../components/BlockForm'
 import { Interruptor, TituloDeSecao } from '../components/ListToolbar'
 import { useAsync } from '../hooks/useAsync'
@@ -165,14 +164,6 @@ export function Home() {
             setEditando(null)
             recarregar()
           }}
-        />
-      )}
-      {editando && (
-        <EditorDoRodape
-          key={editando.id}
-          produto={editando}
-          uid={uid}
-          aoSalvar={recarregar}
         />
       )}
       {aviso && (

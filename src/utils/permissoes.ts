@@ -25,6 +25,12 @@ export const MODULOS_DE_PERMISSAO: ModuloDePermissao[] = [
     descricao: 'Controla se a entrada aparece na aside e se a tela abre.',
     itens: [
       {
+        id: 'aside',
+        rotulo: 'Mostrar a aside',
+        descricao:
+          'Menu lateral da esquerda. Sem ele, as telas continuam abrindo.',
+      },
+      {
         id: 'manual',
         rotulo: 'Manual de produtos',
         descricao: 'Home, produtos, subprodutos, módulos, artigos e a busca.',
@@ -39,7 +45,7 @@ export const MODULOS_DE_PERMISSAO: ModuloDePermissao[] = [
   {
     id: 'administracao',
     titulo: 'Administração',
-    descricao: 'Telas de Configurações › Administração.',
+    descricao: 'Usuários, uso da IA e métricas.',
     itens: [
       {
         id: 'usuarios',

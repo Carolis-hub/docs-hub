@@ -69,7 +69,7 @@ export function Layout({ children }: { children: ReactNode }) {
           )}
 
           <div className="ml-auto flex items-center gap-2">
-            {!aside.visivel && (
+            {!aside.visivel && podeAcessar(profile, 'aside') && (
               <button
                 type="button"
                 onClick={() => void atualizarAside({ visivel: true })}

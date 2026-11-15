@@ -9,10 +9,10 @@ import {
   where,
   writeBatch,
 } from 'firebase/firestore'
+import { recalcularAcessosPorUnidade } from './acessos'
 import { registrarAuditoria } from './audit'
 import { db } from './firebase'
-import type { Block, BlockInput, Ficha, Rodape } from '../types/content'
-import { normalizarFicha } from '../utils/ficha'
+import type { Block, BlockInput, Rodape } from '../types/content'
 import { normalizarRodape } from '../utils/rodape'
 import { slugify } from '../utils/slug'
 
@@ -117,6 +117,7 @@ export async function createBlock(
   batch.set(ref, block)
   registrarAuditoria(batch, uid, 'bloco.criar', `blocks/${ref.id}`)
   await batch.commit()
+  if (!parent) await acompanharAcessos(uid)
   return { id: ref.id, ...block }
 }
 
@@ -138,6 +139,20 @@ export async function updateBlock(
   })
   registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`)
   await batch.commit()
+  if (input.unidadeId !== undefined) await acompanharAcessos(uid)
+}
+
+/**
+ * Produto novo ou que mudou de BU: quem tem acesso por BU passa a ver (ou
+ * deixa de ver) o produto. O produto já foi gravado, então uma falha aqui não
+ * desfaz nada: basta salvar de novo o produto ou o usuário.
+ */
+async function acompanharAcessos(uid: string): Promise<void> {
+  try {
+    await recalcularAcessosPorUnidade(uid)
+  } catch (e) {
+    console.warn('Não foi possível recalcular os acessos por BU.', e)
+  }
 }
 
 /** Troca só a descrição do bloco (usada na descrição do produto, na própria tela). */
@@ -150,23 +165,6 @@ export async function salvarDescricao(
   batch.update(doc(blocks, id), { descricao: descricao.trim() })
   registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'descrição')
   await batch.commit()
-}
-
-/**
- * Grava a ficha do produto (compatibilidade, instaladores, release notes…).
- * Devolve a ficha como foi gravada, já limpa e dentro dos limites.
- */
-export async function salvarFicha(
-  id: string,
-  ficha: Ficha,
-  uid: string,
-): Promise<Ficha> {
-  const limpa = normalizarFicha(ficha)
-  const batch = writeBatch(db)
-  batch.update(doc(blocks, id), { ficha: limpa })
-  registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'ficha')
-  await batch.commit()
-  return limpa
 }
 
 /**

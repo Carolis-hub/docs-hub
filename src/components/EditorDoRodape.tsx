@@ -23,7 +23,7 @@ interface Props {
   uid: string
   /** Chamado depois de gravar, para a tela recarregar. */
   aoSalvar: () => void
-  /** Quando informado, mostra o botão "Fechar" (editor aberto sozinho, fora da edição do produto). */
+  /** Quando informado, mostra o botão "Fechar". */
   aoFechar?: () => void
 }
 
@@ -31,7 +31,8 @@ type Modal = { coluna: string; item?: ItemRodape } | null
 
 /**
  * Configura o rodapé do produto: colunas lado a lado, cada uma com seus itens.
- * Fica no fim da edição do produto; subprodutos, módulos e artigos herdam.
+ * Abre no lugar do próprio rodapé, no fim da página (`RodapeDoProduto`);
+ * subprodutos, módulos e artigos herdam.
  */
 export function EditorDoRodape({ produto, uid, aoSalvar, aoFechar }: Props) {
   const [colunas, setColunas] = useState<ColunaRodape[]>(
@@ -80,10 +81,7 @@ export function EditorDoRodape({ produto, uid, aoSalvar, aoFechar }: Props) {
   const vazio = normalizarRodape({ colunas }) === null
 
   return (
-    <section
-      aria-labelledby="rodape-titulo"
-      className="cartao mt-6 space-y-4 p-5"
-    >
+    <section aria-labelledby="rodape-titulo" className="cartao space-y-4 p-5">
       <div>
         <h2 id="rodape-titulo" className="text-lg font-bold">
           Rodapé do produto

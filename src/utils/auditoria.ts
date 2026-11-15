@@ -30,6 +30,7 @@ const ROTULOS: Record<string, string> = {
   'usuario.editar': 'Editou um usuário',
   'usuario.desativar': 'Desativou um usuário',
   'usuario.reativar': 'Reativou um usuário',
+  'usuario.excluir': 'Excluiu um usuário',
   'migracao.importar': 'Importou documentos (migração)',
   'ingestao.sincronizar': 'Sincronizou uma pasta de documentos',
 }

@@ -1,10 +1,4 @@
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Article, Block } from '../types/content'
@@ -28,7 +22,6 @@ vi.mock('../services/blocks', () => ({
   deleteBlock: vi.fn(),
   reorderBlocks: vi.fn(),
   salvarDescricao: vi.fn(),
-  salvarFicha: vi.fn(),
   salvarRodape: vi.fn(),
 }))
 vi.mock('../services/unidades', () => ({
@@ -144,79 +137,30 @@ describe('BlockPage', () => {
     ).toHaveLength(2)
   })
 
-  it('produto: mostra a descrição e as informações do produto', async () => {
+  it('produto: mostra a descrição; as "Informações do produto" não existem mais', async () => {
     getBlock.mockImplementation(async (id: string) =>
       id === 'p'
-        ? {
-            ...produto,
-            descricao: 'Plataforma de gestão de documentos.',
-            ficha: {
-              secoes: [
-                {
-                  id: 'compatibilidade-di',
-                  tipo: 'tabela',
-                  titulo: 'Compatibilidade DI',
-                  texto: 'Mantenha sempre o produto atualizado.',
-                  colunas: ['SmartShare', 'DI Client'],
-                  linhas: [['3.85.23', '3.85.19']],
-                },
-              ],
-            },
-          }
+        ? { ...produto, descricao: 'Plataforma de gestão de documentos.' }
         : anexos,
     )
     await abrir('p')
     expect(
       await screen.findByText('Plataforma de gestão de documentos.'),
     ).toBeInTheDocument()
+    expect(screen.queryByRole('tab')).toBeNull()
     expect(
-      screen.getByRole('heading', { name: 'Compatibilidade DI' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /Editar informações/ }),
-    ).toBeInTheDocument()
-  })
-
-  it('produto sem nada salvo: as 5 opções fixas já aparecem, para admin e leitor', async () => {
-    const nomes = [
-      'Compatibilidade DI',
-      'Compatibilidade SmartShare',
-      'Instaladores e Aplicativos',
-      'Release Notes',
-      'Contato',
-    ]
-    await abrir('p')
-    const admin = await screen.findAllByRole('tab')
-    expect(admin.map((o) => o.textContent)).toEqual(nomes)
-    cleanup()
-    useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
-    await abrir('p')
-    const leitor = await screen.findAllByRole('tab')
-    expect(leitor.map((o) => o.textContent)).toEqual(nomes)
-  })
-
-  it('leitor não vê a edição das informações do produto', async () => {
-    useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
-    await abrir('p')
-    await screen.findByText('Dashboard')
-    expect(screen.queryByText(/Informações do produto/)).toBeNull()
+      screen.queryByRole('region', { name: 'Informações do produto' }),
+    ).toBeNull()
     expect(
       screen.queryByRole('button', { name: /Editar informações/ }),
     ).toBeNull()
   })
 
-  it('produto: as 5 opções ficam abaixo dos subprodutos', async () => {
+  it('produto: a descrição fica acima dos subprodutos', async () => {
     await abrir('p')
     const subprodutos = await screen.findByRole('region', {
       name: 'Subprodutos',
     })
-    const opcoes = screen.getByRole('region', {
-      name: 'Informações do produto',
-    })
-    expect(
-      subprodutos.compareDocumentPosition(opcoes) &
-        Node.DOCUMENT_POSITION_FOLLOWING,
-    ).toBeTruthy()
     const descricao = screen.getByRole('region', {
       name: 'Descrição do produto',
     })
@@ -312,14 +256,17 @@ describe('BlockPage', () => {
     expect(screen.queryByText(/novo subproduto/i)).toBeNull()
   })
 
-  it('admin acha o rodapé na página do produto, no cabeçalho e no fim da página', async () => {
+  it('admin configura o rodapé no fim da página do produto, onde o rodapé fica', async () => {
     await abrir('p')
     await screen.findByText('Dashboard')
     // Produto sem rodapé: o convite aparece no fim da página.
     expect(
       screen.getByRole('button', { name: /ainda não tem rodapé/i }),
     ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Rodapé' }))
+    expect(screen.queryByRole('button', { name: 'Rodapé' })).toBeNull()
+    fireEvent.click(
+      screen.getByRole('button', { name: /ainda não tem rodapé/i }),
+    )
     expect(
       screen.getByRole('heading', { name: 'Rodapé do produto' }),
     ).toBeInTheDocument()
@@ -330,15 +277,20 @@ describe('BlockPage', () => {
     expect(
       screen.queryByRole('heading', { name: 'Rodapé do produto' }),
     ).toBeNull()
+    // Editar o produto não traz mais o editor do rodapé junto.
+    fireEvent.click(screen.getByRole('button', { name: /editar produto/i }))
+    expect(
+      screen.queryByRole('heading', { name: 'Rodapé do produto' }),
+    ).toBeNull()
   })
 
   it('subproduto não tem configuração de rodapé; leitor também não', async () => {
     await abrir('anexos')
     await screen.findByText('Como excluir anexos?')
-    expect(screen.queryByRole('button', { name: 'Rodapé' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /rodapé/i })).toBeNull()
     useAuth.mockReturnValue({ user: { uid: 'l' }, isAdmin: false })
     await abrir('p')
     await screen.findByText('Dashboard')
-    expect(screen.queryByRole('button', { name: 'Rodapé' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /rodapé/i })).toBeNull()
   })
 })

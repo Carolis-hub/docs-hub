@@ -10,25 +10,30 @@ vi.mock('../../hooks/useAuth', () => ({
     isAdmin: true,
   }),
 }))
-vi.mock('../../services/preferencias', () => ({
-  lerPreferencias: vi.fn(async () => null),
-  salvarPreferencias: vi.fn(async () => undefined),
+vi.mock('../../services/users', () => ({
+  listUsers: vi.fn(async () => [
+    { uid: 'u1', nome: 'Ana', email: 'ana@x.com', role: 'reader' },
+  ]),
+  deleteUsers: vi.fn(),
 }))
 
 describe('ConfiguracoesPage', () => {
-  it('traz as configurações do usuário (aside) junto com os módulos de administração', () => {
+  it('tem dois blocos: Configuração de usuário (com a lista) e Governança', async () => {
     render(
       <MemoryRouter>
         <ConfiguracoesPage />
       </MemoryRouter>,
     )
     expect(
-      screen.getByRole('heading', { name: 'Minhas configurações' }),
+      screen.getByRole('heading', { name: 'Configuração de usuário' }),
     ).toBeInTheDocument()
-    expect(screen.getByLabelText('Mostrar a aside')).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: 'Administração' }),
+      screen.getByRole('heading', { name: 'Governança' }),
     ).toBeInTheDocument()
+    expect(await screen.findByText('Ana')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Minhas configurações' }),
+    ).not.toBeInTheDocument()
   })
 
   it('traz o módulo Governança com Revisão, Sincronização e Auditoria', () => {
@@ -47,10 +52,6 @@ describe('ConfiguracoesPage', () => {
     expect(screen.getByRole('link', { name: /auditoria/i })).toHaveAttribute(
       'href',
       '/admin/auditoria',
-    )
-    expect(screen.getByRole('link', { name: /usuários/i })).toHaveAttribute(
-      'href',
-      '/admin/usuarios',
     )
     expect(screen.getByRole('link', { name: /uso da ia/i })).toHaveAttribute(
       'href',

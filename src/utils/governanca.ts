@@ -19,15 +19,6 @@ export const MODULO_GOVERNANCA: {
     rotulo: 'Auditoria',
     descricao: 'Registro de quem fez o quê e quando.',
   },
-]
-
-/** Módulo "Administração", dentro de Configurações (só administradores). */
-export const MODULO_ADMINISTRACAO: typeof MODULO_GOVERNANCA = [
-  {
-    para: '/admin/usuarios',
-    rotulo: 'Configuração de usuários',
-    descricao: 'Contas, dados cadastrais e permissões de cada pessoa.',
-  },
   {
     para: '/admin/assistente',
     rotulo: 'Uso da IA',
@@ -37,7 +28,8 @@ export const MODULO_ADMINISTRACAO: typeof MODULO_GOVERNANCA = [
 
 export const ROTAS_CONFIGURACOES = [
   '/admin/configuracoes',
-  ...MODULO_ADMINISTRACAO.map((m) => m.para),
+  // Lista, criação e edição de usuários (bloco "Configuração de usuário").
+  '/admin/usuarios',
   ...MODULO_GOVERNANCA.map((m) => m.para),
 ]
 

@@ -239,6 +239,69 @@ ou mudar de banco antes da Fase 5.
       `fase-1` a `fase-4` têm commits próprios: **conferir antes**)
 - [ ] Decidir se a branch padrão passa a se chamar `principal`
 
+### Menu Configurações: usuários e governança (pedido do time)
+
+Roadmap desta melhoria. A tela Configurações passa a ter dois grandes blocos:
+**Configuração de usuário** e **Governança**.
+
+- [x] Etapa 1 — Tela Configurações em dois blocos: "Configuração de usuário"
+      (lista de todos os usuários) e "Governança" (Revisão, Sincronização,
+      Auditoria e Uso da IA). "Minhas configurações" fica só em Minhas
+      preferências (avatar no topo)
+- [x] Etapa 2 — Ações da lista: botões "Novo usuário" e lixeira (excluir em
+      lote, com seleção por caixas) no início; em cada linha, lápis (editar) e
+      lixeira (excluir)
+- [x] Etapa 3 — Criar e editar em uma tela própria (`/admin/usuarios/novo` e
+      `/admin/usuarios/:uid/editar`) com os módulos **Geral** (nome, e-mail de
+      login, senha, confirmar senha, tipo de usuário) e **Permissões**
+- [x] Etapa 4 — Módulo Permissões: "Aside lateral" (Mostrar a aside → Manual de
+      produtos, Busca/consulta com IA) e "BUs" (Selecionar todos → cada BU)
+- [x] Etapa 5 — Acesso por BU valendo nas regras: a escolha fica em
+      `users/{uid}.unidadesPermitidas` e vira `produtosPermitidos` (o que as
+      regras do Firestore leem); recalculado quando um produto entra ou muda de BU
+      (pela tela e pelo `npm run estrutura`)
+- [x] Etapa 6 — Exclusão de usuário (uma conta ou em lote), com auditoria
+- [x] Etapa 7 — Testes, conferências do CI e atualização da documentação
+
+Feito em 14/11/2026. Conferido no navegador contra o Emulator (criar, editar,
+excluir um, excluir em lote, entrar como a leitora criada). Fica em aberto:
+
+- [ ] Conferir no Firebase `dev` com as contas reais
+- [ ] **Excluir não apaga a conta de login** do Firebase Authentication (o
+      navegador não pode): a pessoa perde o acesso na hora, mas o e-mail só pode
+      ser cadastrado de novo depois de apagar a conta no console do Firebase.
+      Resolver de vez pede um servidor com Admin SDK (o mesmo caso do assistente)
+- [ ] **Senha de outra pessoa**: o admin não define; a tela envia o e-mail de
+      redefinição do Firebase (não exercitado de verdade: o Emulator não envia
+      e-mail). Na própria conta, a troca é direta
+- [ ] Contas antigas (só com `produtosPermitidos`) passam ao acesso por BU na
+      primeira vez que forem salvas na tela nova
+
+### Rodapé: configuração no lugar do rodapé, janela e tabelas (pedido do time)
+
+- [x] A configuração saiu da edição do produto e do cabeçalho: fica no fim da
+      página do produto, onde o rodapé aparece (botão "Configurar rodapé" dentro
+      do rodapé; sem rodapé, o convite para configurar)
+- [x] Na tela ficam só o nome da coluna e o título das opções; clicar no título
+      abre uma janela com o conteúdo (opção sem conteúdo e com link abre o link)
+- [x] Tabelas no conteúdo (linhas com "|"), com o botão "Tabela" no editor do
+      item e prévia; limite do conteúdo subiu de 2.000 para 8.000 caracteres
+- [x] "Informações do produto" removidas da tela do produto (as 5 opções fixas:
+      Compatibilidade DI, Compatibilidade SmartShare, Instaladores e Aplicativos,
+      Release Notes, Contato): esse conteúdo passa a ser do rodapé. O campo
+      `ficha` que já estiver gravado em `blocks` fica no banco, sem uso
+- [ ] Conferir no Firebase `dev` com o rodapé real do SmartShare 4
+
+### Consulta sem a IA (pedido do time)
+
+- [x] "Busca/consulta com IA" funciona sem o servidor do assistente: sem
+      servidor configurado, ou com ele fora do ar, a pergunta é procurada direto
+      no índice de busca (sem palavras comuns, com sinônimos) e a tela lista os
+      artigos encontrados com um trecho (`src/utils/consultaSemIA.ts`). Não
+      escreve resposta, não gasta com a API e respeita os filtros e o acesso
+- [ ] Conferir no Firebase `dev` com os artigos reais (ex.: "como digitalizo um
+      documento")
+
 ### Aside e menus de administrador
 
 - [x] Aside esquerda (Manual de produtos, Busca/consulta com IA), disponível

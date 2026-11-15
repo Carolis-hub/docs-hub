@@ -8,6 +8,7 @@ import {
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { RespostaAssistente } from '../types/assistente'
+import { criarMotor } from '../utils/searchEngine'
 import { AssistentePage } from './AssistentePage'
 
 const assistenteConfigurado = vi.fn()
@@ -100,17 +101,58 @@ beforeEach(() => {
           ordem: 0,
         },
       ],
-      motor: {},
+      motor: criarMotor(
+        [
+          {
+            id: 'dig',
+            titulo: 'Digitalizar documentos',
+            resumo: '',
+            textoPlano: 'Para digitalizar um documento, abra a captura.',
+            blockId: 's1',
+            publico: 'usuario',
+            productId: 'p1',
+          },
+        ],
+        true,
+      ),
     },
   })
 })
 
 describe('AssistentePage', () => {
-  it('avisa quando o servidor do assistente não foi configurado', () => {
+  it('sem servidor configurado, a consulta funciona sem a IA', async () => {
     assistenteConfigurado.mockReturnValue(false)
     abrir()
-    expect(screen.getByText(/ainda não foi configurado/)).toBeInTheDocument()
-    expect(screen.queryByLabelText('Sua pergunta')).toBeNull()
+    expect(screen.getByRole('status')).toHaveTextContent('Consulta sem IA')
+    await perguntarComTexto('como digitalizo um documento')
+    expect(
+      await screen.findByRole('link', { name: 'Digitalizar documentos' }),
+    ).toHaveAttribute('href', '/a/dig')
+    expect(perguntar).not.toHaveBeenCalled()
+  })
+
+  it('servidor fora do ar: mostra os artigos da busca em vez do erro', async () => {
+    perguntar.mockRejectedValueOnce(
+      Object.assign(new Error('Não consegui falar com o assistente.'), {
+        codigo: 'rede',
+      }),
+    )
+    abrir()
+    await perguntarComTexto('como digitalizo um documento')
+    expect(
+      await screen.findByRole('link', { name: 'Digitalizar documentos' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(
+      screen.getByText(/Não consegui falar com o assistente de IA/),
+    ).toBeInTheDocument()
+  })
+
+  it('consulta sem IA sem nada parecido avisa e sugere outras palavras', async () => {
+    assistenteConfigurado.mockReturnValue(false)
+    abrir()
+    await perguntarComTexto('folha de pagamento')
+    expect(await screen.findByText(/Não encontrei artigos/)).toBeInTheDocument()
   })
 
   it('envia a pergunta e mostra a resposta com citação clicável, fontes e a cota restante', async () => {
