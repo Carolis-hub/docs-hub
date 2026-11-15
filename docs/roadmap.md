@@ -302,6 +302,21 @@ excluir um, excluir em lote, entrar como a leitora criada). Fica em aberto:
 - [ ] Conferir no Firebase `dev` com os artigos reais (ex.: "como digitalizo um
       documento")
 
+### Aside fixa e recolhível, busca dentro do produto e "Ver mais" (pedido do time)
+
+- [x] Aside fixa: não rola junto com o resto da tela
+- [x] Aside pode ser recolhida (faixa só com os ícones) e expandida; a escolha
+      fica guardada no navegador
+- [x] Entrada "Busca/consulta com IA" passou a se chamar "Buscar Artigo" (aside,
+      Minhas preferências e permissões do usuário)
+- [x] Botão flutuante passou a se chamar "Assistente IA"
+- [x] Busca do topo (Ctrl+K) só aparece dentro de um produto (página do produto,
+      subproduto, módulo, artigo e resultados da busca dele) e procura só nele
+      (`src/contexts/produtoAtual.ts`)
+- [x] Cartão do produto lista até 5 subprodutos; havendo mais, "Ver mais" leva à
+      tela do produto
+- [ ] Conferir no Firebase `dev` com dados reais
+
 ### Aside e menus de administrador
 
 - [x] Aside esquerda (Manual de produtos, Busca/consulta com IA), disponível

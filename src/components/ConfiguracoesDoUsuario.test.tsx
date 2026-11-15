@@ -27,7 +27,7 @@ describe('ConfiguracoesDoUsuario', () => {
     render(<ConfiguracoesDoUsuario />)
     expect(screen.getByLabelText('Mostrar a aside')).toBeChecked()
     expect(prévia()).toHaveTextContent('Manual de produtos')
-    expect(prévia()).toHaveTextContent('Busca/consulta com IA')
+    expect(prévia()).toHaveTextContent('Buscar Artigo')
     expect(
       screen.getByRole('button', { name: 'Restaurar o padrão' }),
     ).toBeDisabled()
@@ -35,8 +35,8 @@ describe('ConfiguracoesDoUsuario', () => {
 
   it('desmarcar uma entrada tira da prévia e grava na conta', async () => {
     render(<ConfiguracoesDoUsuario />)
-    fireEvent.click(screen.getByLabelText('Busca/consulta com IA'))
-    expect(prévia()).not.toHaveTextContent('Busca/consulta com IA')
+    fireEvent.click(screen.getByLabelText('Buscar Artigo'))
+    expect(prévia()).not.toHaveTextContent('Buscar Artigo')
     expect(prévia()).toHaveTextContent('Manual de produtos')
     await waitFor(() =>
       expect(salvarPreferencias).toHaveBeenCalledWith('u1', {
@@ -55,7 +55,7 @@ describe('ConfiguracoesDoUsuario', () => {
   it('sem nenhuma entrada marcada avisa que a aside não aparece', () => {
     render(<ConfiguracoesDoUsuario />)
     fireEvent.click(screen.getByLabelText('Manual de produtos'))
-    fireEvent.click(screen.getByLabelText('Busca/consulta com IA'))
+    fireEvent.click(screen.getByLabelText('Buscar Artigo'))
     expect(prévia()).toHaveTextContent(/Nenhuma entrada marcada/)
   })
 

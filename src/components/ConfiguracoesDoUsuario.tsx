@@ -1,4 +1,4 @@
-import { BookOpen, Sparkles, type LucideIcon } from 'lucide-react'
+import { BookOpen, Search, type LucideIcon } from 'lucide-react'
 import { useAuth } from '../hooks/useAuth'
 import { usePreferencias } from '../hooks/usePreferencias'
 import type { EntradaAside } from '../utils/aside'
@@ -10,7 +10,7 @@ import {
 
 const ICONES: Record<EntradaAside, LucideIcon> = {
   manual: BookOpen,
-  busca: Sparkles,
+  busca: Search,
 }
 
 /**

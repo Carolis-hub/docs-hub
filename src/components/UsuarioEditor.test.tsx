@@ -70,7 +70,7 @@ describe('UsuarioEditor', () => {
     expect(screen.getByLabelText('Tipo de usuário')).toHaveValue('reader')
     expect(screen.getByLabelText('Mostrar a aside')).toBeChecked()
     expect(screen.getByLabelText('Manual de produtos')).toBeChecked()
-    expect(screen.getByLabelText('Busca/consulta com IA')).toBeChecked()
+    expect(screen.getByLabelText('Buscar Artigo')).toBeChecked()
     expect(screen.getByLabelText(/Process Solution/)).not.toBeChecked()
   })
 
@@ -124,7 +124,7 @@ describe('UsuarioEditor', () => {
     fireEvent.change(screen.getByLabelText('Nome'), {
       target: { value: 'Ana Maria' },
     })
-    fireEvent.click(screen.getByLabelText('Busca/consulta com IA'))
+    fireEvent.click(screen.getByLabelText('Buscar Artigo'))
     fireEvent.click(screen.getByLabelText('Mostrar a aside'))
     fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
     await waitFor(() => expect(onDone).toHaveBeenCalledWith('u1'))

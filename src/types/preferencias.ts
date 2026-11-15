@@ -4,7 +4,7 @@ export interface ConfigAside {
   visivel: boolean
   /** Entrada "Manual de produtos". */
   manual: boolean
-  /** Entrada "Busca/consulta com IA". */
+  /** Entrada "Buscar Artigo". */
   busca: boolean
 }
 

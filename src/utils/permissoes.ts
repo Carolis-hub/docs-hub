@@ -37,7 +37,7 @@ export const MODULOS_DE_PERMISSAO: ModuloDePermissao[] = [
       },
       {
         id: 'busca',
-        rotulo: 'Busca/consulta com IA',
+        rotulo: 'Buscar Artigo',
         descricao: 'Página do assistente e o botão flutuante do assistente.',
       },
     ],

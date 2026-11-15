@@ -15,6 +15,7 @@ import {
   type Visao,
 } from '../components/ListToolbar'
 import { PageHeader } from '../components/PageHeader'
+import { useInformarProdutoAtual } from '../contexts/produtoAtual'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
 import { usePreferencia } from '../hooks/usePreferencia'
@@ -95,6 +96,9 @@ export function BlockPage() {
       contagens,
     }
   }, [blockId, isAdmin])
+
+  // O cabeçalho mostra a busca (Ctrl+K) só dentro de um produto.
+  useInformarProdutoAtual(dados?.cadeia[0])
 
   const [modo, setModo] = useState<'novo' | 'editar' | null>(null)
   const [editandoFilho, setEditandoFilho] = useState<Block | null>(null)

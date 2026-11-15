@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArticleContent } from '../components/ArticleContent'
 import { RodapeDoProduto } from '../components/RodapeDoProduto'
 import { Breadcrumb } from '../components/Breadcrumb'
+import { useInformarProdutoAtual } from '../contexts/produtoAtual'
 import { useAsync } from '../hooks/useAsync'
 import { useAuth } from '../hooks/useAuth'
 import { useSearchEngine } from '../hooks/useSearchEngine'
@@ -58,6 +59,9 @@ export function ArticlePage() {
       }
     }
   }
+
+  // O cabeçalho mostra a busca (Ctrl+K) só dentro de um produto.
+  useInformarProdutoAtual(dados?.cadeia[0])
 
   if (carregando) return <Carregando />
   if (erro)

@@ -1,15 +1,30 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { Search } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { useProdutoAtual } from '../contexts/produtoAtual'
 import { useSearchEngine } from '../hooks/useSearchEngine'
 
-/** Busca rápida do cabeçalho: atalho Ctrl+K (ou ⌘K) e sugestões. */
+/**
+ * Busca rápida do cabeçalho: atalho Ctrl+K (ou ⌘K) e sugestões. Só aparece
+ * dentro de um produto (página do produto, subproduto, módulo, artigo ou os
+ * resultados da busca dele) e procura só naquele produto.
+ */
 export function QuickSearch() {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const [texto, setTexto] = useState('')
   const [aberto, setAberto] = useState(false)
   const { dados } = useSearchEngine()
+  const atual = useProdutoAtual()
+  const { pathname } = useLocation()
+  const [params] = useSearchParams()
+  // Nos resultados da busca, o produto vem do filtro que está na URL.
+  const produtoId =
+    atual?.id ?? (pathname === '/busca' ? (params.get('produto') ?? '') : '')
+  const nomeDoProduto =
+    atual?.nome ||
+    dados?.produtos.find((p) => p.id === produtoId)?.nome ||
+    'este produto'
 
   useEffect(() => {
     function aoTeclar(e: KeyboardEvent) {
@@ -24,16 +39,23 @@ export function QuickSearch() {
   }, [])
 
   const sugestoes = useMemo(
-    () => (dados && texto.trim() ? dados.motor.buscar(texto).slice(0, 5) : []),
-    [dados, texto],
+    () =>
+      dados && produtoId && texto.trim()
+        ? dados.motor.buscar(texto, { productId: produtoId }).slice(0, 5)
+        : [],
+    [dados, texto, produtoId],
   )
 
   function irParaBusca(e: FormEvent) {
     e.preventDefault()
     if (!texto.trim()) return
     setAberto(false)
-    navigate(`/busca?q=${encodeURIComponent(texto.trim())}`)
+    navigate(
+      `/busca?q=${encodeURIComponent(texto.trim())}&produto=${encodeURIComponent(produtoId)}`,
+    )
   }
+
+  if (!produtoId) return null
 
   return (
     <form role="search" onSubmit={irParaBusca} className="relative">
@@ -44,8 +66,8 @@ export function QuickSearch() {
       <input
         ref={inputRef}
         type="search"
-        aria-label="Busca rápida"
-        placeholder="Buscar artigos por título ou conteúdo"
+        aria-label={`Busca rápida em ${nomeDoProduto}`}
+        placeholder={`Buscar em ${nomeDoProduto}`}
         value={texto}
         onChange={(e) => {
           setTexto(e.target.value)

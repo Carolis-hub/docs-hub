@@ -15,7 +15,7 @@ export const ENTRADAS_DA_ASIDE: {
   rotulo: string
 }[] = [
   { id: 'manual', rotulo: 'Manual de produtos' },
-  { id: 'busca', rotulo: 'Busca/consulta com IA' },
+  { id: 'busca', rotulo: 'Buscar Artigo' },
 ]
 
 const bool = (v: unknown, padrao: boolean) =>

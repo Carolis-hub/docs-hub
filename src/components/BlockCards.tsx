@@ -48,6 +48,9 @@ interface Props {
   resumos?: Record<string, string>
 }
 
+/** Quantos subprodutos o cartão do produto lista; o resto fica atrás de "Ver mais". */
+const MAX_SUBPRODUTOS = 5
+
 function Cartao({
   bloco,
   variante,
@@ -144,7 +147,7 @@ function Cartao({
             aria-label={`Subprodutos de ${bloco.nome}`}
             className="flex flex-wrap gap-1.5 rounded-xl bg-fundo p-3"
           >
-            {filhos.map((f) => (
+            {filhos.slice(0, MAX_SUBPRODUTOS).map((f) => (
               <li key={f.id}>
                 <Link
                   to={`/b/${f.id}`}
@@ -154,6 +157,17 @@ function Cartao({
                 </Link>
               </li>
             ))}
+            {filhos.length > MAX_SUBPRODUTOS && (
+              <li>
+                <Link
+                  to={`/b/${bloco.id}`}
+                  aria-label={`Ver mais subprodutos de ${bloco.nome}`}
+                  className="inline-flex items-center px-1.5 py-0.5 text-xs font-semibold text-destaque hover:underline"
+                >
+                  Ver mais
+                </Link>
+              </li>
+            )}
           </ul>
         )}
       </li>
@@ -226,7 +240,7 @@ function Cartao({
           aria-label={`Subprodutos de ${bloco.nome}`}
           className="flex w-full basis-full flex-wrap gap-1.5 border-t border-borda pt-2"
         >
-          {filhos.map((f) => (
+          {filhos.slice(0, MAX_SUBPRODUTOS).map((f) => (
             <li key={f.id}>
               <Link
                 to={`/b/${f.id}`}
@@ -236,6 +250,17 @@ function Cartao({
               </Link>
             </li>
           ))}
+          {filhos.length > MAX_SUBPRODUTOS && (
+            <li>
+              <Link
+                to={`/b/${bloco.id}`}
+                aria-label={`Ver mais subprodutos de ${bloco.nome}`}
+                className="inline-flex items-center px-1.5 py-0.5 text-xs font-semibold text-destaque hover:underline"
+              >
+                Ver mais
+              </Link>
+            </li>
+          )}
         </ul>
       )}
     </li>
