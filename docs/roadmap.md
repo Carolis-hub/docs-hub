@@ -286,6 +286,10 @@ excluir um, excluir em lote, entrar como a leitora criada). Fica em aberto:
       abre uma janela com o conteúdo (opção sem conteúdo e com link abre o link)
 - [x] Tabelas no conteúdo (linhas com "|"), com o botão "Tabela" no editor do
       item e prévia; limite do conteúdo subiu de 2.000 para 8.000 caracteres
+- [x] "Informações do produto" removidas da tela do produto (as 5 opções fixas:
+      Compatibilidade DI, Compatibilidade SmartShare, Instaladores e Aplicativos,
+      Release Notes, Contato): esse conteúdo passa a ser do rodapé. O campo
+      `ficha` que já estiver gravado em `blocks` fica no banco, sem uso
 - [ ] Conferir no Firebase `dev` com o rodapé real do SmartShare 4
 
 ### Aside e menus de administrador

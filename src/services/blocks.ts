@@ -12,8 +12,7 @@ import {
 import { recalcularAcessosPorUnidade } from './acessos'
 import { registrarAuditoria } from './audit'
 import { db } from './firebase'
-import type { Block, BlockInput, Ficha, Rodape } from '../types/content'
-import { normalizarFicha } from '../utils/ficha'
+import type { Block, BlockInput, Rodape } from '../types/content'
 import { normalizarRodape } from '../utils/rodape'
 import { slugify } from '../utils/slug'
 
@@ -166,23 +165,6 @@ export async function salvarDescricao(
   batch.update(doc(blocks, id), { descricao: descricao.trim() })
   registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'descrição')
   await batch.commit()
-}
-
-/**
- * Grava a ficha do produto (compatibilidade, instaladores, release notes…).
- * Devolve a ficha como foi gravada, já limpa e dentro dos limites.
- */
-export async function salvarFicha(
-  id: string,
-  ficha: Ficha,
-  uid: string,
-): Promise<Ficha> {
-  const limpa = normalizarFicha(ficha)
-  const batch = writeBatch(db)
-  batch.update(doc(blocks, id), { ficha: limpa })
-  registrarAuditoria(batch, uid, 'bloco.editar', `blocks/${id}`, 'ficha')
-  await batch.commit()
-  return limpa
 }
 
 /**

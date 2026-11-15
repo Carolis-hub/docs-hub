@@ -6,8 +6,6 @@ import { RodapeDoProduto } from '../components/RodapeDoProduto'
 import { BlockCards } from '../components/BlockCards'
 import { BlockForm } from '../components/BlockForm'
 import { DescricaoDoProduto } from '../components/DescricaoDoProduto'
-import { EditorDaFicha } from '../components/EditorDaFicha'
-import { FichaDoProduto } from '../components/FichaDoProduto'
 import { Breadcrumb } from '../components/Breadcrumb'
 import {
   AlternarVisao,
@@ -29,7 +27,6 @@ import {
   listProductTree,
   reorderBlocks,
   salvarDescricao,
-  salvarFicha,
   updateBlock,
 } from '../services/blocks'
 import { listArticlesByBlock } from '../services/articles'
@@ -42,7 +39,6 @@ import {
   tipoDoNivel,
   tipoDosFilhos,
 } from '../utils/blocos'
-import { completarFicha } from '../utils/ficha'
 import { iconeDoArtigo } from '../utils/iconeDoArtigo'
 import { CATEGORIAS } from '../utils/categorias'
 import { normalizar } from '../utils/search'
@@ -103,7 +99,6 @@ export function BlockPage() {
   const [modo, setModo] = useState<'novo' | 'editar' | null>(null)
   const [editandoFilho, setEditandoFilho] = useState<Block | null>(null)
   const [aviso, setAviso] = useState<string | null>(null)
-  const [editandoFicha, setEditandoFicha] = useState(false)
   const [organizar, setOrganizar] = useState(false)
   const [filtroSecoes, setFiltroSecoes] = useState('')
   const [filtroArtigos, setFiltroArtigos] = useState('')
@@ -342,47 +337,6 @@ export function BlockPage() {
           )}
         </section>
       )}
-
-      {ehProduto &&
-        (() => {
-          // As 5 opções são fixas: sempre aparecem, só o conteúdo muda.
-          const ficha = completarFicha(bloco.ficha)
-          if (editandoFicha) {
-            return (
-              <div className="mb-10">
-                <EditorDaFicha
-                  inicial={ficha}
-                  aoCancelar={() => setEditandoFicha(false)}
-                  aoSalvar={async (nova) => {
-                    await salvarFicha(bloco.id, nova, uid)
-                    setEditandoFicha(false)
-                    recarregar()
-                  }}
-                />
-              </div>
-            )
-          }
-          return (
-            <section className="mb-10" aria-label="Informações do produto">
-              <FichaDoProduto
-                ficha={ficha}
-                admin={isAdmin}
-                acoes={
-                  isAdmin && (
-                    <button
-                      type="button"
-                      className="botao w-full"
-                      onClick={() => setEditandoFicha(true)}
-                    >
-                      <Pencil className="size-4" aria-hidden />
-                      Editar informações
-                    </button>
-                  )
-                }
-              />
-            </section>
-          )
-        })()}
 
       {(todosArtigos.length > 0 || !ehProduto) && (
         <section aria-label="Artigos">
