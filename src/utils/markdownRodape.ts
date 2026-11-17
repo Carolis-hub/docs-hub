@@ -6,15 +6,25 @@ export type TrechoMd =
   | { tipo: 'codigo'; texto: string }
   | { tipo: 'link'; url: string; trechos: TrechoMd[] }
 
+/** Alinhamento de um bloco ou coluna; sem valor, fica à esquerda. */
+export type AlinhamentoMd = 'centro' | 'direita'
+
 export type BlocoMd =
-  | { tipo: 'titulo'; nivel: 1 | 2 | 3; trechos: TrechoMd[] }
-  | { tipo: 'paragrafo'; trechos: TrechoMd[] }
+  | {
+      tipo: 'titulo'
+      nivel: 1 | 2 | 3
+      trechos: TrechoMd[]
+      alinhamento?: AlinhamentoMd
+    }
+  | { tipo: 'paragrafo'; trechos: TrechoMd[]; alinhamento?: AlinhamentoMd }
   | { tipo: 'lista'; ordenada: boolean; itens: TrechoMd[][] }
   | {
       tipo: 'tabela'
       /** Vazio quando a tabela não tem a linha de traços depois do cabeçalho. */
       cabecalho: TrechoMd[][]
       linhas: TrechoMd[][][]
+      /** Um por coluna, vindo de `:---:` (centro) e `---:` (direita). */
+      alinhamentos: (AlinhamentoMd | undefined)[]
     }
 
 const PONTUACAO = '\\`*_{}[]()#+-.!|~>"\'<&'
@@ -160,6 +170,12 @@ function montarTabela(linhas: string[]): BlocoMd {
     .filter((_, i) => !(temCabecalho && i === 1))
     .map(celulas)
   const largura = Math.max(...brutas.map((l) => l.length))
+  const marcas = temCabecalho ? celulas(linhas[1] as string) : []
+  const alinhamentos = Array.from({ length: largura }, (_, i) => {
+    const m = (marcas[i] ?? '').trim()
+    if (m.startsWith(':') && m.endsWith(':')) return 'centro' as const
+    return m.endsWith(':') ? ('direita' as const) : undefined
+  })
   const prontas = brutas.map((l) =>
     Array.from({ length: largura }, (_, i) => trechosMd((l[i] ?? '').trim())),
   )
@@ -167,6 +183,23 @@ function montarTabela(linhas: string[]): BlocoMd {
     tipo: 'tabela',
     cabecalho: temCabecalho ? (prontas[0] as TrechoMd[][]) : [],
     linhas: temCabecalho ? prontas.slice(1) : prontas,
+    alinhamentos,
+  }
+}
+
+/**
+ * Alinhamento de uma linha: `->texto<-` centraliza e `->texto->` vai à direita.
+ * Devolve o texto sem as marcas.
+ */
+function lerAlinhamento(linha: string): {
+  texto: string
+  alinhamento?: AlinhamentoMd
+} {
+  const m = /^->\s*(.*?)\s*(<-|->)$/.exec(linha)
+  if (!m || !m[1]) return { texto: linha }
+  return {
+    texto: m[1],
+    alinhamento: m[2] === '<-' ? 'centro' : 'direita',
   }
 }
 
@@ -202,7 +235,9 @@ export function lerMarkdown(md: string): BlocoMd[] {
   }
   for (const bruta of md.replace(/\r\n?/g, '\n').split('\n')) {
     const linha = bruta.trim()
-    const titulo = /^(#{1,3})\s+(.+)$/.exec(linha)
+    // Parágrafo alinhado ocupa a própria linha (`->texto<-`).
+    const alinhada = lerAlinhamento(linha)
+    const titulo = /^(#{1,3})\s+(.+)$/.exec(alinhada.texto)
     const item = /^(?:([-*+])|(\d{1,3})[.)])\s+(.*)$/.exec(linha)
     if (linha.startsWith('|')) {
       fecharParagrafo()
@@ -221,6 +256,15 @@ export function lerMarkdown(md: string): BlocoMd[] {
         tipo: 'titulo',
         nivel: (titulo[1] as string).length as 1 | 2 | 3,
         trechos: trechosMd(titulo[2] as string),
+        ...(alinhada.alinhamento && { alinhamento: alinhada.alinhamento }),
+      })
+    } else if (alinhada.alinhamento) {
+      fecharParagrafo()
+      fecharLista()
+      blocos.push({
+        tipo: 'paragrafo',
+        trechos: trechosMd(alinhada.texto),
+        alinhamento: alinhada.alinhamento,
       })
     } else if (item) {
       fecharParagrafo()

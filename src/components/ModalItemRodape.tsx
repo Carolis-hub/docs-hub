@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { ItemRodape } from '../types/content'
 import { LIMITES_RODAPE, novoIdDoRodape, urlDoRodape } from '../utils/rodape'
@@ -37,6 +38,26 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
     setConteudo(
       conteudo.slice(0, ini) + antes + meio + depois + conteudo.slice(fim),
     )
+    el?.focus()
+  }
+
+  /**
+   * Aplica `f` à linha onde está o cursor (ou à seleção inteira, linha a linha
+   * não é necessário: vale a linha do cursor). Tira marcas antigas de título e
+   * alinhamento antes, para o botão poder ser clicado de novo sem acumular.
+   */
+  function linhaAtual(f: (linha: string) => string) {
+    const el = area.current
+    const pos = el && tocou.current ? el.selectionStart : conteudo.length
+    const ini = conteudo.lastIndexOf('\n', pos - 1) + 1
+    const fimBusca = conteudo.indexOf('\n', pos)
+    const fim = fimBusca === -1 ? conteudo.length : fimBusca
+    const limpa = conteudo
+      .slice(ini, fim)
+      .trim()
+      .replace(/^->\s*(.*?)\s*(<-|->)$/, '$1')
+      .replace(/^#{1,3}\s+/, '')
+    setConteudo(conteudo.slice(0, ini) + f(limpa) + conteudo.slice(fim))
     el?.focus()
   }
 
@@ -113,11 +134,23 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
         aria-modal="true"
         aria-label={item ? 'Editar item do rodapé' : 'Novo item do rodapé'}
         onSubmit={enviar}
-        className="cartao max-h-[90vh] w-full max-w-3xl space-y-4 overflow-y-auto p-6"
+        className="cartao max-h-[90vh] w-full max-w-3xl space-y-4 overflow-y-auto p-6 pt-0"
       >
-        <h3 className="text-lg font-bold">
-          {item ? 'Editar item do rodapé' : 'Novo item do rodapé'}
-        </h3>
+        {/* Fica fixo no topo: dá para fechar sem rolar até o fim da janela. */}
+        <div className="sticky top-0 z-10 -mx-6 flex items-center justify-between gap-2 border-b border-borda bg-cartao px-6 py-4">
+          <h3 className="text-lg font-bold">
+            {item ? 'Editar item do rodapé' : 'Novo item do rodapé'}
+          </h3>
+          <button
+            type="button"
+            className="botao h-9 w-9 shrink-0 p-0"
+            aria-label="Fechar"
+            title="Fechar (Esc)"
+            onClick={aoCancelar}
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
         <label className="block text-sm">
           Nome do item
           <input
@@ -148,6 +181,22 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
             Conteúdo (Markdown)
           </label>
           <div className="mt-1 flex flex-wrap gap-1">
+            <button
+              type="button"
+              className="botao h-8 px-2.5"
+              onClick={() => linhaAtual((l) => `## ${l || 'Título'}`)}
+            >
+              Título
+            </button>
+            <button
+              type="button"
+              className="botao h-8 px-2.5"
+              onClick={() =>
+                linhaAtual((l) => `->${l || 'Texto centralizado'}<-`)
+              }
+            >
+              Centralizar
+            </button>
             <button
               type="button"
               className="botao h-8 px-2.5"
@@ -231,10 +280,12 @@ export function ModalItemRodape({ item, aoSalvar, aoCancelar }: Props) {
             onChange={(e) => setConteudo(e.target.value)}
           />
           <p className="mt-1 text-xs text-suave">
-            Aceita **negrito**, *itálico*, listas com “-”, [texto](link),
-            tabelas e escape com barra invertida (\*, \[, \]). Na tabela, cada
-            linha começa e termina com “|”, e as células são separadas por “|”;
-            para mais colunas ou linhas, repita o padrão.
+            Aceita **negrito**, *itálico*, títulos com “## ”, listas com “-”,
+            [texto](link), tabelas e escape com barra invertida (\*, \[, \]). Na
+            tabela, cada linha começa e termina com “|”, e as células são
+            separadas por “|”; para mais colunas ou linhas, repita o padrão.
+            Para centralizar uma linha, escreva “{'->texto<-'}” (ou use o botão
+            Centralizar); na tabela, “:---:” centraliza a coluna.
           </p>
         </div>
 

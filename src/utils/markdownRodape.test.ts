@@ -103,3 +103,27 @@ describe('tabelas', () => {
     ).toEqual(['paragrafo', 'tabela', 'paragrafo', 'lista'])
   })
 })
+
+describe('alinhamento', () => {
+  it('->texto<- centraliza e ->texto-> vai à direita, com título ou parágrafo', () => {
+    const [a, b, c] = lerMarkdown(
+      '->## Novidades<-\n\n->Novembro/2026<-\n\n->fim->',
+    )
+    expect(a).toMatchObject({ tipo: 'titulo', alinhamento: 'centro' })
+    expect(b).toMatchObject({ tipo: 'paragrafo', alinhamento: 'centro' })
+    expect(c).toMatchObject({ tipo: 'paragrafo', alinhamento: 'direita' })
+  })
+
+  it('sem as marcas nada muda', () => {
+    const [a] = lerMarkdown('Texto normal')
+    expect(a).not.toHaveProperty('alinhamento')
+  })
+
+  it('tabela lê o alinhamento das colunas', () => {
+    const [t] = lerMarkdown(
+      '| a | b | c |\n| --- | :---: | ---: |\n| 1 | 2 | 3 |',
+    )
+    if (t?.tipo !== 'tabela') throw new Error('não é tabela')
+    expect(t.alinhamentos).toEqual([undefined, 'centro', 'direita'])
+  })
+})

@@ -1,5 +1,9 @@
 import { Link } from 'react-router-dom'
-import { lerMarkdown, type TrechoMd } from '../utils/markdownRodape'
+import {
+  lerMarkdown,
+  type AlinhamentoMd,
+  type TrechoMd,
+} from '../utils/markdownRodape'
 import { ehLinkInterno } from '../utils/rodape'
 
 export function LinkDoRodape({
@@ -29,6 +33,13 @@ export function LinkDoRodape({
     </a>
   )
 }
+
+const CLASSE_ALINHAMENTO = {
+  centro: 'text-center',
+  direita: 'text-right',
+} as const
+
+const alinhar = (a?: AlinhamentoMd) => (a ? CLASSE_ALINHAMENTO[a] : '')
 
 function Trechos({ trechos }: { trechos: TrechoMd[] }) {
   return (
@@ -80,7 +91,10 @@ export function MarkdownRodape({ texto }: { texto: string }) {
       {blocos.map((b, i) => {
         if (b.tipo === 'titulo') {
           return (
-            <p key={i} className="font-semibold text-texto">
+            <p
+              key={i}
+              className={`text-texto ${b.nivel === 1 ? 'text-base font-bold' : 'font-semibold'} ${b.nivel === 3 ? 'text-suave' : ''} ${alinhar(b.alinhamento)}`}
+            >
               <Trechos trechos={b.trechos} />
             </p>
           )
@@ -111,7 +125,7 @@ export function MarkdownRodape({ texto }: { texto: string }) {
                         <th
                           key={j}
                           scope="col"
-                          className="border border-borda bg-bloco px-3 py-2 font-semibold text-texto"
+                          className={`border border-borda bg-bloco px-3 py-2 font-semibold text-texto ${alinhar(b.alinhamentos[j]) || 'text-left'}`}
                         >
                           <Trechos trechos={c} />
                         </th>
@@ -125,7 +139,7 @@ export function MarkdownRodape({ texto }: { texto: string }) {
                       {linha.map((c, k) => (
                         <td
                           key={k}
-                          className="border border-borda px-3 py-2 align-top"
+                          className={`border border-borda px-3 py-2 align-top ${alinhar(b.alinhamentos[k])}`}
                         >
                           <Trechos trechos={c} />
                         </td>
@@ -138,7 +152,7 @@ export function MarkdownRodape({ texto }: { texto: string }) {
           )
         }
         return (
-          <p key={i}>
+          <p key={i} className={alinhar(b.alinhamento)}>
             <Trechos trechos={b.trechos} />
           </p>
         )

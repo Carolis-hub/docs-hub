@@ -290,6 +290,10 @@ excluir um, excluir em lote, entrar como a leitora criada). Fica em aberto:
       Compatibilidade DI, Compatibilidade SmartShare, Instaladores e Aplicativos,
       Release Notes, Contato): esse conteúdo passa a ser do rodapé. O campo
       `ficha` que já estiver gravado em `blocks` fica no banco, sem uso
+- [x] Janela do item: botão "X" fixo no topo (fecha sem rolar até o fim) e
+      organização do conteúdo: títulos (`## `, com tamanhos), alinhamento
+      centralizado (`->texto<-`, botão "Centralizar"), à direita (`->texto->`) e
+      por coluna de tabela (`:---:`, `---:`)
 - [ ] Conferir no Firebase `dev` com o rodapé real do SmartShare 4
 
 ### Consulta sem a IA (pedido do time)
